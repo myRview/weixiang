@@ -50,7 +50,7 @@ public class OrderInfoEntity implements Serializable {
     private BigDecimal amount;
 
      @Schema(description = "订单状态,0未支付，1-已支付")
-    private Byte status;
+    private Integer status;
 
      @Schema(description = "创建时间")
     private Date createTime;

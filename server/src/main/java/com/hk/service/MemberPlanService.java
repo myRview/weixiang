@@ -1,7 +1,13 @@
 package com.hk.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.entity.MemberPlanEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hk.enums.StatusEnum;
+import com.hk.param.PlanSearchParam;
+import com.hk.vo.plan.MemberPlanVO;
+
+import java.util.List;
 
 /**
 * <p>
@@ -13,4 +19,13 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface MemberPlanService extends IService<MemberPlanEntity> {
 
+    Page<MemberPlanVO> selectPage(PlanSearchParam searchParam);
+
+    MemberPlanVO getInfoById(Long id);
+
+    List<MemberPlanVO> selectList(StatusEnum statusEnum);
+
+    boolean savePlan(MemberPlanVO planVO);
+
+    boolean updatePlan(MemberPlanVO planVO);
 }

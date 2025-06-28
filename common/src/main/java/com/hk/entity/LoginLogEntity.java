@@ -51,7 +51,7 @@ public class LoginLogEntity implements Serializable {
     private Date loginTime;
 
      @Schema(description = "1-登录成功，0-登录失败")
-    private Byte status;
+    private Integer status;
 
      @Schema(description = "创建时间")
     private Date createTime;

@@ -32,28 +32,31 @@ public class UserEntity implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-     @Schema(description = "账号")
+    @Schema(description = "账号")
     private String account;
 
-     @Schema(description = "密码")
+    @Schema(description = "密码")
     private String password;
 
-     @Schema(description = "密码盐")
+    @Schema(description = "密码盐")
     private String salt;
 
-     @Schema(description = "邮箱")
+    @Schema(description = "用户名")
+    private String userName;
+
+    @Schema(description = "邮箱")
     private String email;
 
-     @Schema(description = "手机号")
+    @Schema(description = "手机号")
     private String phone;
 
-     @Schema(description = "0-禁用，1-启用")
-    private Byte status;
+    @Schema(description = "0-禁用，1-启用")
+    private Integer status;
 
-     @Schema(description = "创建时间")
+    @Schema(description = "创建时间")
     private Date createTime;
 
-     @Schema(description = "更新时间")
+    @Schema(description = "更新时间")
     private Date updateTime;
 
 }

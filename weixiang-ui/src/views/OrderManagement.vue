@@ -43,7 +43,7 @@
           <el-date-picker
             v-model="searchDateRange"
             type="daterange"
-            range-separator="至"  
+            range-separator="至"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
             clearable
@@ -116,8 +116,9 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 // 订单状态选项
 const orderStatuses = ref([
@@ -135,6 +136,12 @@ const searchProduct = ref("");
 const searchOrderStatus = ref("");
 const searchDateRange = ref<[Date | null, Date | null]>([null, null]);
 
+// 分页相关
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+const tableData = ref([]);
+
 // 定义订单数据接口
 interface Order {
   id: number;
@@ -146,11 +153,10 @@ interface Order {
   status: 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled';
 }
 
-// 生成完整模拟数据
+// 所有订单数据
 const allOrders = ref<Order[]>([]);
 
-
-// 初始化所有订单数据 - 临时写死示例数据，后续将从后台接口获取
+// 初始化所有订单数据
 const initAllOrders = () => {
   const data: Order[] = [
     { id: 1, orderNo: 'ORD23000001', userName: '张三', productName: '智能手表', orderDate: '2023-10-15', amount: 1299.00, status: 'completed' },
@@ -163,182 +169,113 @@ const initAllOrders = () => {
     { id: 8, orderNo: 'ORD23000008', userName: '吴十', productName: '平板电脑', orderDate: '2023-10-22', amount: 3299.00, status: 'paid' }
   ];
   allOrders.value = data;
+  total.value = data.length;
+  tableData.value = data;
 };
 
 // 获取订单状态标签
 const getOrderStatusLabel = (status: string) => {
-  const statusObj = orderStatuses.value.find(item => item.value === status);
-  return statusObj ? statusObj.label : status;
+  const found = orderStatuses.value.find(item => item.value === status);
+  return found ? found.label : status;
 };
 
-// 获取订单状态标签类型
+// 获取订单状态类型
 const getOrderStatusType = (status: string) => {
-  const statusObj = orderStatuses.value.find(item => item.value === status);
-  return statusObj ? statusObj.type : 'default';
+  const found = orderStatuses.value.find(item => item.value === status);
+  return found ? found.type : '';
 };
 
-// 格式化金额为货币格式
-const formatCurrency = (row: Order, column: any) => {
-  return '¥' + row.amount.toFixed(2);
-};
-
-// 分页相关数据
-const currentPage = ref(1);
-const pageSize = ref(10);
-const total = ref(100); // 模拟总数据量
-
-// 模拟订单数据
-const tableData = ref<Order[]>([]);
-
-// 加载数据并应用搜索过滤和分页
-const loadData = () => {
-  // 应用搜索过滤
-  let filteredData = [...allOrders.value];
-
-  if (searchOrderNo.value) {
-    filteredData = filteredData.filter((item) =>
-      item.orderNo.includes(searchOrderNo.value)
-    );
-  }
-  if (searchUserName.value) {
-    filteredData = filteredData.filter((item) =>
-      item.userName.includes(searchUserName.value)
-    );
-  }
-  if (searchProduct.value) {
-    filteredData = filteredData.filter((item) =>
-      item.productName.includes(searchProduct.value)
-    );
-  }
-  if (searchOrderStatus.value) {
-    filteredData = filteredData.filter(
-      (item) => item.status === searchOrderStatus.value
-    );
-  }
-  if (searchDateRange.value[0] && searchDateRange.value[1]) {
-    const startDate = new Date(searchDateRange.value[0]);
-    const endDate = new Date(searchDateRange.value[1]);
-    endDate.setHours(23, 59, 59, 999);
-    filteredData = filteredData.filter((item) => {
-      const orderDate = new Date(item.orderDate);
-      return orderDate >= startDate && orderDate <= endDate;
-    });
-  }
-
-  // 更新总条数
-  total.value = filteredData.length;
-
-  // 分页处理
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  tableData.value = filteredData.slice(startIndex, endIndex);
+// 格式化金额
+const formatCurrency = (row: any, column: any, cellValue: number) => {
+  return `¥${cellValue.toFixed(2)}`;
 };
 
 // 搜索处理
 const handleSearch = () => {
-  currentPage.value = 1; // 搜索时重置到第一页
-  loadData();
+  // 这里添加搜索逻辑
+  let filtered = allOrders.value;
+  
+  if (searchOrderNo.value) {
+    filtered = filtered.filter(order => order.orderNo.includes(searchOrderNo.value));
+  }
+  
+  if (searchUserName.value) {
+    filtered = filtered.filter(order => order.userName.includes(searchUserName.value));
+  }
+  
+  if (searchProduct.value) {
+    filtered = filtered.filter(order => order.productName.includes(searchProduct.value));
+  }
+  
+  if (searchOrderStatus.value) {
+    filtered = filtered.filter(order => order.status === searchOrderStatus.value);
+  }
+  
+  // 日期范围搜索
+  if (searchDateRange.value[0] && searchDateRange.value[1]) {
+    const startDate = new Date(searchDateRange.value[0]);
+    const endDate = new Date(searchDateRange.value[1]);
+    
+    filtered = filtered.filter(order => {
+      const orderDate = new Date(order.orderDate);
+      return orderDate >= startDate && orderDate <= endDate;
+    });
+  }
+  
+  total.value = filtered.length;
+  tableData.value = filtered;
 };
 
-// 重置搜索条件
+// 重置搜索
 const resetSearch = () => {
-  searchOrderNo.value = "";
-  searchUserName.value = "";
-  searchProduct.value = "";
-  searchOrderStatus.value = "";
+  searchOrderNo.value = '';
+  searchUserName.value = '';
+  searchProduct.value = '';
+  searchOrderStatus.value = '';
   searchDateRange.value = [null, null];
   currentPage.value = 1;
-  loadData();
+  
+  // 重置表格数据
+  tableData.value = allOrders.value;
+  total.value = allOrders.value.length;
 };
 
-// 分页事件处理
+// 分页大小变化
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
-  loadData();
 };
 
+// 当前页码变化
 const handleCurrentChange = (val: number) => {
   currentPage.value = val;
-  loadData();
 };
-initAllOrders();
 
-loadData();
+// 页面加载时初始化数据
+onMounted(() => {
+  initAllOrders();
+});
 </script>
 
 <style scoped>
 .order-management {
   padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-
-/* 卡片容器样式 */
-.card-container {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  margin-bottom: 20px;
 }
 
 .search-container {
-  margin-bottom: 20px;
-}
-
-/* 标题样式 */
-.page-title {
-  font-size: 20px;
-  font-weight: 500;
-  color: #303133;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-/* 表格样式优化 */
-::v-deep .el-table {
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-::v-deep .el-table th {
   background-color: #f5f7fa;
-  font-weight: 500;
-  color: #303133;
+  padding: 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 
-::v-deep .el-table tr:hover > td {
-  background-color: #f9fafc !important;
+.card-container {
+  background-color: #fff;
+  border-radius: 4px;
+  padding: 20px;
 }
 
-::v-deep .el-table__row--striped td {
-  background-color: #fafafa;
-}
-
-/* 分页容器样式 */
 .pagination-container {
-  margin-top: 16px;
+  margin-top: 20px;
   text-align: right;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .member-management {
-    padding: 10px;
-  }
-
-  .card-container {
-    padding: 15px;
-  }
-
-  ::v-deep .el-table {
-    font-size: 13px;
-  }
-
-  .pagination-container {
-    margin-top: 12px;
-  }
 }
 </style>

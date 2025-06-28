@@ -1,7 +1,10 @@
 package com.hk.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.entity.LoginLogEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hk.param.LogSearchParam;
+import com.hk.vo.log.LoginLogVO;
 
 /**
 * <p>
@@ -13,4 +16,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface LoginLogService extends IService<LoginLogEntity> {
 
+    Page<LoginLogVO> selectLoginPage(LogSearchParam searchParam);
+
+    LoginLogVO getInfoById(Long id);
 }

@@ -54,7 +54,7 @@ public class OperationLogEntity implements Serializable {
     private Date operationTime;
 
      @Schema(description = "1-成功，0-失败")
-    private Byte status;
+    private Integer status;
 
      @Schema(description = "创建时间")
     private Date createTime;

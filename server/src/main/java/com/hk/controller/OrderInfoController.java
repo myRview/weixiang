@@ -1,7 +1,11 @@
 package com.hk.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hk.common.ResponseResult;
 import com.hk.entity.OrderInfoEntity;
+import com.hk.param.OrderSearchParam;
 import com.hk.service.OrderInfoService;
+import com.hk.vo.order.OrderVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,44 +33,44 @@ public class OrderInfoController {
      * 添加订单表
      */
     @PostMapping("/add")
-    @Operation(summary ="添加订单")
-    public boolean add(@RequestBody OrderInfoEntity orderInfoEntity) {
-        return orderInfoService.save(orderInfoEntity);
+    @Operation(summary = "添加订单")
+    public ResponseResult addOrder(@RequestBody OrderInfoEntity orderInfoEntity) {
+        return orderInfoService.save(orderInfoEntity) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
 
     /**
      * 删除订单表
      */
     @DeleteMapping("/{id}")
-    @Operation(summary ="删除订单")
-    public boolean delete(@PathVariable Long id) {
-        return orderInfoService.removeById(id);
+    @Operation(summary = "删除订单")
+    public ResponseResult deleteOrder(@PathVariable Long id) {
+        return orderInfoService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
     /**
      * 修改订单表
      */
     @PostMapping("/update")
-    @Operation(summary ="修改订单")
-    public boolean update(@RequestBody OrderInfoEntity orderInfoEntity) {
-        return orderInfoService.updateById(orderInfoEntity);
+    @Operation(summary = "修改订单")
+    public ResponseResult updateOrder(@RequestBody OrderInfoEntity orderInfoEntity) {
+        return orderInfoService.updateById(orderInfoEntity) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
 
     /**
      * 查询详情
      */
     @GetMapping("/{id}")
-    @Operation(summary ="查询订单详情")
-    public OrderInfoEntity getById(@PathVariable Long id) {
-        return orderInfoService.getById(id);
+    @Operation(summary = "查询订单详情")
+    public ResponseResult<OrderVO> getOrderById(@PathVariable Long id) {
+        return ResponseResult.success(orderInfoService.getOrderById(id));
     }
 
     /**
      * 查询列表
      */
-    @GetMapping("/list")
-    @Operation(summary ="查询订单列表")
-    public List<OrderInfoEntity> list() {
-        return orderInfoService.list();
+    @PostMapping("/page")
+    @Operation(summary = "查询订单列表")
+    public ResponseResult<Page<OrderVO>> selectOrderPage(@RequestBody OrderSearchParam searchParam) {
+        return ResponseResult.success(orderInfoService.selectOrderPage(searchParam));
     }
 }

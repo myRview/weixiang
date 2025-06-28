@@ -1,7 +1,11 @@
 package com.hk.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hk.common.ResponseResult;
 import com.hk.entity.LoginLogEntity;
+import com.hk.param.LogSearchParam;
 import com.hk.service.LoginLogService;
+import com.hk.vo.log.LoginLogVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +34,8 @@ public class LoginLogController {
      */
     @PostMapping("/add")
     @Operation(summary = "添加登录日志表")
-    public boolean add(@RequestBody LoginLogEntity loginLogEntity) {
-        return loginLogService.save(loginLogEntity);
+    public ResponseResult addLoginLog(@RequestBody LoginLogEntity loginLogEntity) {
+        return loginLogService.save(loginLogEntity) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
 
     /**
@@ -39,8 +43,8 @@ public class LoginLogController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除登录日志表")
-    public boolean delete(@PathVariable Long id) {
-        return loginLogService.removeById(id);
+    public ResponseResult deleteLoginLog(@PathVariable Long id) {
+        return loginLogService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
     /**
@@ -48,8 +52,8 @@ public class LoginLogController {
      */
     @PostMapping("/update")
     @Operation(summary = "修改登录日志表")
-    public boolean update(@RequestBody LoginLogEntity loginLogEntity) {
-        return loginLogService.updateById(loginLogEntity);
+    public ResponseResult updateLoginLog(@RequestBody LoginLogEntity loginLogEntity) {
+        return loginLogService.updateById(loginLogEntity) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
 
     /**
@@ -57,16 +61,16 @@ public class LoginLogController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "查询详情")
-    public LoginLogEntity getById(@PathVariable Long id) {
-        return loginLogService.getById(id);
+    public ResponseResult<LoginLogVO> getLoginLogById(@PathVariable Long id) {
+        return ResponseResult.success(loginLogService.getInfoById(id));
     }
 
     /**
      * 查询列表
      */
-    @GetMapping("/list")
+    @PostMapping("/page")
     @Operation(summary = "查询列表")
-    public List<LoginLogEntity> list() {
-        return loginLogService.list();
+    public ResponseResult<Page<LoginLogVO>> selectLoginPage(@RequestBody LogSearchParam searchParam) {
+        return ResponseResult.success(loginLogService.selectLoginPage(searchParam));
     }
 }

@@ -1,16 +1,63 @@
 <template>
   <div class="login-log-container">
+    <div class="search-container">
+      <el-card class="search-card">
+        <!-- 搜索表单 -->
+        <el-form :model="searchParam" class="search-form" inline>
+          <el-form-item label="用户名">
+            <el-input
+              v-model="searchParam.username"
+              placeholder="请输入用户名"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="IP地址">
+            <el-input
+              v-model="searchParam.ipAddress"
+              placeholder="请输入IP地址"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch">搜索</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
         <el-table-column prop="id" label="日志ID" width="100"></el-table-column>
-        <el-table-column prop="username" label="用户名" min-width="120"></el-table-column>
-        <el-table-column prop="ipAddress" label="IP地址" width="140"></el-table-column>
-        <el-table-column prop="loginLocation" label="登录地点" min-width="160"></el-table-column>
-        <el-table-column prop="device" label="登录设备" width="120"></el-table-column>
-        <el-table-column prop="loginTime" label="登录时间" width="180"></el-table-column>
+        <el-table-column
+          prop="username"
+          label="用户名"
+          min-width="120"
+        ></el-table-column>
+        <el-table-column
+          prop="ipAddress"
+          label="IP地址"
+          width="140"
+        ></el-table-column>
+        <el-table-column
+          prop="location"
+          label="登录地点"
+          min-width="160"
+        ></el-table-column>
+        <el-table-column
+          prop="device"
+          label="登录设备"
+          width="120"
+        ></el-table-column>
+        <el-table-column label="登录时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.loginTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="登录状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'">{{ scope.row.status === 'success' ? '成功' : '失败' }}</el-tag>
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">{{
+              scope.row.status === 1 ? "成功" : "失败"
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100">
@@ -31,104 +78,107 @@
         />
       </div>
     </div>
+    <!-- 详情对话框 -->
+    <div class="detail-dialog">
+      <el-dialog v-model="dialogVisible" width="600">
+        <span
+          slot="title"
+          style="display: block; text-align: center; margin-bottom: 10px"
+        >
+          <h3>登录日志详情</h3>
+        </span>
+        <el-form :model="currentLog" label-width="100px">
+          <el-form-item label="用户名">
+            <el-input v-model="currentLog.username" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="IP地址">
+            <el-input v-model="currentLog.ipAddress" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="登录地点">
+            <el-input v-model="currentLog.location" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="登录设备">
+            <el-input v-model="currentLog.device" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="登录时间">
+            <el-input
+              :value="formatDate(currentLog.loginTime)"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="登录状态">
+            <el-tag :type="currentLog.status === 1 ? 'success' : 'danger'">
+              {{ currentLog.status === 1 ? "成功" : "失败" }}
+            </el-tag>
+          </el-form-item>
+        </el-form>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-
-// 定义登录日志数据接口
-interface LoginLog {
-  id: number;
-  username: string;
-  ipAddress: string;
-  loginLocation: string;
-  device: string;
-  loginTime: string;
-  status: 'success' | 'fail';
-  description?: string;
-}
-
+import { selectLoginPage } from "@/api/denglurizhi";
+import { onMounted, ref } from "vue";
+import dayjs from "dayjs";
+const formatDate = (date: string | number | Date) => {
+  return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+};
 // 分页相关数据
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(100);
-const tableData = ref<LoginLog[]>([]);
+const tableData = ref<API.LoginLogVO[]>([]);
+const searchParam = ref<API.LogSearchParam>({});
 
-// 生成随机IP地址
-const getRandomIp = (): string => {
-  return Array.from({ length: 4 }, () => Math.floor(Math.random() * 256)).join('.');
-};
-
-// 生成随机日期时间
-const getRandomDateTime = (): string => {
-  const date = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000));
-  return date.toISOString().replace('T', ' ').slice(0, 19);
-};
-
-// 登录地点列表
-const loginLocations = [
-  '北京市 电信', '上海市 联通', '广州市 移动', '深圳市 电信', '杭州市 联通',
-  '南京市 移动', '武汉市 电信', '成都市 联通', '重庆市 移动', '西安市 电信'
-];
-
-// 登录设备列表
-const devices = ['Windows PC', 'macOS', 'iPhone', 'Android', 'iPad', 'Linux'];
-
-// 登录失败原因
-const failureReasons = [
-  '密码错误', '账号不存在', '账号被锁定', 'IP被限制', '验证码错误'
-];
-
-// 初始化登录日志数据
-const initLoginLogs = () => {
-  const logs: LoginLog[] = [];
-  for (let i = 1; i <= 100; i++) {
-    const status = Math.random() > 0.2 ? 'success' : 'fail';
-    logs.push({
-      id: i,
-      username: `user${Math.floor(Math.random() * 50) + 1}`,
-      ipAddress: getRandomIp(),
-      loginLocation: loginLocations[Math.floor(Math.random() * loginLocations.length)],
-      device: devices[Math.floor(Math.random() * devices.length)],
-      loginTime: getRandomDateTime(),
-      status,
-      description: status === 'fail' ? failureReasons[Math.floor(Math.random() * failureReasons.length)] : undefined
-    });
+const selectPage = async () => {
+  searchParam.value = {
+    ...searchParam.value,
+    pageNum: currentPage.value,
+    pageSize: pageSize.value,
+  };
+  const res = await selectLoginPage(searchParam.value);
+  if (res.data.code === 200) {
+    tableData.value = res.data.data?.records;
+    total.value = res.data.data?.total || 0;
   }
-  return logs;
 };
 
-// 所有日志数据
-const allLogs = ref<LoginLog[]>(initLoginLogs());
-
-// 加载数据并应用分页
-const loadData = () => {
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  tableData.value = allLogs.value.slice(startIndex, endIndex);
-  total.value = allLogs.value.length;
-};
-
+// 弹框控制
+const dialogVisible = ref(false);
+const currentLog = ref<API.LoginLogVO>({});
 // 查看详情
-const handleDetail = (log: LoginLog) => {
-  console.log('查看登录详情:', log);
-  // 这里可以添加详情弹窗逻辑
+const handleDetail = (log: any) => {
+  currentLog.value = log;
+  dialogVisible.value = true;
 };
 
 // 分页事件处理
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
-  loadData();
+  selectPage();
 };
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val;
-  loadData();
+  selectPage();
 };
 
-// 初始加载数据
-loadData();
+// 搜索事件
+const handleSearch = () => {
+  currentPage.value = 1;
+  selectPage();
+};
+
+// 重置事件
+const handleReset = () => {
+  searchParam.value = {};
+  currentPage.value = 1;
+  selectPage();
+};
+onMounted(() => {
+  selectPage();
+});
 </script>
 
 <style scoped>
@@ -146,7 +196,33 @@ loadData();
   padding: 20px;
   margin-bottom: 20px;
 }
-
+.search-container {
+  margin-bottom: 20px;
+}
+/* 搜索表单优化 */
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.search-form .el-form-item {
+  margin-bottom: 0;
+}
+.search-form .el-form-item__label {
+  width: 80px;
+  text-align: right;
+}
+.search-form .el-input {
+  width: 200px;
+}
+/* 按钮组样式 */
+.search-form .el-form-item:last-child {
+  margin-left: 10px;
+}
+.search-form .el-button {
+  padding: 8px 16px;
+}
 /* 表格样式优化 */
 ::v-deep .el-table {
   border-radius: 6px;
@@ -173,6 +249,44 @@ loadData();
   text-align: right;
 }
 
+/* 弹框层级调整 */
+::v-deep .el-dialog {
+  z-index: 2000 !important; /* 确保弹框显示在最上层 */
+}
+
+/* 详情对话框样式优化 */
+.detail-dialog {
+  .el-dialog__header {
+    text-align: center; /* 标题整体居中 */
+  }
+  .el-dialog__title {
+    display: block; /* 确保标题为块级元素 */
+  }
+  .el-dialog__body {
+    padding: 30px 40px; /* 增加内边距提升空间感 */
+  }
+  .el-form {
+    max-width: 600px; /* 限制表单最大宽度 */
+    margin: 0 auto; /* 表单整体居中 */
+  }
+  .el-form-item {
+    max-width: 500px; /* 每行最大宽度限制 */
+    margin: 0 auto 15px; /* 行间距调整+居中 */
+  }
+  .el-form-item__label {
+    text-align: center; /* 标签文字居中 */
+  }
+  .el-input {
+    .el-input__inner {
+      text-align: center; /* 输入框内容居中 */
+      max-width: 400px; /* 输入框最大宽度 */
+      overflow: hidden; /* 溢出隐藏 */
+      text-overflow: ellipsis; /* 溢出显示省略号 */
+      white-space: nowrap; /* 强制单行显示 */
+    }
+  }
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .login-log-container {
@@ -181,6 +295,16 @@ loadData();
 
   .card-container {
     padding: 15px;
+  }
+
+  .search-form {
+    gap: 12px;
+  }
+  .search-form .el-form-item__label {
+    width: 60px;
+  }
+  .search-form .el-input {
+    width: 160px;
   }
 
   ::v-deep .el-table {

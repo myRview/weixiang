@@ -33,7 +33,7 @@ public class MemberPlanEntity implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-    @Schema(description = "会员名称")
+    @Schema(description = "套餐名称")
     private String name;
 
     @Schema(description = "价格")
@@ -46,7 +46,7 @@ public class MemberPlanEntity implements Serializable {
     private Integer validityDays;
 
     @Schema(description = "0-禁用，1-启用")
-    private Byte status;
+    private Integer status;
 
     @Schema(description = "创建时间")
     private Date createTime;

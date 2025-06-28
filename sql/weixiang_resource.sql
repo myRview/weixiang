@@ -49,7 +49,8 @@ CREATE TABLE `order_info`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `order_number`(`order_number`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '订单表' ROW_FORMAT = Dynamic;
-
+alter table order_info add idx_user_id(user_id);
+alter table order_info add idx_plan_id(plan_id);
 -- ----------------------------
 -- Table structure for sys_login_log
 -- ----------------------------
@@ -67,7 +68,8 @@ CREATE TABLE `sys_login_log`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '登录日志表' ROW_FORMAT = Dynamic;
-
+alter table sys_login_log add idx_user_id(user_id);
+alter table sys_login_log add idx_ip_address(ip_address);
 -- ----------------------------
 -- Table structure for sys_operation_log
 -- ----------------------------
@@ -86,8 +88,9 @@ CREATE TABLE `sys_operation_log`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
+alter table sys_operation_log add idx_user_id(user_id);
+alter table sys_operation_log add idx_ip_address(ip_address);
+    -- ----------------------------
 -- Table structure for sys_user
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_user`;
@@ -104,5 +107,5 @@ CREATE TABLE `sys_user`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `account`(`account`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
-
+alter table sys_user add user_name varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '用户名';
 SET FOREIGN_KEY_CHECKS = 1;

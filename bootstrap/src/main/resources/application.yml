@@ -4,7 +4,7 @@ server:
     context-path: /api
 spring:
   application:
-    name: Weixiang_ResourceS
+    name: weixiang
   datasource:
     url: jdbc:mysql://192.168.159.128:3306/Weixiang_Resource?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root

@@ -1,7 +1,12 @@
 package com.hk.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hk.common.ResponseResult;
 import com.hk.entity.MemberPlanEntity;
+import com.hk.enums.StatusEnum;
+import com.hk.param.PlanSearchParam;
 import com.hk.service.MemberPlanService;
+import com.hk.vo.plan.MemberPlanVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +35,8 @@ public class MemberPlanController {
      */
     @PostMapping("/add")
     @Operation(summary ="添加会员套餐")
-    public boolean add(@RequestBody MemberPlanEntity memberPlanEntity) {
-        return memberPlanService.save(memberPlanEntity);
+    public ResponseResult addPlan(@RequestBody MemberPlanVO planVO) {
+        return memberPlanService.savePlan(planVO)? ResponseResult.success("添加成功"):ResponseResult.fail("添加失败");
     }
 
     /**
@@ -39,8 +44,8 @@ public class MemberPlanController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary ="删除会员套餐")
-    public boolean delete(@PathVariable Long id) {
-        return memberPlanService.removeById(id);
+    public ResponseResult deletePlan(@PathVariable Long id) {
+        return memberPlanService.removeById(id)? ResponseResult.success("删除成功"):ResponseResult.fail("删除失败");
     }
 
     /**
@@ -48,8 +53,8 @@ public class MemberPlanController {
      */
     @PostMapping("/update")
     @Operation(summary ="修改会员套餐")
-    public boolean update(@RequestBody MemberPlanEntity memberPlanEntity) {
-        return memberPlanService.updateById(memberPlanEntity);
+    public ResponseResult updatePlan(@RequestBody MemberPlanVO planVO) {
+        return memberPlanService.updatePlan(planVO)? ResponseResult.success("修改成功"):ResponseResult.fail("修改失败");
     }
 
     /**
@@ -57,16 +62,26 @@ public class MemberPlanController {
      */
     @GetMapping("/{id}")
     @Operation(summary ="查询会员套餐详情")
-    public MemberPlanEntity getById(@PathVariable Long id) {
-        return memberPlanService.getById(id);
+    public ResponseResult<MemberPlanVO> getPlanInfoById(@PathVariable Long id) {
+        return ResponseResult.success(memberPlanService.getInfoById(id));
     }
 
     /**
      * 查询列表
      */
-    @GetMapping("/list")
+    @PostMapping("/page")
     @Operation(summary ="查询会员套餐列表")
-    public List<MemberPlanEntity> list() {
-        return memberPlanService.list();
+    public ResponseResult<Page<MemberPlanVO>> selectPlanPage(@RequestBody PlanSearchParam searchParam) {
+        return ResponseResult.success(memberPlanService.selectPage(searchParam));
+    }
+
+
+    /**
+     * 查询列表
+     */
+    @PostMapping("/list")
+    @Operation(summary ="查询会员套餐列表")
+    public ResponseResult<List<MemberPlanVO>> selectPlanList() {
+        return ResponseResult.success(memberPlanService.selectList(StatusEnum.NORMAL));
     }
 }

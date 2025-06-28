@@ -1,10 +1,15 @@
 <template>
   <div class="home">
     <el-container>
-      <Header/>
+      <AppHeader />
       <el-container>
-        <el-aside width="200px">
-          <el-menu :default-active="$route.path" class="el-menu-vertical-demo" router>
+        <el-aside :width="180">
+          <el-menu
+            :default-active="$route.path"
+            class="el-menu-vertical-demo"
+            router
+            :collapse="isCollapsed"
+          >
             <template v-for="route in routes" :key="route.path">
               <el-menu-item
                 v-if="!route.children || route.children.length === 0"
@@ -48,6 +53,7 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { ref } from "vue";
 import {
   House,
   DataAnalysis,
@@ -56,16 +62,22 @@ import {
   Edit,
   ShoppingCart,
   User,
-  Setting
+  Setting,
+  Expand,
+  Fold,
 } from "@element-plus/icons-vue";
-import Header from "../components/Header.vue";
+import AppHeader from "../components/AppHeader.vue";
 
 const router = useRouter();
+const isCollapsed = ref(false);
+
+const getCollapseIcon = () => isCollapsed.value ? Expand : Fold;
+
 const routes =
   router.options.routes
-    .find(route => route.path === "/")
+    .find((route) => route.path === "/")
     ?.children?.filter(
-      route => !route.redirect && route.meta?.title && route.meta?.icon
+      (route) => !route.redirect && route.meta?.title && route.meta?.icon
     ) || [];
 </script>
 
@@ -136,7 +148,8 @@ body {
   background-color: transparent !important;
 }
 
-::v-deep .el-menu-item, ::v-deep .el-sub-menu__title {
+::v-deep .el-menu-item,
+::v-deep .el-sub-menu__title {
   color: #94a3b8 !important;
   height: 50px !important;
   line-height: 50px !important;
@@ -145,7 +158,8 @@ body {
   transition: all 0.2s ease !important;
 }
 
-::v-deep .el-menu-item:hover, ::v-deep .el-sub-menu__title:hover {
+::v-deep .el-menu-item:hover,
+::v-deep .el-sub-menu__title:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -154,7 +168,8 @@ body {
   color: #5c5c5c !important;
 }
 
-::v-deep .el-menu-item .el-icon, ::v-deep .el-sub-menu__title .el-icon {
+::v-deep .el-menu-item .el-icon,
+::v-deep .el-sub-menu__title .el-icon {
   margin-right: 12px !important;
   font-size: 18px !important;
 }

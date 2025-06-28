@@ -1,0 +1,121 @@
+// @ts-ignore
+/* eslint-disable */
+import request from "@/request";
+
+/** 查询用户详情 GET /user/${param0} */
+export async function getUserById(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserByIdParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params;
+  return request<API.ResponseResultUserVO>(`/user/${param0}`, {
+    method: "GET",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
+}
+
+/** 删除用户 DELETE /user/${param0} */
+export async function deleteUser(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.deleteUserParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params;
+  return request<API.ResponseResult>(`/user/${param0}`, {
+    method: "DELETE",
+    params: { ...queryParams },
+    ...(options || {}),
+  });
+}
+
+/** 添加用户 POST /user/add */
+export async function addUser(
+  body: API.UserAddVO,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/add", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 查询用户列表 POST /user/list */
+export async function getUserList(
+  body: API.UserSearchParam,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultPageUserVO>("/user/list", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 修改密码 POST /user/pwd */
+export async function updatePassword(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.updatePasswordParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/pwd", {
+    method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 重置密码 POST /user/reset/pwd */
+export async function resetPassword(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.resetPasswordParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/reset/pwd", {
+    method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 启用/禁用用户 POST /user/status */
+export async function transStatus(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.transStatusParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/status", {
+    method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 修改用户 POST /user/update */
+export async function updateUser(
+  body: API.UserEditVO,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/update", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

@@ -1,22 +1,76 @@
 <template>
   <div class="operation-log-container">
+    <div class="search-container">
+      <el-card class="search-card">
+        <!-- 搜索表单 -->
+        <el-form :model="searchParam" class="search-form" inline>
+          <el-form-item label="用户名">
+            <el-input
+              v-model="searchParam.username"
+              placeholder="请输入用户名"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="IP地址">
+            <el-input
+              v-model="searchParam.ipAddress"
+              placeholder="请输入IP地址"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch">搜索</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
         <el-table-column prop="id" label="日志ID" width="100"></el-table-column>
-        <el-table-column prop="operator" label="操作人员" min-width="120"></el-table-column>
-        <el-table-column prop="operation" label="操作内容" min-width="200"></el-table-column>
-        <el-table-column prop="module" label="操作模块" width="120"></el-table-column>
-        <el-table-column prop="ipAddress" label="IP地址" width="140"></el-table-column>
-        <el-table-column prop="operationAddress" label="操作地址" min-width="160"></el-table-column>
-        <el-table-column prop="operationTime" label="操作时间" width="180"></el-table-column>
+        <el-table-column
+          prop="username"
+          label="操作人员"
+          min-width="120"
+        ></el-table-column>
+        <el-table-column
+          prop="operationContent"
+          label="操作内容"
+          min-width="200"
+        ></el-table-column>
+        <el-table-column
+          prop="operationModule"
+          label="操作模块"
+          width="120"
+        ></el-table-column>
+        <el-table-column
+          prop="ipAddress"
+          label="IP地址"
+          width="140"
+        ></el-table-column>
+        <el-table-column
+          prop="operationAddress"
+          label="操作地址"
+          min-width="160"
+        ></el-table-column>
+        <el-table-column label="操作时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.operationTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="操作状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'">{{ scope.row.status === 'success' ? '成功' : '失败' }}</el-tag>
+            <el-tag
+              :type="scope.row.status === 1 ? 'success' : 'danger'"
+              >{{ scope.row.status === 1 ? "成功" : "失败" }}</el-tag
+            >
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="scope">
-            <el-button type="text" size="small" @click="handleDetail(scope.row)">详情</el-button>
+            <el-button type="text" size="small" @click="handleDetail(scope.row)"
+              >详情</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -32,103 +86,111 @@
         />
       </div>
     </div>
+    <!-- 详情对话框 -->
+    <div class="detail-dialog">
+      <el-dialog v-model="dialogVisible" width="600">
+        <span
+          slot="title"
+          style="display: block; text-align: center; margin-bottom: 10px"
+        >
+          <h3>操作日志详情</h3>
+        </span>
+        <el-form :model="currentLog" label-width="100px">
+          <el-form-item label="用户名">
+            <el-input v-model="currentLog.username" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="IP地址">
+            <el-input v-model="currentLog.ipAddress" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="操作内容">
+            <el-input v-model="currentLog.operationContent" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="操作模块">
+            <el-input v-model="currentLog.operationModule" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="操作地址">
+            <el-input v-model="currentLog.operationAddress" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="操作时间">
+            <el-input
+              :value="formatDate(currentLog.operationTime)"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="操作状态">
+            <el-tag
+              :type="currentLog.status === 1 ? 'success' : 'danger'"
+            >
+              {{ currentLog.status === 1 ? "成功" : "失败" }}
+            </el-tag>
+          </el-form-item>
+        </el-form>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-
-// 定义操作日志数据接口
-interface OperationLog {
-  id: number;
-  operator: string;
-  operation: string;
-  module: string;
-  ipAddress: string;
-  operationAddress: string;
-  operationTime: string;
-  status: 'success' | 'fail';
-}
-
+import { selectOperaLogPage } from "@/api/caozuorizhiguanli";
+import { onMounted, ref } from "vue";
+import dayjs from "dayjs";
+const formatDate = (date: string | number | Date) => {
+  return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+};
 // 分页相关数据
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(100);
-const tableData = ref<OperationLog[]>([]);
-
-// 生成随机IP地址
-const getRandomIp = (): string => {
-  return Array.from({ length: 4 }, () => Math.floor(Math.random() * 256)).join('.');
-};
-
-// 生成随机日期时间
-const getRandomDateTime = (): string => {
-  const date = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000));
-  return date.toISOString().replace('T', ' ').slice(0, 19);
-};
-
-// 操作模块列表
-const modules = ['用户管理', '商品管理', '订单管理', '系统设置', '数据统计'];
-
-// 操作地址列表
-const operationAddresses = [
-  '/user/list', '/product/edit', '/order/detail', '/system/setting', '/data/analysis',
-  '/login', '/dashboard', '/member/card', '/order/refund', '/log/operation'
-];
-
-// 操作内容列表
-const operations = [
-  '新增数据', '编辑信息', '删除记录', '查询数据', '导出报表', '导入数据', '修改密码', '登录系统', '退出系统'
-];
-
-// 初始化操作日志数据
-const initOperationLogs = () => {
-  const logs: OperationLog[] = [];
-  for (let i = 1; i <= 100; i++) {
-    logs.push({
-      id: i,
-      operator: `用户${Math.floor(Math.random() * 50) + 1}`,
-      operation: operations[Math.floor(Math.random() * operations.length)],
-      module: modules[Math.floor(Math.random() * modules.length)],
-      ipAddress: getRandomIp(),
-      operationAddress: operationAddresses[Math.floor(Math.random() * operationAddresses.length)],
-      operationTime: getRandomDateTime(),
-      status: Math.random() > 0.1 ? 'success' : 'fail'
-    });
+const tableData = ref<API.OperationLogVO[]>([]);
+const searchParam = ref<API.LogSearchParam>({});
+const selectPage = async () => {
+  searchParam.value = {
+    ...searchParam.value,
+    pageNum: currentPage.value,
+    pageSize: pageSize.value,
+  };
+  const res = await selectOperaLogPage(searchParam.value);
+  if (res.data.code === 200) {
+    tableData.value = res.data.data?.records;
+    total.value = res.data.data?.total || 0;
   }
-  return logs;
+};
+// 搜索事件
+const handleSearch = () => {
+  currentPage.value = 1;
+  selectPage();
 };
 
-// 所有日志数据
-const allLogs = ref<OperationLog[]>(initOperationLogs());
-
-// 加载数据并应用分页
-const loadData = () => {
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  tableData.value = allLogs.value.slice(startIndex, endIndex);
-  total.value = allLogs.value.length;
+// 重置事件
+const handleReset = () => {
+  searchParam.value = {};
+  currentPage.value = 1;
+  selectPage();
 };
 
+const dialogVisible = ref(false);
+const currentLog = ref<API.OperationLogVO>({});
 // 查看详情
-const handleDetail = (log: OperationLog) => {
-  console.log('查看详情:', log);
+const handleDetail = (log: any) => {
+  console.log("查看详情:", log);
   // 这里可以添加详情弹窗逻辑
+  currentLog.value = log;
+  dialogVisible.value = true;
 };
 
 // 分页事件处理
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
-  loadData();
+  selectPage();
 };
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val;
-  loadData();
+  selectPage();
 };
-
-// 初始加载数据
-loadData();
+onMounted(() => {
+  selectPage();
+});
 </script>
 
 <style scoped>
@@ -137,7 +199,33 @@ loadData();
   max-width: 1400px;
   margin: 0 auto;
 }
-
+.search-container {
+  margin-bottom: 20px;
+}
+/* 搜索表单优化 */
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.search-form .el-form-item {
+  margin-bottom: 0;
+}
+.search-form .el-form-item__label {
+  width: 80px;
+  text-align: right;
+}
+.search-form .el-input {
+  width: 200px;
+}
+/* 按钮组样式 */
+.search-form .el-form-item:last-child {
+  margin-left: 10px;
+}
+.search-form .el-button {
+  padding: 8px 16px;
+}
 /* 卡片容器样式 */
 .card-container {
   background: #fff;
