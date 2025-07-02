@@ -17,11 +17,10 @@ public class CodeGenerator {
         FastAutoGenerator.create("jdbc:mysql://192.168.159.128:3306/Weixiang_Resource?useSSL=false&serverTimezone=UTC", "root", "123456") // 替换为实际密码
                 .globalConfig(builder -> {
                     builder.author("hk") // 设置作者
-                            .enableSwagger() // 开启 swagger 模式
+//                            .enableSwagger() // 开启 swagger 模式
                             .outputDir(outputDir); // 指定输出目录
                 }).packageConfig(builder -> {
                     builder.parent("com.hk") // 设置父包名
-                            .moduleName("resource") // 设置模块名
                             .entity("entity") // 实体类包名
                             .service("service") // service包名
                             .serviceImpl("service.impl") // service实现类包名

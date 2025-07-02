@@ -50,7 +50,7 @@ export async function selectOperaLogPage(
   body: API.LogSearchParam,
   options?: { [key: string]: any }
 ) {
-  return request<API.ResponseResultPageOperationLogVO>("/operation/log/page", {
+  return request<API.ResponseResultIPageOperationLogVO>("/operation/log/page", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

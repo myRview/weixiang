@@ -60,10 +60,9 @@
         </el-table-column>
         <el-table-column prop="status" label="操作状态" width="100">
           <template #default="scope">
-            <el-tag
-              :type="scope.row.status === 1 ? 'success' : 'danger'"
-              >{{ scope.row.status === 1 ? "成功" : "失败" }}</el-tag
-            >
+            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">{{
+              scope.row.status === 1 ? "成功" : "失败"
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100">
@@ -118,9 +117,7 @@
             ></el-input>
           </el-form-item>
           <el-form-item label="操作状态">
-            <el-tag
-              :type="currentLog.status === 1 ? 'success' : 'danger'"
-            >
+            <el-tag :type="currentLog.status === 1 ? 'success' : 'danger'">
               {{ currentLog.status === 1 ? "成功" : "失败" }}
             </el-tag>
           </el-form-item>
@@ -144,16 +141,18 @@ const total = ref(100);
 const tableData = ref<API.OperationLogVO[]>([]);
 const searchParam = ref<API.LogSearchParam>({});
 const selectPage = async () => {
-  searchParam.value = {
-    ...searchParam.value,
-    pageNum: currentPage.value,
-    pageSize: pageSize.value,
-  };
-  const res = await selectOperaLogPage(searchParam.value);
-  if (res.data.code === 200) {
-    tableData.value = res.data.data?.records;
-    total.value = res.data.data?.total || 0;
-  }
+  try {
+    searchParam.value = {
+      ...searchParam.value,
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+    };
+    const res = await selectOperaLogPage(searchParam.value);
+    if (res.data.code === 200) {
+      tableData.value = res.data.data?.records;
+      total.value = Number(res.data.data?.total) || 0;
+    }
+  } catch (error) {}
 };
 // 搜索事件
 const handleSearch = () => {

@@ -39,6 +39,22 @@ declare namespace API {
     id: number;
   };
 
+  type IPageLoginLogVO = {
+    size?: number;
+    total?: number;
+    current?: number;
+    records?: LoginLogVO[];
+    pages?: number;
+  };
+
+  type IPageOperationLogVO = {
+    size?: number;
+    total?: number;
+    current?: number;
+    records?: OperationLogVO[];
+    pages?: number;
+  };
+
   type LoginLogEntityduixiang = {
     id?: number;
     /** 用户名 */
@@ -205,20 +221,6 @@ declare namespace API {
     createTime?: string;
   };
 
-  type PageLoginLogVO = {
-    records?: LoginLogVO[];
-    total?: number;
-    size?: number;
-    current?: number;
-    orders?: OrderItem[];
-    optimizeCountSql?: PageLoginLogVO;
-    searchCount?: PageLoginLogVO;
-    optimizeJoinOfCountSql?: boolean;
-    maxLimit?: number;
-    countId?: string;
-    pages?: number;
-  };
-
   type PageMemberPlanVO = {
     records?: MemberPlanVO[];
     total?: number;
@@ -227,20 +229,6 @@ declare namespace API {
     orders?: OrderItem[];
     optimizeCountSql?: PageMemberPlanVO;
     searchCount?: PageMemberPlanVO;
-    optimizeJoinOfCountSql?: boolean;
-    maxLimit?: number;
-    countId?: string;
-    pages?: number;
-  };
-
-  type PageOperationLogVO = {
-    records?: OperationLogVO[];
-    total?: number;
-    size?: number;
-    current?: number;
-    orders?: OrderItem[];
-    optimizeCountSql?: PageOperationLogVO;
-    searchCount?: PageOperationLogVO;
     optimizeJoinOfCountSql?: boolean;
     maxLimit?: number;
     countId?: string;
@@ -294,6 +282,18 @@ declare namespace API {
     data?: Record<string, any>;
   };
 
+  type ResponseResultIPageLoginLogVO = {
+    code?: number;
+    message?: string;
+    data?: IPageLoginLogVO;
+  };
+
+  type ResponseResultIPageOperationLogVO = {
+    code?: number;
+    message?: string;
+    data?: IPageOperationLogVO;
+  };
+
   type ResponseResultListMemberPlanVO = {
     code?: number;
     message?: string;
@@ -330,22 +330,10 @@ declare namespace API {
     data?: OrderVO;
   };
 
-  type ResponseResultPageLoginLogVO = {
-    code?: number;
-    message?: string;
-    data?: PageLoginLogVO;
-  };
-
   type ResponseResultPageMemberPlanVO = {
     code?: number;
     message?: string;
     data?: PageMemberPlanVO;
-  };
-
-  type ResponseResultPageOperationLogVO = {
-    code?: number;
-    message?: string;
-    data?: PageOperationLogVO;
   };
 
   type ResponseResultPageOrderVO = {
@@ -436,6 +424,8 @@ declare namespace API {
     pageSize?: number;
     /** 账号 */
     account?: string;
+    /** 用户名 */
+    userName?: string;
     /** 邮箱 */
     email?: string;
     /** 手机号 */

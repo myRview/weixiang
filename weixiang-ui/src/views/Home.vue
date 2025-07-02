@@ -3,7 +3,12 @@
     <el-container>
       <AppHeader />
       <el-container>
-        <el-aside :width="180">
+        <el-aside :width="isCollapsed ? '100px' : '196px'">
+          <div class="collapse-trigger" @click="toggleCollapse">
+            <el-icon>
+              <component :is="isCollapsed ? ArrowRight : ArrowLeft" />
+            </el-icon>
+          </div>
           <el-menu
             :default-active="$route.path"
             class="el-menu-vertical-demo"
@@ -18,7 +23,9 @@
                 <el-icon>
                   <component :is="route.meta.icon" :key="route.path" />
                 </el-icon>
-                <span>{{ route.meta.title }}</span>
+                <template #title>
+                  <span>{{ route.meta.title }}</span>
+                </template>
               </el-menu-item>
               <el-sub-menu v-else :index="'/' + route.path">
                 <template #title>
@@ -63,15 +70,17 @@ import {
   ShoppingCart,
   User,
   Setting,
-  Expand,
-  Fold,
+  ArrowLeft,
+  ArrowRight,
 } from "@element-plus/icons-vue";
 import AppHeader from "../components/AppHeader.vue";
 
 const router = useRouter();
 const isCollapsed = ref(false);
 
-const getCollapseIcon = () => isCollapsed.value ? Expand : Fold;
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+};
 
 const routes =
   router.options.routes
@@ -99,25 +108,12 @@ body {
   flex-direction: column;
 }
 
-::v-deep .el-container > .el-container {
+:deep(.el-container > .el-container) {
   flex-direction: row;
 }
 
-::v-deep .el-container > .el-container > .el-container {
+:deep(.el-container > .el-container > .el-container) {
   flex-direction: column;
-}
-
-.footer-content {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.footer-left,
-.footer-right {
-  font-size: 14px;
-  line-height: 30px;
-  margin: 0 10px;
 }
 
 .el-main {
@@ -126,6 +122,7 @@ body {
   border-radius: 12px;
   margin: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  transition: margin-left 0.3s ease;
 }
 
 .el-aside {
@@ -134,43 +131,95 @@ body {
   text-align: left;
   border-radius: 12px;
   margin-top: 16px;
-  width: 240px !important;
   transition: all 0.3s ease;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  height: calc(100vh - 80px);
 }
 
-::v-deep .el-sub-menu .el-menu-item {
+.collapse-trigger {
+  position: absolute;
+  right: -10px;
+  top: 30%;
+  width: 30px;
+  height: 30px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.collapse-trigger .el-icon {
+  font-size: 14px;
+  color: #409eff;
+}
+
+.collapse-trigger:hover {
+  background-color: #f5f5f5;
+}
+
+:deep(.el-sub-menu .el-menu-item) {
   padding-left: 60px !important;
 }
 
-::v-deep .el-menu {
+:deep(.el-menu) {
   border-right: none !important;
   background-color: transparent !important;
 }
 
-::v-deep .el-menu-item,
-::v-deep .el-sub-menu__title {
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
   color: #94a3b8 !important;
   height: 50px !important;
   line-height: 50px !important;
   margin: 5px 10px !important;
   border-radius: 8px !important;
   transition: all 0.2s ease !important;
+  white-space: nowrap;
 }
 
-::v-deep .el-menu-item:hover,
-::v-deep .el-sub-menu__title:hover {
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-::v-deep .el-menu-item.is-active {
+:deep(.el-menu-item.is-active) {
   background-color: #b8dcff !important;
   color: #5c5c5c !important;
 }
 
-::v-deep .el-menu-item .el-icon,
-::v-deep .el-sub-menu__title .el-icon {
+:deep(.el-menu-item .el-icon),
+:deep(.el-sub-menu__title .el-icon) {
   margin-right: 12px !important;
   font-size: 18px !important;
+}
+
+/* 折叠状态下的样式调整 */
+:deep(.el-menu--collapse) {
+  width: 64px;
+}
+
+:deep(.el-menu--collapse .el-sub-menu) {
+  position: relative;
+}
+
+:deep(.el-menu--collapse .el-sub-menu .el-sub-menu__title span),
+:deep(.el-menu--collapse .el-menu-item span) {
+  height: 0;
+  width: 0;
+  overflow: hidden;
+  visibility: hidden;
+  display: inline-block;
+}
+
+:deep(
+    .el-menu--collapse .el-sub-menu .el-sub-menu__title .el-sub-menu__icon-arrow
+  ) {
+  display: none;
 }
 </style>

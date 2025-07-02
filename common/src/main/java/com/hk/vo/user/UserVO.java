@@ -35,4 +35,10 @@ public class UserVO implements Serializable {
 
     @Schema(description = "创建时间")
     private Date createTime;
+
+    @Schema(description = "角色代码")
+    private String roleCode;
+
+    @Schema(description = "角色")
+    private RoleVO roleVO;
 }

@@ -1,6 +1,6 @@
 package com.hk.vo.log;
 
-import com.hk.entity.LoginLogEntity;
+import com.hk.entity.log.LoginLogEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

@@ -1,6 +1,8 @@
 package com.hk.vo.order;
 
-import com.hk.entity.OrderInfoEntity;
+import com.hk.entity.order.OrderInfoEntity;
+import com.hk.vo.plan.MemberPlanVO;
+import com.hk.vo.user.UserVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -38,6 +40,12 @@ public class OrderVO {
 
     @Schema(description = "创建时间")
     private Date createTime;
+
+    @Schema(description = "用户信息")
+    private UserVO userVO;
+
+    @Schema(description = "套餐信息")
+    private MemberPlanVO planVO;
 
     public static OrderVO converter(OrderInfoEntity orderInfo) {
         OrderVO orderVO = new OrderVO();

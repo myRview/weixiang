@@ -11,7 +11,7 @@
               clearable
             />
           </el-form-item>
-          <el-form-item label="状态" >
+          <el-form-item label="状态">
             <el-select
               v-model="searchParam.status"
               style="width: 120px"
@@ -27,19 +27,31 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
+            <el-button type="primary" @click="selectPage">搜索</el-button>
             <el-button @click="handleReset">重置</el-button>
+            <el-button
+              type="success"
+              @click="handleAdd"
+              style="margin-left: 10px"
+              >添加套餐</el-button
+            >
           </el-form-item>
         </el-form>
       </el-card>
     </div>
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
-        <el-table-column prop="id" label="套餐ID" width="100"></el-table-column>
+        <el-table-column
+          prop="id"
+          label="套餐ID"
+          width="100"
+          show-overflow-tooltip="true"
+        ></el-table-column>
         <el-table-column
           prop="name"
           label="套餐名称"
           min-width="150"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column prop="price" label="套餐价格" width="120">
           <template #default="scope">
@@ -50,6 +62,7 @@
           prop="description"
           label="套餐描述"
           min-width="200"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="validityDays"
@@ -68,7 +81,7 @@
             {{ formatDate(scope.row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="140">
           <template #default="scope">
             <el-button
               type="primary"
@@ -98,58 +111,175 @@
         />
       </div>
     </div>
+    <!-- 套餐新增和编辑弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      width="600px"
+      :before-close="handleDialogClose"
+    >
+      <template #header>
+        <div class="custom-dialog-header">
+          {{ dialogType === "add" ? "新增套餐" : "编辑套餐" }}
+        </div>
+      </template>
+      <el-form :model="formData" label-width="80px">
+        <el-form-item label="套餐名称">
+          <el-input v-model="formData.name" placeholder="请输入套餐名称" />
+        </el-form-item>
+        <el-form-item label="套餐价格">
+          <el-input
+            type="number"
+            v-model="formData.price"
+            placeholder="请输入套餐价格"
+          />
+        </el-form-item>
+        <el-form-item label="套餐描述">
+          <el-input
+            type="textarea"
+            v-model="formData.description"
+            placeholder="请输入套餐描述"
+          />
+        </el-form-item>
+        <el-form-item label="有效期(天)">
+          <el-input
+            type="number"
+            min="0"
+            v-model="formData.validityDays"
+            placeholder="请输入有效期"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="formData.status" placeholder="请选择状态">
+            <el-option
+              v-for="(item, key) in StatusEnums"
+              :key="key"
+              :value="item.code"
+              :label="item.description"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleDialogConfirm"
+            >确认</el-button
+          >
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import dayjs from "dayjs";
-import { selectPlanPage } from "@/api/huiyuantaocanguanli";
-import { StatusEnums } from '@/enums/status.enum';
+import {
+  addPlan,
+  deletePlan,
+  selectPlanPage,
+  updatePlan,
+} from "@/api/huiyuantaocanguanli";
+import { StatusEnums } from "@/enums/status.enum";
 const formatDate = (date: string | number | Date) => {
   return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
 };
-const searchParam = ref<API.PlanSearchParam>({});
+
+// 弹框相关变量
+const dialogVisible = ref(false);
+const dialogType = ref<"add" | "edit">("add");
+const formData = ref<API.MemberPlanVO>({});
 
 // 套餐数据
 const tableData = ref<API.MemberPlanVO[]>([]);
-  const currentPage = ref(1);
+const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+const searchParam = ref<API.PlanSearchParam>({});
 const selectPage = async () => {
-  const res = await selectPlanPage(searchParam.value);
-  if (res.data.code === 200) {
-    tableData.value = res.data.data?.records;
-    total.value = res.data.data?.total || 0;
-  }
+  try {
+    searchParam.value.pageNum = currentPage.value;
+    searchParam.value.pageSize = pageSize.value;
+    const res = await selectPlanPage(searchParam.value);
+    if (res.data.code === 200) {
+      tableData.value = res.data.data?.records||[];
+      total.value = Number(res.data.data?.total) || 0;
+    }
+  } catch (err) {}
 };
 
 // 编辑套餐
 const handleEdit = (plan: API.MemberPlanVO) => {
-  ElMessage.info(`编辑套餐: ${plan.name}`);
-  // 这里可以添加编辑逻辑
+  dialogVisible.value = true;
+  dialogType.value = "edit";
+  formData.value = { ...plan };
 };
 
 // 删除套餐
-const handleDelete = (plan: API.MemberPlanVO) => {
-  ElMessage.warning(`删除套餐: ${plan.name}`);
-  // 这里可以添加删除逻辑
+const handleDelete = async (plan: API.MemberPlanVO) => {
+  try {
+    await ElMessageBox.confirm(`确定要删除套餐「${plan.name}」吗？`, "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+    const res = await deletePlan({ id: plan.id });
+    if (res.data.code === 200) {
+      ElMessage.success("删除成功");
+      selectPage();
+    }
+  } catch (err) {
+    // 用户取消操作，无需处理
+  }
 };
-// 搜索事件
-const handleSearch = () => {
-  // currentPage.value = 1;
+
+// 关闭弹框
+const handleDialogClose = () => {
+  dialogVisible.value = false;
+};
+// 确认提交
+const handleDialogConfirm = async () => {
+  if (dialogType.value === "add") {
+    // 添加逻辑
+    const res = await addPlan(formData.value);
+    if (res.data.code !== 200) {
+      ElMessage.error(res.data.message);
+      return;
+    }
+    ElMessage.success("添加成功");
+  } else if (dialogType.value === "edit") {
+    // 编辑逻辑
+    if (formData.value.id === undefined) {
+      ElMessage.error("编辑失败");
+      return;
+    }
+    formData.value.createTime = undefined;
+    const res = await updatePlan(formData.value);
+    if (res.data.code !== 200) {
+      ElMessage.error(res.data.message);
+      return;
+    }
+    ElMessage.success("编辑成功");
+  }
+  dialogVisible.value = false;
   selectPage();
+};
+// 添加套餐
+const handleAdd = () => {
+  dialogVisible.value = true;
+  dialogType.value = "add";
+  formData.value = {};
 };
 // 分页处理
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
-  handleSearch();
+  selectPage();
 };
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val;
-  handleSearch();
+  selectPage();
 };
 // 重置事件
 const handleReset = () => {
@@ -228,7 +358,61 @@ onMounted(() => {
   margin-top: 15px;
   text-align: right;
 }
-/* 响应式调整 */
+.custom-dialog-header {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 20px 0 10px;
+}
+:deep(.el-dialog__header) {
+  padding: 0;
+}
+::v-deep .el-dialog {
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+::v-deep .el-dialog__header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0f2f5;
+}
+::v-deep .el-dialog__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2d3d;
+  text-align: center;
+}
+::v-deep .el-dialog__body {
+  padding: 24px;
+}
+::v-deep .el-form-item {
+  margin-bottom: 18px;
+}
+::v-deep .el-input__inner {
+  border-radius: 6px;
+}
+::v-deep .el-input--textarea .el-textarea__inner {
+  border-radius: 6px;
+}
+::v-deep .el-select {
+  width: 100%;
+}
+::v-deep .el-dialog__footer {
+  padding: 0 24px 24px;
+}
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+::v-deep .el-button--primary {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+::v-deep .el-button--primary:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
 @media (max-width: 768px) {
   .plan-management {
     padding: 10px;

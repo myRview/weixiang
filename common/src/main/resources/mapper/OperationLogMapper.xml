@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.hk.mapper.OperationLogMapper">
+<mapper namespace="com.hk.mapper.log.OperationLogMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="com.hk.entity.OperationLogEntity">
+    <resultMap id="BaseResultMap" type="com.hk.entity.log.OperationLogEntity">
         <id column="id" property="id" />
         <result column="user_id" property="userId" />
         <result column="username" property="username" />
@@ -17,9 +17,50 @@
         <result column="update_time" property="updateTime" />
     </resultMap>
 
-    <!-- 通用查询结果列 -->
-    <sql id="Base_Column_List">
-        id, user_id, username, operation_content, operation_module, ip_address, operation_address, operation_time, status, create_time, update_time
-    </sql>
+
+    <resultMap id="OperationLogResultMap" type="com.hk.entity.log.OperationLogEntity">
+        <id property="id" column="id" />
+        <result property="userId" column="user_id" />
+        <result property="username" column="username" />
+        <result property="operationContent" column="operation_content" />
+        <result property="operationModule" column="operation_module" />
+        <result property="ipAddress" column="ip_address" />
+        <result property="operationAddress" column="operation_address" />
+        <result property="operationTime" column="operation_time" />
+        <result property="status" column="status" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+    <select id="countByCondition" resultType="java.lang.Long">
+        select count(1) from sys_operation_log
+        <where>
+            <if test='username != null and username != ""'>
+                and username like concat('%', #{username}, '%')
+            </if>
+            <if test='ipAddress != null and ipAddress != ""'>
+                and ip_address like concat('%', #{ipAddress}, '%')
+            </if>
+        </where>
+    </select>
+    <select id="selectPageByCondition" resultMap="OperationLogResultMap">
+        select id, user_id, username, operation_content,
+        operation_module, ip_address, operation_address,
+        operation_time, status
+        from sys_operation_log
+        where id in (
+        select id from sys_operation_log
+        <where>
+            <if test='username != null and username != ""'>
+                and username like concat('%', #{username}, '%')
+            </if>
+            <if test='ipAddress != null and ipAddress != ""'>
+                and ip_address like concat('%', #{ipAddress}, '%')
+            </if>
+        </where>
+        order by id desc
+        limit #{offset}, #{pageSize}
+        )
+        order by id desc
+    </select>
 
 </mapper>

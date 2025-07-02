@@ -2,7 +2,7 @@ package com.hk.vo.plan;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.hk.entity.MemberPlanEntity;
+import com.hk.entity.plan.MemberPlanEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

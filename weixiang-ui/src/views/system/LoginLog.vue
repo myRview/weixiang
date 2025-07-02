@@ -62,7 +62,9 @@
         </el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="scope">
-            <el-button type="text" size="small" @click="handleDetail(scope.row)">详情</el-button>
+            <el-button type="text" size="small" @click="handleDetail(scope.row)"
+              >详情</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -132,16 +134,18 @@ const tableData = ref<API.LoginLogVO[]>([]);
 const searchParam = ref<API.LogSearchParam>({});
 
 const selectPage = async () => {
-  searchParam.value = {
-    ...searchParam.value,
-    pageNum: currentPage.value,
-    pageSize: pageSize.value,
-  };
-  const res = await selectLoginPage(searchParam.value);
-  if (res.data.code === 200) {
-    tableData.value = res.data.data?.records;
-    total.value = res.data.data?.total || 0;
-  }
+  try {
+    searchParam.value = {
+      ...searchParam.value,
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+    };
+    const res = await selectLoginPage(searchParam.value);
+    if (res.data.code === 200) {
+      tableData.value = res.data.data?.records;
+      total.value = Number(res.data.data?.total) || 0;
+    }
+  } catch (error) {}
 };
 
 // 弹框控制

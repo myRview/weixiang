@@ -15,6 +15,9 @@ public class UserSearchParam extends PageBaseVO {
     @Schema(description = "账号")
     private String account;
 
+    @Schema(description = "用户名")
+    private String userName;
+
     @Schema(description = "邮箱")
     private String email;
 

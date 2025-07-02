@@ -50,7 +50,7 @@ export async function selectLoginPage(
   body: API.LogSearchParam,
   options?: { [key: string]: any }
 ) {
-  return request<API.ResponseResultPageLoginLogVO>("/login/log/page", {
+  return request<API.ResponseResultIPageLoginLogVO>("/login/log/page", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
