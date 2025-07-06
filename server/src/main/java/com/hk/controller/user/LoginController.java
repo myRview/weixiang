@@ -2,10 +2,14 @@ package com.hk.controller.user;
 
 import com.hk.common.ResponseResult;
 import com.hk.entity.user.UserEntity;
+import com.hk.manager.TokenManager;
 import com.hk.service.user.UserService;
 import com.hk.utils.Md5Utils;
+import com.hk.vo.user.UserCacheVo;
 import com.hk.vo.user.UserLoginVO;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.hk.vo.user.UserVO;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,14 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
  * @author huangkun
  * @date 2025/6/26 16:28
  */
-@Tag(name = "登录", description = "登录接口")
 @RestController
 public class LoginController {
 
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private TokenManager tokenManager;
+
     @PostMapping("/login")
+    @Operation(summary = "登录")
     public ResponseResult<?> login(@RequestBody UserLoginVO loginVO) {
         String account = loginVO.getAccount();
         String email = loginVO.getEmail();
@@ -38,6 +45,21 @@ public class LoginController {
         if (!md5.equals(user.getPassword())){
             return ResponseResult.fail("密码错误");
         }
-        return ResponseResult.success();
+        UserVO userVO = new UserVO();
+        userVO.setId(user.getId());
+        userVO.setAccount(user.getAccount());
+        userVO.setUserName(user.getUserName());
+        String token = tokenManager.createToken(userVO);
+        return ResponseResult.success(token, "登录成功");
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "退出登录")
+    public ResponseResult<?> logout(HttpServletRequest request) {
+        UserCacheVo userCacheVo = tokenManager.getLoginUser(request);
+        if (userCacheVo != null) {
+            tokenManager.delLoginUser(userCacheVo.getUserId());
+        }
+        return ResponseResult.success("退出登录成功");
     }
 }

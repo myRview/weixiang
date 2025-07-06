@@ -37,7 +37,7 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
     }
 
     @Override
-    public IPage<PermissionVO> getPermissionList(PermissionSearchParam searchParam) {
+    public IPage<PermissionVO> getPermissionPage(PermissionSearchParam searchParam) {
         LambdaQueryWrapper<PermissionEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.select(PermissionEntity::getId, PermissionEntity::getPermissionName, PermissionEntity::getPermissionCode);
         Page<PermissionEntity> page = this.page(new Page<>(searchParam.getPageNum(), searchParam.getPageSize()), queryWrapper);
@@ -46,5 +46,13 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             voPage.setRecords(page.getRecords().stream().map(PermissionVO::converter).collect(Collectors.toList()));
         }
         return voPage;
+    }
+
+    @Override
+    public List<PermissionVO> getPermissionList() {
+        LambdaQueryWrapper<PermissionEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(PermissionEntity::getId, PermissionEntity::getPermissionName, PermissionEntity::getPermissionCode);
+        List<PermissionEntity> list = this.list(queryWrapper);
+       return list.stream().map(PermissionVO::converter).collect(Collectors.toList());
     }
 }

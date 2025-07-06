@@ -1,5 +1,6 @@
 package com.hk.service.user.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.entity.user.UserRoleEntity;
@@ -7,6 +8,7 @@ import com.hk.mapper.user.UserRoleMapper;
 import com.hk.service.user.UserRoleService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,6 +31,7 @@ public class UserRoleServiceImpl extends ServiceImpl<UserRoleMapper, UserRoleEnt
 
     @Override
     public List<UserRoleEntity> selectByUserIds(List<Long> userIds) {
+        if (CollectionUtil.isEmpty(userIds)) return new ArrayList<>();
         LambdaQueryWrapper<UserRoleEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.in(UserRoleEntity::getUserId, userIds);
         queryWrapper.select(UserRoleEntity::getUserId, UserRoleEntity::getRoleId);

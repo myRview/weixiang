@@ -20,5 +20,7 @@ public interface PermissionService extends IService<PermissionEntity> {
 
     List<PermissionVO> selectByIds(List<Long> permissionIds);
 
-    IPage<PermissionVO> getPermissionList(PermissionSearchParam searchParam);
+    IPage<PermissionVO> getPermissionPage(PermissionSearchParam searchParam);
+
+    List<PermissionVO> getPermissionList();
 }

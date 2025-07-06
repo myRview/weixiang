@@ -15,7 +15,19 @@ declare namespace API {
     id: number;
   };
 
+  type deleteRoleParams = {
+    id: number;
+  };
+
   type deleteUserParams = {
+    id: number;
+  };
+
+  type deleteUsingDELETEParams = {
+    id: number;
+  };
+
+  type getByIdParams = {
     id: number;
   };
 
@@ -35,23 +47,35 @@ declare namespace API {
     id: number;
   };
 
+  type getRolePermissionParams = {
+    id: number;
+  };
+
   type getUserByIdParams = {
     id: number;
   };
 
   type IPageLoginLogVO = {
     size?: number;
+    records?: LoginLogVO[];
     total?: number;
     current?: number;
-    records?: LoginLogVO[];
     pages?: number;
   };
 
   type IPageOperationLogVO = {
     size?: number;
+    records?: OperationLogVO[];
     total?: number;
     current?: number;
-    records?: OperationLogVO[];
+    pages?: number;
+  };
+
+  type IPagePermissionVO = {
+    size?: number;
+    records?: PermissionVO[];
+    total?: number;
+    current?: number;
     pages?: number;
   };
 
@@ -219,6 +243,10 @@ declare namespace API {
     status?: number;
     /** 创建时间 */
     createTime?: string;
+    /** 用户信息 */
+    userVO?: UserVO;
+    /** 套餐信息 */
+    planVO?: MemberPlanVO;
   };
 
   type PageMemberPlanVO = {
@@ -227,8 +255,8 @@ declare namespace API {
     size?: number;
     current?: number;
     orders?: OrderItem[];
-    optimizeCountSql?: PageMemberPlanVO;
-    searchCount?: PageMemberPlanVO;
+    optimizeCountSql?: any;
+    searchCount?: any;
     optimizeJoinOfCountSql?: boolean;
     maxLimit?: number;
     countId?: string;
@@ -241,8 +269,8 @@ declare namespace API {
     size?: number;
     current?: number;
     orders?: OrderItem[];
-    optimizeCountSql?: PageOrderVO;
-    searchCount?: PageOrderVO;
+    optimizeCountSql?: any;
+    searchCount?: any;
     optimizeJoinOfCountSql?: boolean;
     maxLimit?: number;
     countId?: string;
@@ -255,12 +283,26 @@ declare namespace API {
     size?: number;
     current?: number;
     orders?: OrderItem[];
-    optimizeCountSql?: PageUserVO;
-    searchCount?: PageUserVO;
+    optimizeCountSql?: any;
+    searchCount?: any;
     optimizeJoinOfCountSql?: boolean;
     maxLimit?: number;
     countId?: string;
     pages?: number;
+  };
+
+  type PermissionSearchParam = {
+    pageNum?: number;
+    pageSize?: number;
+  };
+
+  type PermissionVO = {
+    /** 权限id */
+    id?: number;
+    /** 权限名称 */
+    permissionName?: string;
+    /** 权限编码 */
+    permissionCode?: string;
   };
 
   type PlanSearchParam = {
@@ -279,7 +321,7 @@ declare namespace API {
   type ResponseResult = {
     code?: number;
     message?: string;
-    data?: Record<string, any>;
+    data?: any;
   };
 
   type ResponseResultIPageLoginLogVO = {
@@ -294,10 +336,28 @@ declare namespace API {
     data?: IPageOperationLogVO;
   };
 
+  type ResponseResultIPagePermissionVO = {
+    code?: number;
+    message?: string;
+    data?: IPagePermissionVO;
+  };
+
   type ResponseResultListMemberPlanVO = {
     code?: number;
     message?: string;
     data?: MemberPlanVO[];
+  };
+
+  type ResponseResultListPermissionVO = {
+    code?: number;
+    message?: string;
+    data?: PermissionVO[];
+  };
+
+  type ResponseResultListRoleVO = {
+    code?: number;
+    message?: string;
+    data?: RoleVO[];
   };
 
   type ResponseResultLoginLogVO = {
@@ -315,7 +375,7 @@ declare namespace API {
   type ResponseResultObject = {
     code?: number;
     message?: string;
-    data?: Record<string, any>;
+    data?: any;
   };
 
   type ResponseResultOperationLogVO = {
@@ -352,6 +412,24 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: UserVO;
+  };
+
+  type RolePermissionVO = {
+    /** 角色id */
+    roleId?: number;
+    /** 权限id列表 */
+    permissionIds?: number[];
+  };
+
+  type RoleVO = {
+    /** 角色id */
+    id?: number;
+    /** 角色名称 */
+    roleName?: string;
+    /** 角色编码 */
+    roleCode?: string;
+    /** 角色权限 */
+    permissionVOList?: PermissionVO[];
   };
 
   type transStatusParams = {
@@ -406,6 +484,26 @@ declare namespace API {
     code?: string;
   };
 
+  type UserPlanEntityduixiang = {
+    id?: number;
+    /** 用户id */
+    userId?: number;
+    /** 套餐id */
+    planId?: number;
+    /** 订单id */
+    orderId?: number;
+    /** 起效日期 */
+    startDate?: string;
+    /** 失效日期 */
+    endDate?: string;
+    /** 0-失效，1-有效 */
+    status?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 更新时间 */
+    updateTime?: string;
+  };
+
   type UserRegisterVO = {
     /** 账号 */
     account?: string;
@@ -449,5 +547,9 @@ declare namespace API {
     status?: number;
     /** 创建时间 */
     createTime?: string;
+    /** 角色代码 */
+    roleCode?: string;
+    /** 角色 */
+    roleVO?: RoleVO;
   };
 }

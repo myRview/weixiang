@@ -45,6 +45,7 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
         LambdaQueryWrapper<OperationLogEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(username), OperationLogEntity::getUsername, username);
         queryWrapper.like(StringUtils.isNotBlank(ipAddress), OperationLogEntity::getIpAddress, ipAddress);
+        queryWrapper.orderByDesc(OperationLogEntity::getId);
         queryWrapper.select(OperationLogEntity::getId,
                 OperationLogEntity::getUsername,
                 OperationLogEntity::getIpAddress,
@@ -62,5 +63,19 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
             pageResult.setRecords(records.stream().map(OperationLogVO::converter).collect(Collectors.toList()));
         }
         return pageResult;
+    }
+
+    @Override
+    public boolean addLog(OperationLogVO operationLog) {
+        OperationLogEntity entity = new OperationLogEntity();
+        entity.setIpAddress(operationLog.getIpAddress());
+        entity.setOperationAddress(operationLog.getOperationAddress());
+        entity.setOperationContent(operationLog.getOperationContent());
+        entity.setOperationModule(operationLog.getOperationModule());
+        entity.setOperationTime(operationLog.getOperationTime());
+        entity.setStatus(operationLog.getStatus());
+        entity.setUserId(operationLog.getUserId());
+        entity.setUsername(operationLog.getUsername());
+        return this.save(entity);
     }
 }

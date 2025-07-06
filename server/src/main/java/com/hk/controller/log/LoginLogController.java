@@ -1,6 +1,7 @@
 package com.hk.controller.log;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.common.ResponseResult;
 import com.hk.entity.log.LoginLogEntity;
 import com.hk.param.LogSearchParam;
@@ -28,37 +29,20 @@ public class LoginLogController {
     private LoginLogService loginLogService;
 
     /**
-     * 添加登录日志表
-     */
-    @PostMapping("/add")
-    @Operation(summary = "添加登录日志表")
-    public ResponseResult addLoginLog(@RequestBody LoginLogEntity loginLogEntity) {
-        return loginLogService.save(loginLogEntity) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
-    }
-
-    /**
      * 删除登录日志表
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除登录日志表")
+    @OperatorLog(value = "登录日志", desc = "删除登录日志表")
     public ResponseResult deleteLoginLog(@PathVariable Long id) {
         return loginLogService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
-
-    /**
-     * 修改登录日志表
-     */
-    @PostMapping("/update")
-    @Operation(summary = "修改登录日志表")
-    public ResponseResult updateLoginLog(@RequestBody LoginLogEntity loginLogEntity) {
-        return loginLogService.updateById(loginLogEntity) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
-    }
-
     /**
      * 查询详情
      */
     @GetMapping("/{id}")
     @Operation(summary = "查询详情")
+    @OperatorLog(value = "登录日志", desc = "查询详情")
     public ResponseResult<LoginLogVO> getLoginLogById(@PathVariable Long id) {
         return ResponseResult.success(loginLogService.getInfoById(id));
     }
@@ -68,6 +52,7 @@ public class LoginLogController {
      */
     @PostMapping("/page")
     @Operation(summary = "查询列表")
+    @OperatorLog(value = "登录日志", desc = "查询列表")
     public ResponseResult<IPage<LoginLogVO>> selectLoginPage(@RequestBody LogSearchParam searchParam) {
         return ResponseResult.success(loginLogService.selectLoginPage(searchParam));
     }

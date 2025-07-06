@@ -27,28 +27,41 @@
     </div>
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
-        <el-table-column prop="id" label="日志ID" width="100"></el-table-column>
+        <el-table-column
+          prop="id"
+          label="日志ID"
+          width="100"
+          show-overflow-tooltip="true"
+        ></el-table-column>
         <el-table-column
           prop="username"
           label="用户名"
           min-width="120"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="ipAddress"
           label="IP地址"
           width="140"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="location"
           label="登录地点"
           min-width="160"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="device"
           label="登录设备"
           width="120"
+          show-overflow-tooltip="true"
         ></el-table-column>
-        <el-table-column label="登录时间" width="180">
+        <el-table-column
+          label="登录时间"
+          width="180"
+          show-overflow-tooltip="true"
+        >
           <template #default="scope">
             {{ formatDate(scope.row.loginTime) }}
           </template>

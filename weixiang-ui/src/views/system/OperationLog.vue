@@ -27,31 +27,41 @@
     </div>
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
-        <el-table-column prop="id" label="日志ID" width="100"></el-table-column>
+        <el-table-column
+          prop="id"
+          label="日志ID"
+          width="100"
+          show-overflow-tooltip="true"
+        ></el-table-column>
         <el-table-column
           prop="username"
           label="操作人员"
           min-width="120"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="operationContent"
           label="操作内容"
           min-width="200"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="operationModule"
           label="操作模块"
           width="120"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="ipAddress"
           label="IP地址"
           width="140"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="operationAddress"
           label="操作地址"
           min-width="160"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column label="操作时间" width="180">
           <template #default="scope">

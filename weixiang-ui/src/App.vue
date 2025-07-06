@@ -4,4 +4,13 @@
   </div>
 </template>
 
-<style></style>
+<script setup lang="ts">
+</script>
+
+<style scoped>
+.app {
+  height: 98vh;
+  display: flex;
+  flex-direction: column;
+}
+</style>

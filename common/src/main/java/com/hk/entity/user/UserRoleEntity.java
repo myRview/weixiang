@@ -2,6 +2,7 @@ package com.hk.entity.user;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Schema(name = "UserRoleEntity对象", description = "用户角色表")
+@TableName("sys_user_role")
 public class UserRoleEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

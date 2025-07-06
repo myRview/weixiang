@@ -19,4 +19,6 @@ public interface OperationLogService extends IService<OperationLogEntity> {
     OperationLogVO getOperationLogById(Long id);
 
     IPage<OperationLogVO> selectOperaLogPage(LogSearchParam searchParam);
+
+    boolean addLog(OperationLogVO operationLog);
 }

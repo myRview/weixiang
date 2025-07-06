@@ -28,23 +28,20 @@
         <knife4j-version>4.4.0</knife4j-version>
         <hutool-version>5.8.38</hutool-version>
         <mybatis-spring.version>3.0.3</mybatis-spring.version>
+        <mybatis-plus-generator-version>3.5.7</mybatis-plus-generator-version>
+        <openapi-ui-version>2.8.8</openapi-ui-version>
+        <jakarta-version>6.0.0</jakarta-version>
+        <jwt-version>0.12.3</jwt-version>
+        <freemarker-version>2.3.32</freemarker-version>
+        <apache-version>3.14.0</apache-version>
+        <geoip2-version>3.0.1</geoip2-version>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>8.0.33</version>
-            </dependency>
-            <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
-                <version>2.3.32</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mybatis.spring.boot</groupId>
-                <artifactId>mybatis-spring-boot-starter</artifactId>
-                <version>3.0.3</version>
+                <version>${freemarker-version}</version>
             </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -57,14 +54,29 @@
                 <version>${mybatis-spring.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-generator</artifactId>
+                <version>${mybatis-plus-generator-version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-aop</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-test</artifactId>
                 <scope>test</scope>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
 
@@ -81,14 +93,47 @@
                 <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
                 <version>${knife4j-version}</version>
             </dependency>
+            <!--使用指定版本的UI，解决openapi报错问题-->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${openapi-ui-version}</version>
+            </dependency>
 
-
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${apache-version}</version>
+            </dependency>
             <dependency>
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool-version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta-version}</version>
+            </dependency>
 
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt</artifactId>
+                <version>${jwt-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jwt-version}</version>
+                <scope>runtime</scope>
+            </dependency>
+
+            <!-- IP地址解析工具 -->
+            <dependency>
+                <groupId>com.maxmind.geoip2</groupId>
+                <artifactId>geoip2</artifactId>
+                <version>${geoip2-version}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

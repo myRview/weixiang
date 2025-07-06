@@ -1,6 +1,7 @@
 package com.hk.controller.order;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.common.ResponseResult;
 import com.hk.entity.order.OrderInfoEntity;
 import com.hk.param.OrderSearchParam;
@@ -32,6 +33,7 @@ public class OrderInfoController {
      */
     @PostMapping("/add")
     @Operation(summary = "添加订单")
+    @OperatorLog(value = "订单管理", desc = "添加订单")
     public ResponseResult addOrder(@RequestBody OrderInfoEntity orderInfoEntity) {
         return orderInfoService.save(orderInfoEntity) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
@@ -41,6 +43,7 @@ public class OrderInfoController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除订单")
+    @OperatorLog(value = "订单管理", desc = "删除订单")
     public ResponseResult deleteOrder(@PathVariable Long id) {
         return orderInfoService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
@@ -50,6 +53,7 @@ public class OrderInfoController {
      */
     @PostMapping("/update")
     @Operation(summary = "修改订单")
+    @OperatorLog(value = "订单管理", desc = "修改订单")
     public ResponseResult updateOrder(@RequestBody OrderInfoEntity orderInfoEntity) {
         return orderInfoService.updateById(orderInfoEntity) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
@@ -59,6 +63,7 @@ public class OrderInfoController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "查询订单详情")
+    @OperatorLog(value = "订单管理", desc = "查询订单详情")
     public ResponseResult<OrderVO> getOrderById(@PathVariable Long id) {
         return ResponseResult.success(orderInfoService.getOrderById(id));
     }
@@ -68,6 +73,7 @@ public class OrderInfoController {
      */
     @PostMapping("/page")
     @Operation(summary = "查询订单列表")
+    @OperatorLog(value = "订单管理", desc = "查询订单列表")
     public ResponseResult<Page<OrderVO>> selectOrderPage(@RequestBody OrderSearchParam searchParam) {
         return ResponseResult.success(orderInfoService.selectOrderPage(searchParam));
     }

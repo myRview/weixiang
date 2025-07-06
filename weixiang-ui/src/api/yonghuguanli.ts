@@ -45,6 +45,14 @@ export async function addUser(
   });
 }
 
+/** 获取当前用户 POST /user/info */
+export async function getLoginUser(options?: { [key: string]: any }) {
+  return request<API.ResponseResultUserVO>("/user/info", {
+    method: "POST",
+    ...(options || {}),
+  });
+}
+
 /** 查询用户列表 POST /user/list */
 export async function getUserList(
   body: API.UserSearchParam,

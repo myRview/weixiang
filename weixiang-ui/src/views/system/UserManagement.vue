@@ -110,18 +110,11 @@
           width="120"
           show-overflow-tooltip="true"
         ></el-table-column>
-        <el-table-column
-          prop="role"
-          label="角色"
-          width="120"
-          show-overflow-tooltip="true"
-        ></el-table-column>
-        <el-table-column
-          prop="membershipLevel"
-          label="会员等级"
-          width="120"
-          show-overflow-tooltip="true"
-        ></el-table-column>
+        <el-table-column label="角色" width="120" show-overflow-tooltip="true">
+          <template #default="scope">
+            {{ USER_ROLE_MAP[scope.row.roleCode] || "无" }}
+          </template>
+        </el-table-column>
         <el-table-column
           label="创建时间"
           width="120"
@@ -138,7 +131,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300px">
+        <el-table-column label="操作" width="360px">
           <template #default="scope">
             <el-button
               type="text"
@@ -155,7 +148,7 @@
               >编辑</el-button
             >
             <el-button
-              :type="scope.row.status === 1 ? 'danger' : 'success'"
+              :type="scope.row.status === 1 ? 'warning' : 'success'"
               size="small"
               style="margin-right: 5px"
               @click="handleToggleStatus(scope.row)"
@@ -167,6 +160,13 @@
               style="margin-right: 5px"
               @click="handleDelete(scope.row)"
               >删除</el-button
+            >
+            <el-button
+              type="danger"
+              size="small"
+              style="margin-right: 5px"
+              @click="handleReset(scope.row)"
+              >重置密码</el-button
             >
           </template>
         </el-table-column>
@@ -254,6 +254,26 @@
             style="border-radius: 6px"
           ></el-input>
         </el-form-item>
+        <el-form-item
+          label="角色"
+          v-if="!isEdit"
+          style="margin-bottom: 18px"
+          required
+        >
+          <el-select
+            v-model="addForm.roleId"
+            placeholder="请选择角色"
+            style="border-radius: 6px"
+            clearable
+          >
+            <el-option
+              v-for="item in roleData"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span
@@ -332,18 +352,9 @@
           />
         </el-form-item>
         <el-form-item label="角色" class="detail-form-item">
-          <el-input
-            v-model="detailForm.role"
-            placeholder="无"
-            class="detail-input"
-          />
-        </el-form-item>
-        <el-form-item label="会员等级" class="detail-form-item">
-          <el-input
-            v-model="detailForm.membershipLevel"
-            placeholder="无"
-            class="detail-input"
-          />
+          <el-tag class="detail-input status-tag">
+            {{ USER_ROLE_MAP[detailForm.roleCode] || "无" }}
+          </el-tag>
         </el-form-item>
         <el-form-item label="创建时间" class="detail-form-item">
           <el-input
@@ -381,18 +392,36 @@ import {
   deleteUser,
   getUserById,
   getUserList,
+  resetPassword,
   transStatus,
   updateUser,
 } from "@/api/yonghuguanli";
 import { StatusEnums } from "@/enums/status.enum";
+import { USER_ROLE_MAP } from "@/enums/user.enum";
 import dayjs from "dayjs";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { selectAllRole } from "@/api/jiaosequanxianguanli";
 const formatDate = (date: string | number | Date) => {
   return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
 };
 const dialogVisible = ref(false);
 const isEdit = ref(false); // 是否为编辑状态
 const addForm = ref<API.UserAddVO | API.UserEditVO>({});
+
+const roleData = ref<API.RoleVO[]>([]); // 角色数据
+const getRoleData = async () => {
+  try {
+    const res = await selectAllRole();
+    if (res.data.code === 200) {
+      roleData.value = res.data.data || [];
+    } else {
+      ElMessage.error(res.data.message);
+    }
+  } catch (error) {
+    console.error("获取角色列表失败:", error);
+  }
+  console.log(roleData.value);
+};
 
 const handleAddUser = () => {
   isEdit.value = false;
@@ -515,6 +544,23 @@ const handleDelete = async (row: API.UserVO) => {
   }
 };
 
+const handleReset = async (row: API.UserVO) => {
+  try {
+    await ElMessageBox.confirm(`确定要重置「${row.userName}」的密码吗？`, "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+    const res =await resetPassword({ userId: row.id });
+    if (res.data.code === 200) {
+      ElMessage.success("重置成功");
+      loadUserList(); // 刷新列表
+    }
+  }catch (error) {
+    console.error("重置失败:", error);
+  }
+}
+
 // 重置搜索
 const resetSearch = () => {
   searchForm.value = {};
@@ -533,6 +579,7 @@ const handleCurrentChange = (val: number) => {
 };
 onMounted(() => {
   loadUserList();
+  getRoleData();
 });
 </script>
 

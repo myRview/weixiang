@@ -1,6 +1,7 @@
 package com.hk.controller.user;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.common.ResponseResult;
 import com.hk.entity.user.PermissionEntity;
 import com.hk.param.PermissionSearchParam;
@@ -36,24 +37,28 @@ public class RolePermissionController {
 
     @PostMapping("/role/save")
     @Operation(summary = "添加角色")
+    @OperatorLog(value = "角色权限管理", desc = "添加角色")
     public ResponseResult saveRole(@RequestBody RoleVO roleVO) {
         return roleService.saveRole(roleVO) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
 
     @DeleteMapping("/role/{id}")
     @Operation(summary = "删除角色")
+    @OperatorLog(value = "角色权限管理", desc = "删除角色")
     public ResponseResult deleteRole(@PathVariable Long id) {
         return roleService.deleteRole(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
     @GetMapping("/role/{id}")
     @Operation(summary = "查询角色权限详情")
+    @OperatorLog(value = "角色权限管理", desc = "查询角色权限详情")
     public ResponseResult<List<PermissionVO>> getRolePermission(@PathVariable Long id) {
         return ResponseResult.success(roleService.getRolePermission(id));
     }
 
     @GetMapping("/role/list")
     @Operation(summary = "查询角色列表")
+    @OperatorLog(value = "角色权限管理", desc = "查询角色列表")
     public ResponseResult<List<RoleVO>> selectAllRole() {
         return ResponseResult.success(roleService.getAll());
     }
@@ -61,6 +66,7 @@ public class RolePermissionController {
 
     @PostMapping("/permission/save")
     @Operation(summary = "添加权限")
+    @OperatorLog(value = "角色权限管理", desc = "添加权限")
     public ResponseResult savePermission(@RequestBody PermissionVO permissionVO) {
         PermissionEntity permission = new PermissionEntity();
         permission.setPermissionName(permissionVO.getPermissionName());
@@ -70,18 +76,28 @@ public class RolePermissionController {
 
     @PostMapping("/permission/delete")
     @Operation(summary = "删除权限")
+    @OperatorLog(value = "角色权限管理", desc = "删除权限")
     public ResponseResult deletePermission(@RequestBody List<Long> permissionIds) {
         return permissionService.removeBatchByIds(permissionIds) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
+    @PostMapping("/permission/page")
+    @Operation(summary = "权限分页列表")
+    @OperatorLog(value = "角色权限管理", desc = "权限分页列表")
+    public ResponseResult<IPage<PermissionVO>> getPermissionPage(@RequestBody PermissionSearchParam searchParam) {
+        return ResponseResult.success(permissionService.getPermissionPage(searchParam));
+    }
+
     @PostMapping("/permission/list")
     @Operation(summary = "权限列表")
-    public ResponseResult<IPage<PermissionVO>> getPermissionList(@RequestBody PermissionSearchParam searchParam) {
-        return ResponseResult.success(permissionService.getPermissionList(searchParam));
+    @OperatorLog(value = "角色权限管理", desc = "权限列表")
+    public ResponseResult<List<PermissionVO>> getPermissionList() {
+        return ResponseResult.success(permissionService.getPermissionList());
     }
 
     @PostMapping("/role/permission")
     @Operation(summary = "角色添加权限")
+    @OperatorLog(value = "角色权限管理", desc = "角色添加权限")
     public ResponseResult saveRolePermission(@RequestBody RolePermissionVO rolePermissionVO) {
         boolean result = roleService.saveRolePermission(rolePermissionVO);
         return result ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");

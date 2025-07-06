@@ -2,6 +2,7 @@ package com.hk.entity.plan;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Schema(name = "UserPlanEntity对象", description = "用户套餐表")
+@TableName("sys_user_plan")
 public class UserPlanEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

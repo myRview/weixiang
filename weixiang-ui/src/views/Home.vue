@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <div class="home" v-if="showLayout">
     <el-container>
       <AppHeader />
       <el-container>
@@ -15,7 +15,7 @@
             router
             :collapse="isCollapsed"
           >
-            <template v-for="route in routes" :key="route.path">
+            <template v-for="route in menuRoutes" :key="route.path">
               <el-menu-item
                 v-if="!route.children || route.children.length === 0"
                 :index="'/' + route.path"
@@ -56,49 +56,42 @@
       </el-container>
     </el-container>
   </div>
+  <router-view v-else />
 </template>
 
 <script setup lang="ts">
-import { useRouter } from "vue-router";
-import { ref } from "vue";
-import {
-  House,
-  DataAnalysis,
-  Goods,
-  Grid,
-  Edit,
-  ShoppingCart,
-  User,
-  Setting,
-  ArrowLeft,
-  ArrowRight,
-} from "@element-plus/icons-vue";
+import { useRouter, useRoute } from "vue-router";
+import { ref, computed, watch } from "vue";
+import { ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
 import AppHeader from "../components/AppHeader.vue";
 
 const router = useRouter();
+const route = useRoute();
 const isCollapsed = ref(false);
+
+// 计算属性：是否显示布局
+const showLayout = computed(() => {
+  return route.matched.some((record) => record.meta.requiresAuth);
+});
+
+// 获取菜单路由
+const menuRoutes = computed(() => {
+  const layoutRoute = router.options.routes.find((r) => r.name === "Layout");
+  return (
+    layoutRoute?.children?.filter(
+      (route) => !route.meta?.hidden && route.meta?.title && route.meta?.icon
+    ) || []
+  );
+});
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
 };
-
-const routes =
-  router.options.routes
-    .find((route) => route.path === "/")
-    ?.children?.filter(
-      (route) => !route.redirect && route.meta?.title && route.meta?.icon
-    ) || [];
 </script>
 
 <style scoped>
-html,
-body {
-  height: 100%;
-  margin: 0;
-}
-
 .home {
-  height: 98vh;
+  height: 100vh;
 }
 
 .el-container {

@@ -1,6 +1,7 @@
 package com.hk.controller.log;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.common.ResponseResult;
 import com.hk.entity.log.OperationLogEntity;
 import com.hk.param.LogSearchParam;
@@ -27,31 +28,15 @@ public class OperationLogController {
     @Autowired
     private OperationLogService operationLogService;
 
-    /**
-     * 添加操作日志表
-     */
-    @PostMapping("/add")
-    @Operation(summary = "添加操作日志")
-    public ResponseResult addOperationLog(@RequestBody OperationLogEntity operationLogEntity) {
-        return operationLogService.save(operationLogEntity) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
-    }
 
     /**
      * 删除操作日志表
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除操作日志")
+    @OperatorLog(value = "操作日志管理", desc = "删除操作日志")
     public ResponseResult deleteOperationLog(@PathVariable Long id) {
         return operationLogService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
-    }
-
-    /**
-     * 修改操作日志表
-     */
-    @PostMapping("/update")
-    @Operation(summary = "修改操作日志")
-    public ResponseResult updateOperationLog(@RequestBody OperationLogEntity operationLogEntity) {
-        return operationLogService.updateById(operationLogEntity) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
 
     /**
@@ -59,6 +44,7 @@ public class OperationLogController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "查询操作日志详情")
+    @OperatorLog(value = "操作日志管理", desc = "查询操作日志详情")
     public ResponseResult<OperationLogVO> getOperationLogById(@PathVariable Long id) {
         return ResponseResult.success(operationLogService.getOperationLogById(id));
     }
@@ -68,6 +54,7 @@ public class OperationLogController {
      */
     @PostMapping("/page")
     @Operation(summary = "查询操作日志列表")
+    @OperatorLog(value = "操作日志管理", desc = "查询操作日志列表")
     public ResponseResult<IPage<OperationLogVO>> selectOperaLogPage(@RequestBody LogSearchParam searchParam) {
         return ResponseResult.success(operationLogService.selectOperaLogPage(searchParam));
     }

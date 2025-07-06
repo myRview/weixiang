@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.common.ErrorCode;
-import com.hk.constants.UserConstant;
+import com.hk.constants.BaseConstant;
 import com.hk.entity.user.RoleEntity;
 import com.hk.entity.user.UserEntity;
 import com.hk.entity.user.UserRoleEntity;
@@ -110,10 +110,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         userEntity.setPhone(phone == null ? "" : phone);
         userEntity.setStatus(StatusEnum.NORMAL.getCode());
         UserRoleEntity userRole = new UserRoleEntity();
-        userRole.setRoleId(userRole.getRoleId());
+        userRole.setRoleId(role.getId());
+        boolean save = this.save(userEntity);
         userRole.setUserId(userEntity.getId());
         userRoleService.save(userRole);
-        return this.save(userEntity);
+        return save;
     }
 
 
@@ -134,6 +135,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         if (userRole != null) {
             RoleVO roleVO = roleService.selectById(userRole.getRoleId());
             userVO.setRoleVO(roleVO);
+            userVO.setRoleCode(roleVO.getRoleCode());
         }
         return userVO;
     }
@@ -157,9 +159,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     }
 
     @Override
-    public boolean updatePassword(String password) {
-        //TODO:获取当前用户Id
-        Long userId = 1L;
+    public boolean updatePassword(String password, Long userId) {
         UserEntity user = this.getById(userId);
         String salt = user.getSalt();
         String md5 = Md5Utils.md5(salt, password);
@@ -173,7 +173,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     public boolean resetPassword(Long userId) {
         UserEntity user = this.getById(userId);
         String salt = user.getSalt();
-        String md5 = Md5Utils.md5(salt, UserConstant.DEFAULT_PASSWORD);
+        String md5 = Md5Utils.md5(salt, BaseConstant.DEFAULT_PASSWORD);
         LambdaUpdateWrapper<UserEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(UserEntity::getId, userId);
         updateWrapper.set(UserEntity::getPassword, md5);

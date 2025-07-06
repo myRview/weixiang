@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.entity.log.LoginLogEntity;
+import com.hk.entity.log.OperationLogEntity;
 import com.hk.mapper.log.LoginLogMapper;
 import com.hk.param.LogSearchParam;
 import com.hk.service.log.LoginLogService;
@@ -36,6 +37,7 @@ public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLogEnt
         LambdaQueryWrapper<LoginLogEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(username), LoginLogEntity::getUsername, username);
         queryWrapper.like(StringUtils.isNotBlank(ipAddress), LoginLogEntity::getIpAddress, ipAddress);
+        queryWrapper.orderByDesc(LoginLogEntity::getId);
         queryWrapper.select(LoginLogEntity::getId,
                 LoginLogEntity::getUsername,
                 LoginLogEntity::getIpAddress,

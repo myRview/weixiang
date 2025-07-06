@@ -2,6 +2,7 @@ package com.hk.entity.user;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,6 +24,7 @@ import java.util.Date;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Schema(name = "RoleEntity对象", description = "角色表")
+@TableName("sys_role")
 public class RoleEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

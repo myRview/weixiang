@@ -6,8 +6,12 @@ import systemManagement from "../views/SystemManagementView.vue";
 import LoginLog from "../views/system/LoginLog.vue";
 import OperationLog from "../views/system/OperationLog.vue";
 import UserManagement from "../views/system/UserManagement.vue";
-import PlanManagement from "@/views/system/PlanManagement.vue";
-import UserDetail from "../views/UserDetail.vue"; // 新增导入
+import PlanManagement from "@/views/PlanManagement.vue";
+import RoleManagement from "@/views/system/RoleManagement.vue";
+import PermissionManagement from "@/views/system/PermissionManagement.vue";
+import UserDetail from "../views/UserDetail.vue";
+import Login from "../views/Login.vue";
+import Register from "../views/Register.vue";
 import {
   House,
   Edit,
@@ -17,17 +21,45 @@ import {
   Document,
   TrendCharts,
   Setting,
+  UserFilled,
+  Menu,
 } from "@element-plus/icons-vue";
+
 export const routes: Array<RouteRecordRaw> = [
+  // 登录注册（独立页面）
+  {
+    path: "/login",
+    name: "Login",
+    component: Login,
+    meta: {
+      title: "登录",
+      hidden: true,
+      requiresAuth: false, // 添加认证标识
+    },
+  },
+  {
+    path: "/register",
+    name: "Register",
+    component: Register,
+    meta: {
+      title: "注册",
+      hidden: true,
+      requiresAuth: false, // 添加认证标识
+    },
+  },
+  // 布局路由（需要登录）
   {
     path: "/",
-    name: "Home",
+    name: "Layout",
     component: Home,
     meta: {
-      title: "首页",
-      icon: House,
+      requiresAuth: true, // 需要登录
     },
     children: [
+      {
+        path: "",
+        redirect: "/profile"
+      },
       {
         path: "data-analysis",
         name: "DataAnalysis",
@@ -35,6 +67,15 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "数据分析",
           icon: TrendCharts,
+        },
+      },
+      {
+        path: "profile",
+        name: "Profile",
+        component: UserDetail,
+        meta: {
+          title: "个人中心",
+          icon: User,
         },
       },
       {
@@ -46,14 +87,13 @@ export const routes: Array<RouteRecordRaw> = [
           icon: ShoppingCart,
         },
       },
-      // 新增个人中心路由
       {
-        path: "profile",
-        name: "Profile",
-        component: UserDetail,
+        path: "plan-management",
+        name: "PlanManagement",
+        component: PlanManagement,
         meta: {
-          title: "个人中心",
-          icon: User,
+          title: "套餐管理",
+          icon: Ticket,
         },
       },
       {
@@ -71,16 +111,25 @@ export const routes: Array<RouteRecordRaw> = [
             component: UserManagement,
             meta: {
               title: "用户管理",
-              icon: User
+              icon: User,
             },
           },
           {
-            path: "plan-management",
-            name: "PlanManagement",
-            component: PlanManagement,
+            path: "role-management",
+            name: "RoleManagement",
+            component: RoleManagement,
             meta: {
-              title: "套餐管理",
-              icon: Ticket
+              title: "角色管理",
+              icon: UserFilled,
+            },
+          },
+          {
+            path: "permission-management",
+            name: "PermissionManagement",
+            component: PermissionManagement,
+            meta: {
+              title: "权限管理",
+              icon: Menu,
             },
           },
           {
@@ -89,7 +138,7 @@ export const routes: Array<RouteRecordRaw> = [
             component: LoginLog,
             meta: {
               title: "登录日志",
-              icon: Document
+              icon: Document,
             },
           },
           {
@@ -98,12 +147,16 @@ export const routes: Array<RouteRecordRaw> = [
             component: OperationLog,
             meta: {
               title: "操作日志",
-              icon: Edit
+              icon: Edit,
             },
           },
-          
         ],
       },
     ],
+  },
+  // 未匹配路由重定向到登录页
+  {
+    path: "/:pathMatch(.*)*",
+    redirect: "/login",
   },
 ];

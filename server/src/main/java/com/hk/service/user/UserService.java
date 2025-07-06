@@ -30,7 +30,7 @@ public interface UserService extends IService<UserEntity> {
 
     boolean updateUser(UserEditVO editVO);
 
-    boolean updatePassword(String password);
+    boolean updatePassword(String password, Long userId);
 
     boolean resetPassword(Long userId);
 }

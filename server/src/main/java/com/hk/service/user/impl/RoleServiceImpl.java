@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -155,6 +156,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, RoleEntity> impleme
 
     @Override
     public List<RoleEntity> selectByIds(List<Long> roleIds) {
+        if (CollectionUtil.isEmpty(roleIds)) return new ArrayList<>();
         LambdaQueryWrapper<RoleEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.in(RoleEntity::getId, roleIds);
         queryWrapper.select(RoleEntity::getId, RoleEntity::getRoleCode);

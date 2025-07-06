@@ -2,6 +2,7 @@ package com.hk.entity.user;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Schema(name = "PermissionEntity对象", description = "权限表")
+@TableName("sys_permission")
 public class PermissionEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
