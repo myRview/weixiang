@@ -30,42 +30,12 @@ export async function deleteLoginLog(
   });
 }
 
-/** 添加登录日志表 POST /login/log/add */
-export async function addLoginLog(
-  body: API.LoginLogEntityduixiang,
-  options?: { [key: string]: any }
-) {
-  return request<API.ResponseResult>("/login/log/add", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
 /** 查询列表 POST /login/log/page */
 export async function selectLoginPage(
   body: API.LogSearchParam,
   options?: { [key: string]: any }
 ) {
   return request<API.ResponseResultIPageLoginLogVO>("/login/log/page", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
-/** 修改登录日志表 POST /login/log/update */
-export async function updateLoginLog(
-  body: API.LoginLogEntityduixiang,
-  options?: { [key: string]: any }
-) {
-  return request<API.ResponseResult>("/login/log/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

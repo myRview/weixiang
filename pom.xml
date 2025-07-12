@@ -35,6 +35,8 @@
         <freemarker-version>2.3.32</freemarker-version>
         <apache-version>3.14.0</apache-version>
         <geoip2-version>3.0.1</geoip2-version>
+        <alipay-version>4.40.298.ALL</alipay-version>
+        <UserAgentUtils-version>1.21</UserAgentUtils-version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -133,6 +135,17 @@
                 <groupId>com.maxmind.geoip2</groupId>
                 <artifactId>geoip2</artifactId>
                 <version>${geoip2-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.bitwalker</groupId>
+                <artifactId>UserAgentUtils</artifactId>
+                <version>${UserAgentUtils-version}</version>
+            </dependency>
+<!--            支付宝平台接入-->
+            <dependency>
+                <groupId>com.alipay.sdk</groupId>
+                <artifactId>alipay-sdk-java</artifactId>
+                <version>${alipay-version}</version>
             </dependency>
 
         </dependencies>

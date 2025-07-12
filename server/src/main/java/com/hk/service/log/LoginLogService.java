@@ -19,4 +19,6 @@ public interface LoginLogService extends IService<LoginLogEntity> {
     IPage<LoginLogVO> selectLoginPage(LogSearchParam searchParam);
 
     LoginLogVO getInfoById(Long id);
+
+    boolean addLog(LoginLogVO loginLogVO);
 }

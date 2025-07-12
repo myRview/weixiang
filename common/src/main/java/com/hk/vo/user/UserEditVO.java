@@ -3,12 +3,14 @@ package com.hk.vo.user;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @author huangkun
  * @date 2025/6/26 16:54
  */
 @Data
-public class UserEditVO {
+public class UserEditVO implements Serializable {
 
     @Schema(description = "用户ID")
     private Long userId;

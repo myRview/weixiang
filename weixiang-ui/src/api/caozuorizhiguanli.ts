@@ -30,42 +30,12 @@ export async function deleteOperationLog(
   });
 }
 
-/** 添加操作日志 POST /operation/log/add */
-export async function addOperationLog(
-  body: API.OperationLogEntityduixiang,
-  options?: { [key: string]: any }
-) {
-  return request<API.ResponseResult>("/operation/log/add", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
 /** 查询操作日志列表 POST /operation/log/page */
 export async function selectOperaLogPage(
   body: API.LogSearchParam,
   options?: { [key: string]: any }
 ) {
   return request<API.ResponseResultIPageOperationLogVO>("/operation/log/page", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
-/** 修改操作日志 POST /operation/log/update */
-export async function updateOperationLog(
-  body: API.OperationLogEntityduixiang,
-  options?: { [key: string]: any }
-) {
-  return request<API.ResponseResult>("/operation/log/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

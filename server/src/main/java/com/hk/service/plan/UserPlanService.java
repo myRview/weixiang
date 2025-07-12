@@ -1,7 +1,11 @@
 package com.hk.service.plan;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hk.common.ResponseResult;
 import com.hk.entity.plan.UserPlanEntity;
+import com.hk.vo.order.OrderVO;
+import com.hk.vo.plan.PayPlanVo;
+import com.hk.vo.plan.UserPlan;
 
 /**
 * <p>
@@ -13,4 +17,8 @@ import com.hk.entity.plan.UserPlanEntity;
 */
 public interface UserPlanService extends IService<UserPlanEntity> {
 
+    UserPlan getPayPlan(Long userId);
+
+
+    boolean saveUserPlan(OrderVO orderVO);
 }

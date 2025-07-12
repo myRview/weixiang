@@ -12,4 +12,5 @@ public class BaseConstant {
     public static final String USER_ID = "user_id";
 
     public static final String CACHE_PREFIX = "weixiang:cache:";
+    public static final String SIGN_IN_USER = CACHE_PREFIX + "sign_in_user:";
 }

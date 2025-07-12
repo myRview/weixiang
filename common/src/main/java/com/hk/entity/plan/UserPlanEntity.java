@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * <p>
@@ -49,12 +50,12 @@ public class UserPlanEntity implements Serializable {
     private LocalDate endDate;
 
     @Schema(description = "0-失效，1-有效")
-    private Byte status;
+    private Integer status;
 
     @Schema(description = "创建时间")
-    private LocalDateTime createTime;
+    private Date createTime;
 
     @Schema(description = "更新时间")
-    private LocalDateTime updateTime;
+    private Date updateTime;
 
 }

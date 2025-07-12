@@ -1,7 +1,9 @@
 package com.hk.cache;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.*;
+import org.springframework.data.redis.connection.RedisStringCommands;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -110,5 +112,100 @@ public class RedisService<T> {
     // 判断键是否存在
     public Boolean hasKey(String key) {
         return redisTemplate.hasKey(key);
+    }
+
+    /**
+     * 设置位值
+     *
+     * @param key    键
+     * @param offset 位偏移量
+     * @param value  位值 (true=1, false=0)
+     * @return 修改前的位值
+     */
+    public Boolean setBit(String key, long offset, boolean value) {
+        return redisTemplate.opsForValue().setBit(key, offset, value);
+    }
+
+    /**
+     * 获取位值
+     *
+     * @param key    键
+     * @param offset 位偏移量
+     * @return 位值 (true=1, false=0)
+     */
+    public Boolean getBit(String key, long offset) {
+        return redisTemplate.opsForValue().getBit(key, offset);
+    }
+
+    /**
+     * 统计位值为1的数量
+     *
+     * @param key 键
+     * @return 1的数量
+     */
+    public Long bitCount(String key) {
+        return redisTemplate.execute((RedisCallback<Long>) connection ->
+                connection.bitCount(key.getBytes())
+        );
+    }
+
+    /**
+     * 统计范围内位值为1的数量
+     *
+     * @param key   键
+     * @param startBit 起始字节位置
+     * @param endBit   结束字节位置
+     * @return 1的数量
+     */
+    public Long bitCount(String key, long startBit, long endBit) {
+        // 将位偏移量转换为字节索引
+        long startByte = startBit / 8;
+        long endByte = endBit / 8;
+
+        // 使用Redis原生bitCount方法（按字节范围）
+        Long count = redisTemplate.execute((RedisCallback<Long>) connection ->
+                connection.bitCount(key.getBytes(), startByte, endByte)
+        );
+
+        // 如果起始位不在字节边界，需要减去多余的部分
+        if (startBit % 8 != 0) {
+            // 计算起始字节中多余的部分
+            long extraStart = startBit % 8;
+            for (long i = startBit; i < (startByte + 1) * 8; i++) {
+                if (getBit(key, i)) {
+                    count--;
+                }
+            }
+        }
+
+        // 如果结束位不在字节边界，需要减去多余的部分
+        if (endBit % 8 != 7) {
+            // 计算结束字节中多余的部分
+            long extraEnd = endBit % 8;
+            for (long i = (endByte) * 8; i <= endBit; i++) {
+                if (getBit(key, i)) {
+                    count--;
+                }
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 执行位运算操作
+     *
+     * @param op      运算类型 (AND/OR/XOR/NOT)
+     * @param destKey 目标键
+     * @param srcKeys 源键列表
+     * @return 结果长度
+     */
+    public Long bitOp(RedisStringCommands.BitOperation op, String destKey, String... srcKeys) {
+        byte[][] srcBytes = new byte[srcKeys.length][];
+        for (int i = 0; i < srcKeys.length; i++) {
+            srcBytes[i] = srcKeys[i].getBytes();
+        }
+        return redisTemplate.execute((RedisCallback<Long>) connection ->
+                connection.bitOp(op, destKey.getBytes(), srcBytes)
+        );
     }
 }

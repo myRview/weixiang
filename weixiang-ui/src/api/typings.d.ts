@@ -23,14 +23,6 @@ declare namespace API {
     id: number;
   };
 
-  type deleteUsingDELETEParams = {
-    id: number;
-  };
-
-  type getByIdParams = {
-    id: number;
-  };
-
   type getLoginLogByIdParams = {
     id: number;
   };
@@ -43,12 +35,20 @@ declare namespace API {
     id: number;
   };
 
+  type getPayPlanParams = {
+    userId: number;
+  };
+
   type getPlanInfoByIdParams = {
     id: number;
   };
 
   type getRolePermissionParams = {
     id: number;
+  };
+
+  type getSignRecordParams = {
+    year?: number;
   };
 
   type getUserByIdParams = {
@@ -77,28 +77,6 @@ declare namespace API {
     total?: number;
     current?: number;
     pages?: number;
-  };
-
-  type LoginLogEntityduixiang = {
-    id?: number;
-    /** 用户名 */
-    username?: string;
-    /** 用户id */
-    userId?: number;
-    /** IP地址 */
-    ipAddress?: string;
-    /** 登录地点 */
-    location?: string;
-    /** 登录设备 */
-    device?: string;
-    /** 登录时间 */
-    loginTime?: string;
-    /** 1-登录成功，0-登录失败 */
-    status?: number;
-    /** 创建时间 */
-    createTime?: string;
-    /** 更新时间 */
-    updateTime?: string;
   };
 
   type LoginLogVO = {
@@ -130,6 +108,7 @@ declare namespace API {
   };
 
   type MemberPlanVO = {
+    /** 套餐id */
     id?: number;
     /** 套餐名称 */
     name?: string;
@@ -143,30 +122,6 @@ declare namespace API {
     status?: number;
     /** 创建时间 */
     createTime?: string;
-  };
-
-  type OperationLogEntityduixiang = {
-    id?: number;
-    /** 用户id */
-    userId?: number;
-    /** 用户名 */
-    username?: string;
-    /** 操作内容 */
-    operationContent?: string;
-    /** 操作模块 */
-    operationModule?: string;
-    /** IP地址 */
-    ipAddress?: string;
-    /** 操作地址 */
-    operationAddress?: string;
-    /** 操作时间 */
-    operationTime?: string;
-    /** 1-成功，0-失败 */
-    status?: number;
-    /** 创建时间 */
-    createTime?: string;
-    /** 更新时间 */
-    updateTime?: string;
   };
 
   type OperationLogVO = {
@@ -291,6 +246,13 @@ declare namespace API {
     pages?: number;
   };
 
+  type PayPlanVo = {
+    /** 用户id */
+    userId?: number;
+    /** 套餐id */
+    planId?: number;
+  };
+
   type PermissionSearchParam = {
     pageNum?: number;
     pageSize?: number;
@@ -366,6 +328,12 @@ declare namespace API {
     data?: LoginLogVO;
   };
 
+  type ResponseResultMapLocalDateBoolean = {
+    code?: number;
+    message?: string;
+    data?: Record<string, any>;
+  };
+
   type ResponseResultMemberPlanVO = {
     code?: number;
     message?: string;
@@ -406,6 +374,12 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: PageUserVO;
+  };
+
+  type ResponseResultUserPlan = {
+    code?: number;
+    message?: string;
+    data?: UserPlan;
   };
 
   type ResponseResultUserVO = {
@@ -484,7 +458,7 @@ declare namespace API {
     code?: string;
   };
 
-  type UserPlanEntityduixiang = {
+  type UserPlan = {
     id?: number;
     /** 用户id */
     userId?: number;
@@ -497,11 +471,7 @@ declare namespace API {
     /** 失效日期 */
     endDate?: string;
     /** 0-失效，1-有效 */
-    status?: string;
-    /** 创建时间 */
-    createTime?: string;
-    /** 更新时间 */
-    updateTime?: string;
+    status?: number;
   };
 
   type UserRegisterVO = {

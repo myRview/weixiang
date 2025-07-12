@@ -5,6 +5,7 @@ import com.hk.entity.order.OrderInfoEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hk.param.OrderSearchParam;
 import com.hk.vo.order.OrderVO;
+import com.hk.vo.plan.PayPlanVo;
 
 /**
 * <p>
@@ -19,4 +20,6 @@ public interface OrderInfoService extends IService<OrderInfoEntity> {
     OrderVO getOrderById(Long id);
 
     Page<OrderVO> selectOrderPage(OrderSearchParam searchParam);
+
+    OrderVO payPlan(PayPlanVo payPlanVo);
 }

@@ -3,6 +3,7 @@ package com.hk.aop.log;
 import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.context.UserContext;
 import com.hk.entity.log.OperationLogEntity;
+import com.hk.enums.StatusEnum;
 import com.hk.service.log.OperationLogService;
 import com.hk.utils.IPUtil;
 import com.hk.utils.RequestUtils;
@@ -21,6 +22,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.lang.reflect.Method;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * @author huangkun
@@ -49,12 +51,12 @@ public class OperatorAop {
         operationLog.setOperationContent(operatorLog.desc());
         operationLog.setOperationModule(operatorLog.value());
         operationLog.setOperationTime(new Date());
-        operationLog.setStatus(1);
+        operationLog.setStatus(StatusEnum.NORMAL.getCode());
         // 获取请求信息
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
                 .currentRequestAttributes()).getRequest();
-        String params = RequestUtils.getRequestParams(request, joinPoint);
-        log.error("请求参数:{}", params);
+        Map<String, Object> requestParams = RequestUtils.getRequestParams(request, joinPoint);
+        log.error("请求参数:{}", requestParams);
         String ip = IPUtil.getClientIp(request);
         operationLog.setIpAddress(ip);
         operationLog.setUserId(UserContext.getCurrentUserId());
@@ -65,7 +67,7 @@ public class OperatorAop {
             // 执行目标方法
             result = joinPoint.proceed();
         } catch (Exception e) {
-            operationLog.setStatus(0);
+            operationLog.setStatus(StatusEnum.DISABLE.getCode());
             log.error("目标方法执行异常:{}", e);
         } finally {
             // 保存日志

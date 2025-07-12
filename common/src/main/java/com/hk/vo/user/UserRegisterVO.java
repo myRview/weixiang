@@ -3,13 +3,15 @@ package com.hk.vo.user;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 用户注册
  * @author huangkun
  * @date 2025/6/26 10:46
  */
 @Data
-public class UserRegisterVO {
+public class UserRegisterVO implements Serializable {
 
     @Schema(description = "账号")
     private String account;

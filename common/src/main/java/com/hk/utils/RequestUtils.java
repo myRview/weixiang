@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class RequestUtils {
 
-    public static String getRequestParams(HttpServletRequest request, JoinPoint joinPoint) {
+    public static Map<String, Object> getRequestParams(HttpServletRequest request, JoinPoint joinPoint) {
         Map<String, Object> params = new HashMap<>();
         
         // 获取URL参数
@@ -33,6 +33,6 @@ public class RequestUtils {
             }
         }
         
-        return JSONUtil.toJsonStr(params);
+        return params;
     }
 }

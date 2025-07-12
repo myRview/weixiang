@@ -25,7 +25,7 @@ export async function getPermissionList(options?: { [key: string]: any }) {
   });
 }
 
-/** 权限列表 POST /permission/page */
+/** 权限分页列表 POST /permission/page */
 export async function getPermissionPage(
   body: API.PermissionSearchParam,
   options?: { [key: string]: any }

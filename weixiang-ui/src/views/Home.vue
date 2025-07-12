@@ -127,7 +127,6 @@ const toggleCollapse = () => {
   transition: all 0.3s ease;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   position: relative;
-  height: calc(100vh - 80px);
 }
 
 .collapse-trigger {

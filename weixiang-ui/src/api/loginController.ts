@@ -2,7 +2,7 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** 登陆 POST /login */
+/** 登录 POST /login */
 export async function login(
   body: API.UserLoginVO,
   options?: { [key: string]: any }

@@ -8,6 +8,9 @@ import com.hk.vo.user.UserAddVO;
 import com.hk.vo.user.UserEditVO;
 import com.hk.vo.user.UserVO;
 
+import java.time.LocalDate;
+import java.util.Map;
+
 /**
 * <p>
     * 用户表 服务类
@@ -33,4 +36,13 @@ public interface UserService extends IService<UserEntity> {
     boolean updatePassword(String password, Long userId);
 
     boolean resetPassword(Long userId);
+
+    boolean sign();
+    boolean isSigned();
+
+    int getMonthSignCount();
+
+    int getContinuousSignCount();
+
+    Map<LocalDate, Boolean> getSignRecord(Integer year);
 }

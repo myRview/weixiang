@@ -2,15 +2,20 @@
   <div class="page-background">
     <div class="login-container">
       <div class="header">
-        <img src="../assets/logo.png" alt="系统logo" class="logo"/>
-        <h1>xxx应用系统</h1>
+        <img src="../assets/logo.png" alt="系统logo" class="logo" />
+        <h1>维享空间</h1>
         <p class="sub-title">欢迎回来，请登录您的账号</p>
       </div>
-      
-      <el-form ref="loginForm" :model="form" :rules="rules" label-position="top">
+
+      <el-form
+        ref="loginForm"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+      >
         <el-form-item label="请输入用户名" prop="account">
-          <el-input 
-            v-model="form.account" 
+          <el-input
+            v-model="form.account"
             placeholder="请输入用户名"
           ></el-input>
         </el-form-item>
@@ -23,10 +28,12 @@
           ></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" class="login-btn">登录</el-button>
+          <el-button type="primary" @click="handleLogin" class="login-btn"
+            >登录</el-button
+          >
         </el-form-item>
       </el-form>
-      
+
       <div class="footer">
         <span>还没有账号？</span>
         <el-link type="primary" @click="handleRegister">立即注册</el-link>
@@ -39,7 +46,7 @@
 import { ref } from "vue";
 import { ElMessage } from "element-plus";
 import { login } from "@/api/loginController";
-import { useLoginUserStore } from '../store/loginUser'; 
+import { useLoginUserStore } from "../store/loginUser";
 const form = ref<API.UserLoginVO>({ account: "", password: "" });
 const rules = {
   account: [{ required: true, message: "请输入账号", trigger: "blur" }],
@@ -47,19 +54,23 @@ const rules = {
 };
 
 const handleLogin = async () => {
-  // 登录逻辑
-  const res = await login(form.value);
-  if (res.data.code !== 200) {
-    ElMessage.error(res.data.message);
-    return;
+  try {
+    // 登录逻辑
+    const res = await login(form.value);
+    if (res.data.code !== 200) {
+      ElMessage.error(res.data.message);
+      return;
+    }
+    // 保存 token 到本地存储
+    const token = res.data.data;
+    localStorage.setItem("token", token);
+    const loginUserStore = useLoginUserStore();
+    ElMessage.success("登录成功");
+    await loginUserStore.fetchLoginUser(); // 等待获取用户信息完成
+    window.location.href = "/";
+  } catch (error) {
+    ElMessage.error("获取用户信息失败");
   }
-   // 保存 token 到本地存储
-   const token = res.data.data; 
-  localStorage.setItem('token', token);
-  const loginUserStore = useLoginUserStore();
-  loginUserStore.fetchLoginUser();
-  ElMessage.success("登录成功");
-  window.location.href = "/";
 };
 
 const handleRegister = () => {
@@ -76,7 +87,7 @@ const handleRegister = () => {
 .page-background {
   height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  background-image:url('../assets/background.png') ;
+  background-image: url("../assets/background.png");
   display: flex;
   justify-content: center;
   align-items: center;

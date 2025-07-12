@@ -11,6 +11,7 @@ import * as caozuorizhiguanli from "./caozuorizhiguanli";
 import * as huiyuantaocanguanli from "./huiyuantaocanguanli";
 import * as loginController from "./loginController";
 import * as denglurizhi from "./denglurizhi";
+import * as aliPayController from "./aliPayController";
 export default {
   yonghuguanli,
   yonghutaocanbiaoguanli,
@@ -21,4 +22,5 @@ export default {
   huiyuantaocanguanli,
   loginController,
   denglurizhi,
+  aliPayController,
 };

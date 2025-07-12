@@ -1,6 +1,7 @@
 package com.hk.controller.user;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.hk.aop.log.annotation.LoginLog;
 import com.hk.common.ResponseResult;
 import com.hk.entity.user.UserEntity;
 import com.hk.enums.UserRoleEnum;
@@ -9,6 +10,7 @@ import com.hk.service.user.UserService;
 import com.hk.vo.user.RoleVO;
 import com.hk.vo.user.UserAddVO;
 import com.hk.vo.user.UserRegisterVO;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +30,8 @@ public class UserRegisterController {
     private RoleService roleService;
 
     @PostMapping("/register")
+    @Operation(summary = "注册")
+    @LoginLog(value = "register")
     public ResponseResult register(@RequestBody UserRegisterVO registerVO) {
         String account = registerVO.getAccount();
         String email = registerVO.getEmail();

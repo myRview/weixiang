@@ -44,7 +44,7 @@ public class OrderInfoEntity implements Serializable {
     private Long planId;
 
      @Schema(description = "下单日期")
-    private LocalDate orderDate;
+    private Date orderDate;
 
      @Schema(description = "订单金额")
     private BigDecimal amount;

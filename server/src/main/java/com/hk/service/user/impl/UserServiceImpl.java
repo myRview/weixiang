@@ -5,8 +5,10 @@ import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hk.cache.RedisService;
 import com.hk.common.ErrorCode;
 import com.hk.constants.BaseConstant;
+import com.hk.context.UserContext;
 import com.hk.entity.user.RoleEntity;
 import com.hk.entity.user.UserEntity;
 import com.hk.entity.user.UserRoleEntity;
@@ -26,7 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -47,6 +53,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     private UserRoleService userRoleService;
     @Autowired
     private RoleService roleService;
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public Page<UserVO> getUserList(UserSearchParam userSearchParam) {
@@ -170,6 +178,119 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     }
 
     @Override
+    public boolean sign() {
+        Long userId = UserContext.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        LocalDate date = LocalDate.now();
+        int year = date.getYear();
+        String key = getSignInKey(year, userId);
+        int dayOfYear = date.getDayOfYear() - 1;
+        if (!redisService.getBit(key, dayOfYear)) {
+            return redisService.setBit(key, dayOfYear, true);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isSigned() {
+        Long userId = UserContext.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        LocalDate date = LocalDate.now();
+        int year = date.getYear();
+        int dayOfYear = date.getDayOfYear() - 1;
+
+        String key = getSignInKey(year, userId);
+        return redisService.getBit(key, dayOfYear);
+    }
+
+    @Override
+    public int getMonthSignCount() {
+        Long userId = UserContext.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        LocalDate now = LocalDate.now();
+        YearMonth yearMonth = YearMonth.from(now);
+
+        // 计算当月起始和结束偏移量
+        LocalDate start = yearMonth.atDay(1);
+        LocalDate end = yearMonth.atEndOfMonth();
+        int startOffset = start.getDayOfYear() - 1;
+        int endOffset = end.getDayOfYear() - 1;
+
+        String key = getSignInKey(now.getYear(), userId);
+        int count = 0;
+        while (startOffset <= endOffset) {
+            Boolean flag = redisService.getBit(key, startOffset);
+            if (flag) {
+                ++count;
+            }
+            ++startOffset;
+        }
+        return count;
+    }
+
+    @Override
+    public int getContinuousSignCount() {
+        Long userId = UserContext.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        LocalDate date = LocalDate.now();
+        String key = getSignInKey(date.getYear(), userId);
+
+        int count = 0;
+        int dayOfYear = date.getDayOfYear() - 1;
+        while (dayOfYear >= 0) {
+            if (redisService.getBit(key, dayOfYear)) {
+                ++count;
+                --dayOfYear;
+            } else {
+                break;
+            }
+        }
+        return count;
+    }
+
+    @Override
+    public Map<LocalDate, Boolean> getSignRecord(Integer year) {
+        Long userId = UserContext.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+        Map<LocalDate, Boolean> signRecord = new LinkedHashMap<>();
+        LocalDate now = LocalDate.now();
+        int currentYear = now.getYear();
+        if (year == null) {
+            year = currentYear;
+        }
+        //如果传递的年份等于当前年份，则获取当前时间往前推一年的数据记录，否则就获取年份的记录
+        boolean isCurrentYear = year == currentYear;
+        LocalDate startDate = isCurrentYear ? now.minusYears(1) : LocalDate.of(year, 1, 1);
+        if (startDate.isBefore(LocalDate.of(currentYear, 1, 1))) {
+            //获取开始时间到去年12月31日的记录
+            String signInKey = getSignInKey(startDate.getYear(), userId);
+            LocalDate endDate = LocalDate.of(startDate.getYear(), 12, 31);
+            buildRecord(startDate, endDate, signInKey, signRecord);
+            //获取今年1月1日到当前时间的记录
+            startDate = LocalDate.of(currentYear, 1, 1);
+            endDate = now;
+            signInKey = getSignInKey(currentYear, userId);
+            buildRecord(startDate, endDate, signInKey, signRecord);
+        } else {
+            String signInKey = getSignInKey(year, userId);
+            LocalDate endDate = LocalDate.of(year, 12, 31);
+            buildRecord(startDate, endDate, signInKey, signRecord);
+        }
+        return signRecord;
+    }
+
+
+    @Override
     public boolean resetPassword(Long userId) {
         UserEntity user = this.getById(userId);
         String salt = user.getSalt();
@@ -178,6 +299,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         updateWrapper.eq(UserEntity::getId, userId);
         updateWrapper.set(UserEntity::getPassword, md5);
         return this.update(updateWrapper);
+    }
+
+    private void buildRecord(LocalDate startDate, LocalDate endDate, String signInKey, Map<LocalDate, Boolean> signRecord) {
+        int start = startDate.getDayOfYear() - 1;
+        int end = endDate.getDayOfYear() - 1;
+        int current = start;
+        while (current <= end) {
+            if (redisService.getBit(signInKey, current)) {
+                signRecord.put(startDate, true);
+            }
+            startDate = startDate.plusDays(1);
+            ++current;
+        }
+    }
+
+    private String getSignInKey(int year, Long userId) {
+        return String.format("%s%s:%s", BaseConstant.SIGN_IN_USER, year, userId);
     }
 
     private void checkIphoneAndEmail(String email, String phone) {

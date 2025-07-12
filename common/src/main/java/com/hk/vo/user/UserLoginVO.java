@@ -3,6 +3,8 @@ package com.hk.vo.user;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 用户登录对象
  *
@@ -10,7 +12,7 @@ import lombok.Data;
  * @date 2025/6/26 9:58
  */
 @Data
-public class UserLoginVO {
+public class UserLoginVO implements Serializable {
 
     @Schema(description = "账号")
     private String account;

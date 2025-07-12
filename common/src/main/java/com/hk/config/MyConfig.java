@@ -48,20 +48,20 @@ public class MyConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 定义需要排除的 Swagger 文档路径
-        String[] SWAGGER_PATHS = {
-                "/swagger-ui/**",
-                "/swagger-resources/**",
-                "/v2/api-docs",
-                "/v3/api-docs",
-                "/webjars/**",
-                "/doc.html"
+        String[] EXCLUDE_PATHS = {
+                "/api/swagger-ui/**",
+                "/api/swagger-resources/**",
+                "/api/v2/api-docs",
+                "/api/v3/api-docs/**",
+                "/api/webjars/**",
+                "/api/doc.html",
+                "/api/favicon.ico"
         };
 
         registry.addInterceptor(tokenInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns("/login")
-                .excludePathPatterns("/register")
-                .excludePathPatterns(SWAGGER_PATHS);
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/login")
+                .excludePathPatterns("/api/register")
+                .excludePathPatterns(EXCLUDE_PATHS);
     }
 }

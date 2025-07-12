@@ -1,7 +1,5 @@
 package com.hk.vo.plan;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.hk.entity.plan.MemberPlanEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -17,7 +15,7 @@ import java.util.Date;
 @Data
 public class MemberPlanVO implements Serializable {
 
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
+    @Schema(description = "套餐id")
     private Long id;
 
     @Schema(description = "套餐名称")

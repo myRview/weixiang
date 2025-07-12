@@ -20,6 +20,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.Map;
+
 /**
  * <p>
  * 用户表 前端控制器
@@ -134,5 +137,59 @@ public class UserController {
             throw new BusinessException(ErrorCode.NOT_LOGIN, "未登录");
         }
         return ResponseResult.success(userCacheVo.getUser());
+    }
+
+    /**
+     * 用户签到
+     */
+    @PostMapping("/sign")
+    @Operation(summary = "用户签到")
+    @OperatorLog(value = "用户签到", desc = "用户签到")
+    public ResponseResult sign() {
+        return userService.sign() ? ResponseResult.success("签到成功") : ResponseResult.fail("签到失败");
+    }
+
+    /**
+     * 是否签到
+     */
+    @PostMapping("/isSigned")
+    @Operation(summary = "是否签到")
+    public ResponseResult isSigned() {
+        return userService.isSigned() ? ResponseResult.success("已签到") : ResponseResult.fail("未签到");
+    }
+
+
+    /**
+     * 获取本月签到天数
+     *
+     * @return
+     */
+    @PostMapping("/month/count")
+    @Operation(summary = "获取本月签到天数")
+    public ResponseResult getMonthSignCount() {
+        return ResponseResult.success(userService.getMonthSignCount());
+    }
+
+
+    /**
+     * 获取连续签到天数
+     *
+     * @return
+     */
+    @PostMapping("/continuous/count")
+    @Operation(summary = "获取连续签到天数")
+    public ResponseResult getContinuousSignCount() {
+        return ResponseResult.success(userService.getContinuousSignCount());
+    }
+
+    /**
+     * 获取签到记录
+     *
+     * @return
+     */
+    @GetMapping("/sign/record")
+    @Operation(summary = "获取签到记录")
+    public ResponseResult<Map<LocalDate, Boolean>> getSignRecord(@RequestParam(required = false) Integer year) {
+        return ResponseResult.success(userService.getSignRecord(year));
     }
 }

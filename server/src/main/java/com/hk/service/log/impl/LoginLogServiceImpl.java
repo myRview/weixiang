@@ -63,4 +63,17 @@ public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLogEnt
         }
         return null;
     }
+
+    @Override
+    public boolean addLog(LoginLogVO loginLogVO) {
+        LoginLogEntity entity = new LoginLogEntity();
+        entity.setUsername(loginLogVO.getUsername());
+        entity.setUserId(loginLogVO.getUserId());
+        entity.setIpAddress(loginLogVO.getIpAddress());
+        entity.setLocation(loginLogVO.getLocation());
+        entity.setDevice(loginLogVO.getDevice());
+        entity.setLoginTime(loginLogVO.getLoginTime());
+        entity.setStatus(loginLogVO.getStatus());
+        return this.save(entity);
+    }
 }

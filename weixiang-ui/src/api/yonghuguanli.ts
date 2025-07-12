@@ -45,9 +45,25 @@ export async function addUser(
   });
 }
 
+/** 获取连续签到天数 POST /user/continuous/count */
+export async function getContinuousSignCount(options?: { [key: string]: any }) {
+  return request<API.ResponseResult>("/user/continuous/count", {
+    method: "POST",
+    ...(options || {}),
+  });
+}
+
 /** 获取当前用户 POST /user/info */
 export async function getLoginUser(options?: { [key: string]: any }) {
   return request<API.ResponseResultUserVO>("/user/info", {
+    method: "POST",
+    ...(options || {}),
+  });
+}
+
+/** 是否签到 POST /user/isSigned */
+export async function isSigned(options?: { [key: string]: any }) {
+  return request<API.ResponseResult>("/user/isSigned", {
     method: "POST",
     ...(options || {}),
   });
@@ -64,6 +80,14 @@ export async function getUserList(
       "Content-Type": "application/json",
     },
     data: body,
+    ...(options || {}),
+  });
+}
+
+/** 获取本月签到天数 POST /user/month/count */
+export async function getMonthSignCount(options?: { [key: string]: any }) {
+  return request<API.ResponseResult>("/user/month/count", {
+    method: "POST",
     ...(options || {}),
   });
 }
@@ -91,6 +115,29 @@ export async function resetPassword(
 ) {
   return request<API.ResponseResult>("/user/reset/pwd", {
     method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 用户签到 POST /user/sign */
+export async function sign(options?: { [key: string]: any }) {
+  return request<API.ResponseResult>("/user/sign", {
+    method: "POST",
+    ...(options || {}),
+  });
+}
+
+/** 获取签到记录 GET /user/sign/record */
+export async function getSignRecord(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getSignRecordParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultMapLocalDateBoolean>("/user/sign/record", {
+    method: "GET",
     params: {
       ...params,
     },
