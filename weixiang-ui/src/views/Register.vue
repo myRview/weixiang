@@ -3,8 +3,8 @@
     <div class="register-container">
       <div class="header">
         <img src="../assets/logo.png" alt="系统logo" class="logo"/>
-        <h1>xxx应用系统</h1>
-        <p>创建新账号，开启您的版权</p>
+        <h1>维享空间</h1>
+        <p>创建新账号，开启您的平台之旅</p>
       </div>
       
       <el-form ref="registerForm" :model="form" :rules="rules" label-position="top">

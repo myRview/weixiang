@@ -7,7 +7,7 @@ export async function payPlan(
   body: API.PayPlanVo,
   options?: { [key: string]: any }
 ) {
-  return request<API.ResponseResult>("/user/plan/pay/plan", {
+  return request<API.ResponseResultOrderVO>("/user/plan/pay/plan", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

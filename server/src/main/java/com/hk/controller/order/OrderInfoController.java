@@ -77,4 +77,14 @@ public class OrderInfoController {
     public ResponseResult<Page<OrderVO>> selectOrderPage(@RequestBody OrderSearchParam searchParam) {
         return ResponseResult.success(orderInfoService.selectOrderPage(searchParam));
     }
+
+
+    /**
+     * 查询订单状态
+     */
+    @GetMapping("/status")
+    @Operation(summary = "查询订单状态")
+    public ResponseResult<Integer> getOrderStatusById(@RequestParam Long id) {
+        return ResponseResult.success(orderInfoService.getOrderStatusById(id));
+    }
 }

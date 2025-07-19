@@ -34,7 +34,7 @@ public class OrderInfoEntity implements Serializable {
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
-     @Schema(description = "订单编号")
+    @Schema(description = "订单编号")
     private String orderNumber;
 
      @Schema(description = "用户id")
@@ -57,5 +57,12 @@ public class OrderInfoEntity implements Serializable {
 
      @Schema(description = "更新时间")
     private Date updateTime;
+
+    @Schema(description = "用户名")
+    private String userName;
+
+    @Schema(description = "套餐名")
+    private String planName;
+
 
 }

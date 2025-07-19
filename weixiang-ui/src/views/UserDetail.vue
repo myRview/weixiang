@@ -3,41 +3,86 @@
     <!-- 顶部用户信息卡片 -->
     <div class="user-card">
       <div class="avatar-section">
-        <img :src="defaultAvatar" alt="用户头像" class="avatar" />
-      </div>
-      <div class="user-basic">
-        <div class="username">{{ user?.userName }}</div>
-      </div>
-      <div class="follow-stats">
-        <div class="stat-item">
-          <div class="stat-value">0</div>
-          <div class="stat-label">关注了</div>
+        <div class="avatar-wrapper">
+          <img :src="defaultAvatar" alt="用户头像" class="avatar" />
+          <div class="avatar-badge" v-show="isVip">VIP</div>
         </div>
-        <div class="divider"></div>
-        <div class="stat-item">
-          <div class="stat-value">0</div>
-          <div class="stat-label">关注者</div>
+        <div class="follow-stats">
+          <div class="stat-item hover-effect">
+            <div class="stat-value">{{ user?.followCount || 0 }}</div>
+            <div class="stat-label">关注</div>
+          </div>
+          <div class="divider"></div>
+          <div class="stat-item hover-effect">
+            <div class="stat-value">{{ user?.fansCount || 0 }}</div>
+            <div class="stat-label">粉丝</div>
+          </div>
+        </div>
+      </div>
+      <div class="user-meta">
+        <h1 class="username">{{ user?.userName }}</h1>
+        <div class="user-profile-grid">
+          <div class="info-item">
+            <span class="info-label">性别</span>
+            <span class="info-value">{{
+              user?.gender === 1 ? "男" : "女"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">地址</span>
+            <span class="info-value">{{
+              user?.expandVo?.address || "暂无信息"
+            }}</span>
+          </div>
+          <div class="info-item full-width">
+            <span class="info-label">简介</span>
+            <span class="info-value bio-text">{{
+              user?.expandVo?.bio || "这个用户很懒，什么都没留下～"
+            }}</span>
+          </div>
         </div>
       </div>
       <div class="action-buttons">
-        <button class="btn edit-btn">编辑个人资料</button>
+        <el-button type="default" class="action-btn" @click="handleEditProfile">
+          <el-icon>
+            <Edit />
+          </el-icon>
+          编辑资料
+        </el-button>
+        <el-button type="success" class="action-btn" @click="handleSignIn">
+          <el-icon>
+            <Check />
+          </el-icon>
+          立即签到
+        </el-button>
+        <el-button
+          type="primary"
+          class="action-btn"
+          v-show="!isVip"
+          @click="getPlanList"
+        >
+          <el-icon>
+            <Star />
+          </el-icon>
+          开通会员
+        </el-button>
       </div>
     </div>
     <div class="info-section">
       <div class="section-content">
         <div class="progress-section">
           <div class="submission-stats">
-            <div class="submission-count">
-              {{ selectedYear === currentYear ? "过去一年" : selectedYear + "年" }}共签到 {{ totalSignCount }} 次
-            </div>
+            <div class="submission-count">累计签到 {{ totalSignCount }} 天</div>
             <div class="stats-group">
               <div class="submission-days">
-                <span>本月签到天数: {{ monthSignInDays }}</span>
-                <span>连续签到: {{ continuousSignCount }}</span>
+                <span>本月签到: {{ monthSignInDays }}天</span>
+                <span>连续签到: {{ continuousSignCount }}天</span>
               </div>
               <div class="year-selector">
                 <select v-model="selectedYear" @change="handleYearChange">
-                  <option v-for="year in years" :key="year" :value="year">{{ year }}年</option>
+                  <option v-for="year in years" :key="year" :value="year">
+                    {{ year }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -47,23 +92,218 @@
         </div>
       </div>
     </div>
+    <!-- 会员套餐列表弹框 -->
+    <el-dialog
+      v-model="planDialogVisible"
+      title="会员套餐"
+      :close-on-click-modal="false"
+      width="800px"
+    >
+      <div class="plan-table-container">
+        <el-table :data="planData" style="width: 100%">
+          <el-table-column prop="name" label="套餐名称" width="220">
+            <template #default="scope">
+              <div class="plan-name-container">
+                <span class="plan-name">{{ scope.row.name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="price" label="价格" width="140">
+            <template #default="scope">
+              <div class="price-container">
+                <span class="price-symbol">¥</span>
+                <span class="price-value">{{ scope.row.price }}</span>
+                <span class="price-unit">/{{ scope.row.validityDays }}天</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="validityDays" label="有效期" width="160">
+            <template #default="scope">
+              <div class="validity-container">
+                <el-icon class="calendar-icon">
+                  <Calendar />
+                </el-icon>
+                <span>{{ scope.row.validityDays }}天</span>
+                <span class="validity-tip"
+                  >({{ Math.round(scope.row.validityDays / 30) }}个月)</span
+                >
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="180" fixed="right">
+            <template #default="scope">
+              <el-button
+                type="primary"
+                size="small"
+                class="select-plan-btn"
+                :class="{ 'recommended-btn': scope.row.recommended }"
+                @click="handleSelectPlan(scope.row.id)"
+              >
+                <span>选择此套餐</span>
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
+
+    <!-- 支付二维码弹框 -->
+    <el-dialog
+      v-model="payDialogVisible"
+      title="扫码支付"
+      width="400px"
+      :close-on-click-modal="false"
+      :before-close="handlePayClose"
+    >
+      <div class="pay-dialog-content">
+        <div v-if="orderStatusText === '支付成功'" class="payment-success">
+          <el-icon color="#67C23A" :size="60"><CircleCheckFilled /></el-icon>
+          <div class="success-text">支付成功！</div>
+          <div class="success-tip">会员已开通，即将自动关闭...</div>
+        </div>
+        <div v-else>
+          <div class="qr-code-container">
+            <img :src="qrCodeImage" alt="支付二维码" class="qr-code-img" />
+            <div class="order-info">
+              <div class="order-item">
+                <span class="order-label">套餐名称：</span>
+                <span class="order-value">{{ currentPlanName }}</span>
+              </div>
+              <div class="order-item">
+                <span class="order-label">订单金额：</span>
+                <span class="order-value price">¥{{ currentPlanPrice }}</span>
+              </div>
+              <div class="order-item">
+                <span class="order-label">订单号：</span>
+                <span class="order-value order-id">{{ currentOrderId }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="payment-status">
+            <div class="status-text">{{ orderStatusText }}</div>
+            <el-progress
+              :percentage="paymentProgress"
+              :color="progressColor"
+              :show-text="false"
+            />
+            <div class="status-tip">
+              请使用微信或支付宝扫描上方二维码完成支付
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 用户信息弹框组件 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑资料"
+      width="580px"
+      class="edit-dialog"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="userInfo" label-width="100px" class="user-form">
+        <el-form-item label="账号" class="form-item-account">
+          <el-input v-model="userInfo.account" disabled class="input-account" />
+        </el-form-item>
+        <el-form-item label="头像">
+          <el-upload
+            class="avatar-uploader"
+            :action="uploadUrl"
+            :show-file-list="false"
+            :on-success="handleAvatarSuccess"
+          >
+            <img v-if="userInfo.avatar" :src="userInfo.avatar" class="avatar" />
+            <el-icon v-else class="avatar-uploader-icon">
+              <Plus />
+            </el-icon>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="用户名">
+          <el-input v-model="userInfo.userName" placeholder="请输入用户名" />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="userInfo.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="userInfo.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="性别">
+              <el-select v-model="userInfo.gender" placeholder="请选择">
+                <el-option label="男" value="male" />
+                <el-option label="女" value="female" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="生日">
+              <el-date-picker
+                v-model="userInfo.birthday"
+                type="date"
+                placeholder="选择日期"
+                value-format="YYYY-MM-DD"
+                class="date-picker"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="地址" class="form-item-address">
+          <el-input v-model="userInfo.address" placeholder="请输入详细地址" />
+        </el-form-item>
+        <el-form-item label="简介">
+          <el-input
+            v-model="userInfo.bio"
+            type="textarea"
+            :rows="3"
+            placeholder="介绍一下自己吧～"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitEdit">确认修改</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
+  editUser,
   getContinuousSignCount,
   getMonthSignCount,
   getSignRecord,
   getUserById,
+  sign,
 } from "@/api/yonghuguanli";
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, nextTick } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import dayjs from "dayjs";
 import * as echarts from "echarts";
+import { ElMessage } from "element-plus";
+import {
+  Plus,
+  Star,
+  Edit,
+  Check,
+  Calendar,
+  CircleCheckFilled,
+} from "@element-plus/icons-vue";
+import { selectPlanList } from "@/api/huiyuantaocanguanli";
+import { getPayPlan, payPlan } from "@/api/yonghutaocanbiaoguanli";
+import QRCode from "qrcode";
+import { getOrderById, getOrderStatusById } from "@/api/dingdanguanli";
 
 // 默认头像
-const defaultAvatar = "https://pic.leetcode-cn.com/1631796689-legoLO.png";
+const defaultAvatar =
+  "http://gips2.baidu.com/it/u=195724436,3554684702&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=960";
+
+// 上传接口地址
+const uploadUrl = "实际的API地址"; // 请替换为真实上传接口
 
 const user = ref<API.UserVO>();
 const calendarRef = ref<HTMLDivElement | null>(null);
@@ -77,8 +317,287 @@ const continuousSignCount = ref(0);
 const totalSignCount = ref(0);
 // 签到记录
 const signInRecords = ref<Record<string, boolean>>({});
+const isVip = ref(false);
+const planData = ref<API.MemberPlanVO[]>([]);
+const planDialogVisible = ref(false);
+
+// 支付弹窗控制
+const payDialogVisible = ref(false);
+// 二维码图片数据
+const qrCodeImage = ref("");
+// 订单状态查询定时器
+const orderTimer = ref<NodeJS.Timeout | null>(null);
+// 当前订单ID
+const currentOrderId = ref(Number);
+// 订单状态信息
+const orderStatusText = ref("等待支付...");
+// 支付进度
+const paymentProgress = ref(0);
+// 进度条颜色
+const progressColor = ref("#409eff");
+// 当前套餐名称
+const currentPlanName = ref("");
+// 当前套餐价格
+const currentPlanPrice = ref(0);
 
 const loginUserStore = useLoginUserStore();
+
+// 编辑资料处理
+const editDialogVisible = ref(false);
+const userInfo = ref({
+  account: "",
+  userName: "",
+  phone: "",
+  email: "",
+  gender: "",
+  birthday: "",
+  address: "",
+  bio: "",
+  avatar: defaultAvatar,
+});
+
+const handleEditProfile = () => {
+  userInfo.value = {
+    account: user.value?.account || "",
+    userName: user.value?.userName || "",
+    avatar: user.value?.avatar || defaultAvatar,
+    phone: user.value?.phone || "",
+    email: user.value?.email || "",
+    gender: user.value?.gender ? "male" : "female",
+    birthday: user.value?.expandVo?.birthday || "",
+    address: user.value?.expandVo?.address || "",
+    bio: user.value?.expandVo?.bio || "",
+  };
+  editDialogVisible.value = true;
+};
+
+const handleAvatarSuccess = (response: any) => {
+  userInfo.value.avatar = response.data.url;
+  ElMessage.success("头像上传成功");
+};
+
+const submitEdit = async () => {
+  try {
+    console.log(userInfo.value);
+    const res = await editUser({
+      userId: loginUserStore.loginUser.id,
+      userName: userInfo.value.userName,
+      phone: userInfo.value.phone,
+      email: userInfo.value.email,
+      gender: userInfo.value.gender === "male" ? 1 : 0,
+      avatar: userInfo.value.avatar,
+      birthday: userInfo.value.birthday,
+      address: userInfo.value.address,
+      bio: userInfo.value.bio,
+    });
+    if (res.data.code === 200) {
+      ElMessage.success("资料更新成功");
+      await getUserInfo();
+      editDialogVisible.value = false;
+    } else {
+      ElMessage.error(res.data.message);
+    }
+  } catch (error) {
+    console.error("资料更新失败", error);
+    ElMessage.error("资料更新失败");
+  }
+};
+// 签到处理
+const handleSignIn = async () => {
+  try {
+    const res = await sign();
+    if (res.data.code === 200) {
+      ElMessage.success("签到成功");
+      // 签到成功后刷新数据
+      await getSignInRecords();
+      await getContinuousCount();
+      await getMonthSignInDays();
+    }
+  } catch (error) {
+    console.error("签到失败", error);
+  }
+};
+const getPlanList = async () => {
+  try {
+    const res = await selectPlanList();
+    if (res.data.code === 200) {
+      planData.value = res.data.data;
+      planDialogVisible.value = true;
+    } else {
+      ElMessage.error(res.data.message);
+    }
+  } catch (error) {
+    console.error("获取会员列表失败", error);
+    ElMessage.error("获取会员列表失败");
+  }
+};
+
+const handleSelectPlan = async (planId: number) => {
+  try {
+    // 找到选中的套餐
+    const plan = planData.value.find((p) => p.id === planId);
+    if (!plan) {
+      ElMessage.error("未找到套餐信息");
+      return;
+    }
+
+    // 保存套餐信息
+    currentPlanName.value = plan.name;
+    currentPlanPrice.value = plan.price;
+
+    // 调用支付接口
+    const res = await payPlan({ planId, userId: loginUserStore.loginUser.id });
+    if (res.data.code === 200) {
+      const qrCodeUrl = res.data.data?.qrCodeUrl;
+      currentOrderId.value = res.data.data?.id || 0;
+
+      // 生成二维码
+      QRCode.toDataURL(
+        qrCodeUrl,
+        {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#ffffff",
+          },
+        },
+        (err, url) => {
+          if (err) {
+            ElMessage.error("二维码生成失败");
+            return;
+          }
+          qrCodeImage.value = url;
+          payDialogVisible.value = true;
+          planDialogVisible.value = false;
+
+          // 重置支付状态
+          paymentProgress.value = 0;
+          orderStatusText.value = "等待支付...";
+          progressColor.value = "#409eff";
+
+          // 启动订单状态查询定时器
+          if (orderTimer.value) {
+            clearInterval(orderTimer.value);
+          }
+          orderTimer.value = setInterval(checkOrderStatus, 1500);
+        }
+      );
+    } else {
+      ElMessage.error(res.data.message);
+    }
+  } catch (error) {
+    console.error("开通会员失败", error);
+    ElMessage.error("开通会员失败");
+  }
+};
+
+// 检查订单状态
+const checkOrderStatus = async () => {
+  try {
+    // 调用后端API查询订单状态
+    const res = await getOrderStatusById({ id: currentOrderId.value });
+
+    if (res.data.code === 200) {
+      const status = res.data.data;
+      switch (status) {
+        case 1: // 支付成功
+          paymentProgress.value = 100;
+          orderStatusText.value = "支付成功";
+          progressColor.value = "#67c23a";
+          // 3秒后自动关闭弹窗
+          setTimeout(() => {
+            payDialogVisible.value = false;
+            isVip.value = true;
+            ElMessage.success("会员开通成功！");
+          }, 3000);
+
+          // 清除定时器
+          if (orderTimer.value) {
+            clearInterval(orderTimer.value);
+            orderTimer.value = null;
+          }
+          return;
+
+        case 2: // 支付失败
+          paymentProgress.value = 0;
+          orderStatusText.value = "支付失败";
+          progressColor.value = "#f56c6c";
+          ElMessage.error("支付失败，请重新尝试或联系客服");
+
+          // 清除定时器
+          if (orderTimer.value) {
+            clearInterval(orderTimer.value);
+            orderTimer.value = null;
+          }
+          return;
+
+        case 3: // 订单已关闭
+          paymentProgress.value = 0;
+          orderStatusText.value = "订单已关闭";
+          progressColor.value = "#909399";
+          ElMessage.warning("支付超时，订单已关闭");
+
+          // 清除定时器
+          if (orderTimer.value) {
+            clearInterval(orderTimer.value);
+            orderTimer.value = null;
+          }
+          return;
+
+        default: // 未支付
+          // 更新等待动画
+          paymentProgress.value += 10;
+          if (paymentProgress.value >= 70) {
+            paymentProgress.value = 30;
+          }
+
+          // 根据等待时间更新状态文本
+          const elapsedSeconds = Math.floor(
+            (Date.now() - startTime.value) / 1000
+          );
+          if (elapsedSeconds > 120) {
+            orderStatusText.value = "支付处理中...";
+            progressColor.value = "#e6a23c";
+          } else {
+            orderStatusText.value = "等待支付...";
+            progressColor.value = "#409eff";
+          }
+      }
+    } else {
+      ElMessage.error(res.data.message || "查询订单状态失败");
+    }
+  } catch (error) {
+    console.error("查询订单状态失败", error);
+    // 更新等待动画
+    paymentProgress.value += 10;
+    if (paymentProgress.value >= 70) {
+      paymentProgress.value = 30;
+    }
+  }
+};
+
+// 关闭支付弹窗的处理
+const handlePayClose = (done: () => void) => {
+  if (orderTimer.value) {
+    clearInterval(orderTimer.value);
+    orderTimer.value = null;
+  }
+  done();
+};
+//获取用户购买的套餐
+const getVipInfo = async () => {
+  try {
+    const res = await getPayPlan({ userId: loginUserStore.loginUser.id });
+    if (res.data.code === 200) {
+      res.data.data?.status === 1
+        ? (isVip.value = true)
+        : (isVip.value = false);
+    }
+  } catch (error) {
+    console.error("获取用户购买的套餐失败", error);
+  }
+};
 
 // 当前年份
 const currentYear = ref(dayjs().year());
@@ -89,7 +608,6 @@ const years = computed(() => {
   return [currentYear.value - 2, currentYear.value - 1, currentYear.value];
 });
 
-// 获取用户信息
 const getUserInfo = async () => {
   try {
     const res = await getUserById({ id: loginUserStore.loginUser.id });
@@ -264,97 +782,299 @@ onMounted(async () => {
   await getMonthSignInDays();
   await getContinuousCount();
   await getSignInRecords();
+  await getVipInfo();
 });
 </script>
 
 <style scoped>
+.plan-table-container {
+  margin: 10px;
+}
+
+.plan-name-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hot-tag {
+  background-color: #ff4d4f;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 77, 79, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+  }
+}
+
+.price-container {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-symbol {
+  font-size: 14px;
+  color: #ff4d4f;
+}
+
+.price-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ff4d4f;
+}
+
+.price-unit {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-left: 4px;
+}
+
+.validity-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendar-icon {
+  color: #1890ff;
+}
+
+.validity-tip {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.description-content {
+  color: #595959;
+  line-height: 1.5;
+}
+
+.select-plan-btn {
+  width: 120px;
+}
+
+.recommended-btn {
+  background: linear-gradient(135deg, #ff4d4f 0%, #ff7a45 100%);
+  border: none;
+}
+
+.hot-plan-row {
+  background-color: rgba(255, 248, 248, 0.6);
+}
+
+.profile-container {
+  margin: 0 auto;
+  padding: 20px;
+}
+
 .user-card {
   display: flex;
-  background: white;
-  border-radius: 12px;
+  gap: 30px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  margin-bottom: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .avatar-section {
-  margin-right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 180px;
+  position: relative;
+}
+
+.avatar-wrapper {
+  position: relative;
+  margin-bottom: 16px;
 }
 
 .avatar {
-  width: 120px;
-  height: 120px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #f3f3f3;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease;
 }
 
-.user-basic {
+.avatar-badge {
+  position: absolute;
+  bottom: 8px;
+  right: -4px;
+  background: linear-gradient(135deg, #ff6b6b, #ff8787);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.hover-effect:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+.user-meta {
   flex: 1;
-  padding-right: 24px;
-  border-right: 1px solid #eee;
+  min-width: 0;
 }
 
 .username {
   font-size: 24px;
-  font-weight: 600;
-  color: #262626;
+  font-weight: 700;
+  color: #1a1a1a;
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.user-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.info-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.info-label {
+  font-weight: 500;
+  color: #595959;
+  min-width: 50px;
+  font-size: 14px;
+}
+
+.info-value {
+  color: #1a1a1a;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 500px;
+  display: block;
+  font-size: 14px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
 }
 
 .follow-stats {
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  border-right: 1px solid #eee;
+  border-radius: 12px;
+  padding: 10px 16px;
+  backdrop-filter: blur(4px);
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 
 .stat-item {
   text-align: center;
-  padding: 0 16px;
+  padding: 0 14px;
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #262626;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #8c8c8c;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .divider {
   width: 1px;
-  height: 40px;
-  background: #eee;
+  height: 30px;
+  background: #e8e8e8;
 }
 
 .action-buttons {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  min-width: 180px;
   margin-left: 24px;
 }
 
+.action-btn {
+  width: 180px !important;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .action-buttons {
+    grid-template-columns: 1fr;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 20px;
+  }
+}
+
 .btn {
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
   font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: none;
   cursor: pointer;
-  margin-bottom: 12px;
-  transition: all 0.3s;
-}
-
-.edit-btn {
-  background: #fff;
-  border: 1px solid #e8e8e8;
-  color: #595959;
-}
-
-.edit-btn:hover {
-  background: #f5f5f5;
+  width: 100%;
 }
 
 .info-section {
@@ -424,84 +1144,269 @@ onMounted(async () => {
 
 .calendar-chart {
   width: 100%;
-  height: 220px;
+  height: 200px;
   margin-top: 10px;
 }
 
 @media (max-width: 768px) {
+  .user-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .avatar-section {
+    width: 100%;
+  }
+
+  .user-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
   .calendar-chart {
     height: 180px;
   }
 
-  .user-card {
-    flex-direction: column;
-  }
-
-  .avatar-section {
-    margin-right: 0;
-    margin-bottom: 16px;
-    text-align: center;
-  }
-
-  .user-basic {
-    padding-right: 0;
-    padding-bottom: 16px;
-    border-right: none;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 16px;
-    text-align: center;
-  }
-
   .follow-stats {
-    padding: 16px 0;
-    border-right: none;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 16px;
-    justify-content: center;
-  }
-
-  .action-buttons {
-    margin-left: 0;
-    flex-direction: row;
-    justify-content: center;
-    gap: 16px;
-  }
-
-  .btn {
-    margin-bottom: 0;
-  }
-
-  .submission-stats {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .submission-days {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+    max-width: 280px;
+    margin: 0 auto 16px;
   }
 }
 
 @media (max-width: 480px) {
+  .user-card {
+    padding: 16px;
+  }
+
+  .avatar {
+    width: 90px;
+    height: 90px;
+  }
+
+  .username {
+    font-size: 22px;
+  }
+
+  .follow-stats {
+    padding: 8px 12px;
+  }
+
+  .stat-item {
+    padding: 0 10px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
   .calendar-chart {
     height: 160px;
   }
 
-  .submission-stats {
-    flex-direction: column;
-    gap: 12px;
-  }
-
   .stats-group {
     flex-direction: column;
-    align-items: flex-start;
     gap: 12px;
+    align-items: flex-start;
   }
 
   .submission-days {
     flex-direction: column;
     gap: 8px;
+    align-items: flex-start;
   }
+}
+
+.edit-dialog {
+  --el-dialog-border-radius: 12px;
+  --el-dialog-box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.user-form {
+  padding: 20px 30px;
+  transition: all 0.3s ease;
+}
+
+.user-form .el-form-item {
+  margin-bottom: 22px;
+  --el-form-label-font-size: 14px;
+  --el-form-label-font-weight: 500;
+}
+
+.user-form .el-input__wrapper {
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.user-form .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+}
+
+.user-form .el-input,
+.user-form .el-select,
+.user-form .el-date-editor {
+  width: 100%;
+}
+
+.form-item-account .input-account {
+  background-color: #f8f9fa;
+}
+
+.avatar-uploader {
+  --el-uploader-picture-card-size: 100px;
+  border: 2px dashed var(--el-border-color);
+  border-radius: 12px;
+  transition: border-color 0.3s;
+}
+
+.avatar-uploader:hover {
+  border-color: var(--el-color-primary);
+}
+
+.avatar-uploader-icon {
+  font-size: 24px;
+  color: var(--el-text-color-secondary);
+}
+
+.date-picker.el-date-editor {
+  max-width: 300px;
+}
+
+@media (max-width: 768px) {
+  .user-form {
+    padding: 15px;
+  }
+
+  .el-col {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}
+
+.dialog-footer .el-button {
+  padding: 10px 24px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.dialog-footer .el-button--primary {
+  background: linear-gradient(135deg, #409eff, #3375b9);
+  border: none;
+}
+
+.dialog-footer .el-button--primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.feature-item {
+  margin-bottom: 4px;
+  padding-left: 18px;
+  position: relative;
+}
+
+.feature-item:before {
+  content: "✓";
+  color: #52c41a;
+  position: absolute;
+  left: 0;
+  top: 2px;
+}
+
+/* 新增支付弹窗样式 */
+.pay-dialog-content {
+  text-align: center;
+  padding: 10px;
+}
+
+.qr-code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.qr-code-img {
+  width: 220px;
+  height: 220px;
+  border: 1px solid #eee;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+}
+
+.order-info {
+  width: 100%;
+  text-align: left;
+  padding: 0 10px;
+}
+
+.order-item {
+  display: flex;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.order-label {
+  color: #606266;
+  width: 80px;
+  text-align: right;
+}
+
+.order-value {
+  flex: 1;
+  color: #303133;
+  font-weight: 500;
+}
+
+.price {
+  color: #f56c6c;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.order-id {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.payment-status {
+  margin-top: 15px;
+}
+
+.status-text {
+  font-size: 16px;
+  color: #606266;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.status-tip {
+  margin-top: 15px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.payment-success {
+  padding: 30px 0;
+}
+
+.success-text {
+  font-size: 22px;
+  color: #67c23a;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.success-tip {
+  color: #909399;
+  font-size: 14px;
 }
 </style>

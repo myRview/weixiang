@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: weixiang
+  profiles:
+    active: local
   datasource:
     url: jdbc:mysql://192.168.159.128:3306/Weixiang_Resource?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
@@ -16,6 +18,14 @@ spring:
       port: 6379
       password: root
       database: 2
+  rabbitmq:
+    host: 192.168.159.128
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: auto    #手动确认  manual
 # token过期时间，单位分钟
 token:
   expireTime: 60
@@ -41,3 +51,11 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+# 支付宝配置
+#aliPay:
+#  appId: ${appId}
+#  privateKey: ${privateKey}
+#  publicKey: ${publicKey}
+#  gatewayHost: ${gatewayHost}
+#  signType: ${signType}
+#  notifyUrl: ${notifyUrl}

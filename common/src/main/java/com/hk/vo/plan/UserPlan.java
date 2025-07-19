@@ -39,6 +39,7 @@ public class UserPlan implements Serializable {
     private Integer status;
 
     public static UserPlan convert(UserPlanEntity userPlanEntity) {
+        if (userPlanEntity == null) return null;
         UserPlan userPlan = new UserPlan();
         userPlan.setId(userPlanEntity.getId());
         userPlan.setUserId(userPlanEntity.getUserId());

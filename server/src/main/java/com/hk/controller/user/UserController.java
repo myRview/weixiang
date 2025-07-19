@@ -6,17 +6,11 @@ import com.hk.common.ErrorCode;
 import com.hk.common.ResponseResult;
 import com.hk.context.UserContext;
 import com.hk.exception.BusinessException;
-import com.hk.manager.TokenManager;
 import com.hk.param.UserSearchParam;
 import com.hk.service.user.UserService;
-import com.hk.utils.IPUtil;
-import com.hk.vo.user.UserAddVO;
-import com.hk.vo.user.UserCacheVo;
-import com.hk.vo.user.UserEditVO;
-import com.hk.vo.user.UserVO;
+import com.hk.vo.user.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +61,16 @@ public class UserController {
     @OperatorLog(value = "用户管理", desc = "修改用户")
     public ResponseResult updateUser(@RequestBody UserEditVO editVO) {
         return userService.updateUser(editVO) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
+    }
+
+    /**
+     * 修改用户
+     */
+    @PostMapping("/edit")
+    @Operation(summary = "编辑用户资料")
+//    @OperatorLog(value = "用户管理", desc = "编辑用户资料")
+    public ResponseResult editUser(@RequestBody EditUserExpandVO expandVO) {
+        return userService.editUser(expandVO) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
 
     /**

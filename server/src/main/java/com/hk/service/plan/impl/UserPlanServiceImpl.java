@@ -51,15 +51,14 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
         queryWrapper.eq(UserPlanEntity::getStatus, StatusEnum.NORMAL.getCode());
         queryWrapper.last(" limit 1");
         queryWrapper.select(UserPlanEntity::getId, UserPlanEntity::getUserId, UserPlanEntity::getPlanId,
-                UserPlanEntity::getOrderId, UserPlanEntity::getStartDate, UserPlanEntity::getEndDate);
+                UserPlanEntity::getOrderId, UserPlanEntity::getStartDate, UserPlanEntity::getEndDate, UserPlanEntity::getStatus);
         UserPlanEntity userPlanEntity = this.getOne(queryWrapper);
         return UserPlan.convert(userPlanEntity);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean saveUserPlan(OrderVO orderVO) {
-        OrderVO order = orderInfoService.getOrderById(orderVO.getId());
+    public boolean saveUserPlan(Long orderId) {
+        OrderVO order = orderInfoService.getOrderById(orderId);
         if (order == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "订单不存在");
         }
@@ -67,11 +66,6 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
         if (planVO == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "套餐不存在");
         }
-
-        OrderInfoEntity orderInfo = new OrderInfoEntity();
-        orderInfo.setId(order.getId());
-        orderInfo.setStatus(OrderStatusEnum.FINISHED.getCode());
-        orderInfoService.updateById(orderInfo);
 
         UserPlanEntity userPlanEntity = new UserPlanEntity();
         userPlanEntity.setUserId(order.getUserId());

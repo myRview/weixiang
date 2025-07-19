@@ -61,15 +61,6 @@ export const routes: Array<RouteRecordRaw> = [
         redirect: "/profile"
       },
       {
-        path: "data-analysis",
-        name: "DataAnalysis",
-        component: DataAnalysis,
-        meta: {
-          title: "数据分析",
-          icon: TrendCharts,
-        },
-      },
-      {
         path: "profile",
         name: "Profile",
         component: UserDetail,
@@ -79,12 +70,23 @@ export const routes: Array<RouteRecordRaw> = [
         },
       },
       {
+        path: "data-analysis",
+        name: "DataAnalysis",
+        component: DataAnalysis,
+        meta: {
+          title: "数据分析",
+          icon: TrendCharts,
+          requiresAdmin: true,
+        },
+      },
+      {
         path: "order-management",
         name: "OrderManagement",
         component: OrderManagement,
         meta: {
           title: "订单管理",
           icon: ShoppingCart,
+          requiresAdmin: true,
         },
       },
       {
@@ -94,6 +96,7 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "套餐管理",
           icon: Ticket,
+          requiresAdmin: true,
         },
       },
       {
@@ -103,6 +106,7 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "系统管理",
           icon: Setting,
+          requiresAdmin: true,
         },
         children: [
           {

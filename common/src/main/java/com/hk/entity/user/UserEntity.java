@@ -59,4 +59,10 @@ public class UserEntity implements Serializable {
     @Schema(description = "更新时间")
     private Date updateTime;
 
+    @Schema(description = "性别 0-女，1-男")
+    private Integer gender;
+
+    @Schema(description = "头像")
+    private String avatar;
+
 }

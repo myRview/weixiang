@@ -60,6 +60,21 @@ export async function selectOrderPage(
   });
 }
 
+/** 查询订单状态 GET /order/info/status */
+export async function getOrderStatusById(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getOrderStatusByIdParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultInteger>("/order/info/status", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 修改订单 POST /order/info/update */
 export async function updateOrder(
   body: API.OrderInfoEntityduixiang,

@@ -53,6 +53,21 @@ export async function getContinuousSignCount(options?: { [key: string]: any }) {
   });
 }
 
+/** 编辑用户资料 POST /user/edit */
+export async function editUser(
+  body: API.EditUserExpandVO,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/edit", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 获取当前用户 POST /user/info */
 export async function getLoginUser(options?: { [key: string]: any }) {
   return request<API.ResponseResultUserVO>("/user/info", {

@@ -80,7 +80,12 @@
     </div>
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
-        <el-table-column prop="id" label="订单ID" width="100"></el-table-column>
+        <el-table-column
+            prop="id"
+            label="订单ID"
+            width="100"
+            show-overflow-tooltip="true"
+        ></el-table-column>
         <el-table-column
           prop="orderNumber"
           label="订单编号"
@@ -94,21 +99,20 @@
           show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
+            prop="planName"
           label="套餐名称"
-          min-width="180"
           show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
-          prop="orderDate"
           label="下单日期"
-          width="120"
           show-overflow-tooltip="true"
-        ></el-table-column>
-        <el-table-column
-          label="订单金额"
-          width="120"
         >
-        <template #default="scope">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="订单金额" width="120">
+          <template #default="scope">
             ¥{{ scope.row.amount.toFixed(2) }}
           </template>
         </el-table-column>
@@ -119,12 +123,15 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180">
-          <template #default>
-            <el-button type="primary" size="small" style="margin-right: 5px"
-              >编辑</el-button
+        <el-table-column label="操作">
+          <template #default="scope">
+            <el-button
+                type="danger"
+                size="small"
+                @click="handleDelete(scope.row.id)"
+            >删除
+            </el-button
             >
-            <el-button type="danger" size="small">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -144,9 +151,15 @@
 </template>
 
 <script setup lang="ts">
-import { selectOrderPage } from "@/api/dingdanguanli";
+import {selectOrderPage, deleteOrder} from "@/api/dingdanguanli";
 import { ORDER_STATUS_MAP, ORDER_STATUS_OPTIONS } from "@/enums/order.enum";
+import {ElMessage, ElMessageBox} from "element-plus";
 import { ref, onMounted } from "vue";
+import dayjs from "dayjs";
+
+const formatDate = (date: string | number | Date) => {
+  return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+};
 
 // 搜索条件
 const searchOrderNo = ref("");
@@ -197,20 +210,47 @@ const handleSearch = () => {
 
 // 重置搜索
 const resetSearch = () => {
-  searchParam.value = {}
+  searchParam.value = {};
   handleSearch();
 };
 
 // 分页大小变化
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
-  handleSearch()
+  handleSearch();
 };
 
 // 当前页码变化
 const handleCurrentChange = (val: number) => {
   currentPage.value = val;
-  handleSearch()
+  handleSearch();
+};
+
+// 删除订单
+const handleDelete = async (id: number) => {
+  try {
+    const confirmResult = await ElMessageBox.confirm(
+        "确定要删除该订单吗？",
+        "警告",
+        {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+    );
+
+    if (confirmResult === "confirm") {
+      const res = await deleteOrder({id: id});
+      if (res.data.code === 200) {
+        ElMessage.success("订单删除成功");
+        handleSearch();
+      }
+    }
+  } catch (error) {
+    if (error === "cancel") return;
+    console.error("删除订单失败", error);
+    ElMessage.error("删除订单失败");
+  }
 };
 
 // 页面加载时初始化数据
@@ -279,11 +319,11 @@ onMounted(() => {
     justify-content: flex-start;
     margin-top: 15px;
   }
-  
+
   .search-form :deep(.el-form-item) {
     margin-bottom: 15px;
   }
-  
+
   .compact-date-picker :deep(.el-date-editor) {
     width: 100%;
   }

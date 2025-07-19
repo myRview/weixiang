@@ -3,6 +3,7 @@ package com.hk.controller.plan;
 import com.hk.common.ResponseResult;
 import com.hk.service.order.OrderInfoService;
 import com.hk.service.plan.UserPlanService;
+import com.hk.vo.order.OrderVO;
 import com.hk.vo.plan.PayPlanVo;
 import com.hk.vo.plan.UserPlan;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +32,7 @@ public class UserPlanController {
 
     @PostMapping("/pay/plan")
     @Operation(summary = "用户购买套餐")
-    public ResponseResult payPlan(@RequestBody PayPlanVo payPlanVo) {
+    public ResponseResult<OrderVO> payPlan(@RequestBody PayPlanVo payPlanVo) {
         return ResponseResult.success(orderInfoService.payPlan(payPlanVo));
     }
 

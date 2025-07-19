@@ -19,12 +19,14 @@
     "element-plus": "^2.9.7",
     "pinia": "^3.0.1",
     "pinia-plugin-persistedstate": "^4.2.0",
+    "qrcode": "^1.5.4",
     "vue": "^3.2.13",
     "vue-echarts": "^7.0.3",
     "vue-router": "^4.0.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.194",
+    "@types/qrcode": "^1.5.5",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "@umijs/openapi": "^1.13.0",

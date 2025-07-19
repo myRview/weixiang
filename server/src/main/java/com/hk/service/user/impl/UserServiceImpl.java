@@ -11,12 +11,14 @@ import com.hk.constants.BaseConstant;
 import com.hk.context.UserContext;
 import com.hk.entity.user.RoleEntity;
 import com.hk.entity.user.UserEntity;
+import com.hk.entity.user.UserInfoEntity;
 import com.hk.entity.user.UserRoleEntity;
 import com.hk.enums.StatusEnum;
 import com.hk.exception.BusinessException;
 import com.hk.mapper.user.UserMapper;
 import com.hk.param.UserSearchParam;
 import com.hk.service.user.RoleService;
+import com.hk.service.user.UserInfoService;
 import com.hk.service.user.UserRoleService;
 import com.hk.service.user.UserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -31,10 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -55,6 +54,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     private RoleService roleService;
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private UserInfoService userInfoService;
 
     @Override
     public Page<UserVO> getUserList(UserSearchParam userSearchParam) {
@@ -145,6 +146,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
             userVO.setRoleVO(roleVO);
             userVO.setRoleCode(roleVO.getRoleCode());
         }
+        UserExpandVo userExpandVo = userInfoService.getByUserId(id);
+        userVO.setExpandVo(userExpandVo);
         return userVO;
     }
 
@@ -299,6 +302,66 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         updateWrapper.eq(UserEntity::getId, userId);
         updateWrapper.set(UserEntity::getPassword, md5);
         return this.update(updateWrapper);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean editUser(EditUserExpandVO expandVO) {
+        Long userId = expandVO.getUserId();
+        String userName = expandVO.getUserName();
+        String phone = expandVO.getPhone();
+        String email = expandVO.getEmail();
+        Integer gender = expandVO.getGender();
+        String avatar = expandVO.getAvatar();
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(userId);
+        if (StringUtils.isNotBlank(userName)) {
+            userEntity.setUserName(userName);
+        }
+        if (StringUtils.isNotBlank(phone)) {
+            checkIphoneAndEmail(null, phone);
+            userEntity.setPhone(phone);
+        }
+        if (StringUtils.isNotBlank(email)) {
+            checkIphoneAndEmail(email, null);
+            userEntity.setEmail(email);
+        }
+        userEntity.setGender(gender);
+        if (StringUtils.isNotBlank(avatar)) {
+            userEntity.setAvatar(avatar);
+        }
+        this.updateById(userEntity);
+        UserExpandVo expandVo = userInfoService.getByUserId(userId);
+        Date birthday = expandVO.getBirthday();
+        String province = expandVO.getProvince();
+        String city = expandVO.getCity();
+        String district = expandVO.getDistrict();
+        String address = expandVO.getAddress();
+        String bio = expandVO.getBio();
+        UserInfoEntity userExpandEntity = new UserInfoEntity();
+        if (expandVo != null) {
+            userExpandEntity.setId(expandVo.getId());
+        }
+        if (birthday != null) {
+            userExpandEntity.setBirthday(birthday);
+        }
+        if (StringUtils.isNotBlank(province)) {
+            userExpandEntity.setProvince(province);
+        }
+        if (StringUtils.isNotBlank(city)) {
+            userExpandEntity.setCity(city);
+        }
+        if (StringUtils.isNotBlank(district)) {
+            userExpandEntity.setDistrict(district);
+        }
+        if (StringUtils.isNotBlank(address)) {
+            userExpandEntity.setAddress(address);
+        }
+        if (StringUtils.isNotBlank(bio)) {
+            userExpandEntity.setBio(bio);
+        }
+        userExpandEntity.setUserId(userId);
+        return userInfoService.saveOrUpdate(userExpandEntity);
     }
 
     private void buildRecord(LocalDate startDate, LocalDate endDate, String signInKey, Map<LocalDate, Boolean> signRecord) {

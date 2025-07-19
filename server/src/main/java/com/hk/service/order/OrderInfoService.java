@@ -22,4 +22,8 @@ public interface OrderInfoService extends IService<OrderInfoEntity> {
     Page<OrderVO> selectOrderPage(OrderSearchParam searchParam);
 
     OrderVO payPlan(PayPlanVo payPlanVo);
+
+    boolean updateStatus(Long orderId, Integer status);
+
+    Integer getOrderStatusById(Long id);
 }

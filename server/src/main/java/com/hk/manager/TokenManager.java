@@ -81,6 +81,7 @@ public class TokenManager {
         userCacheVo.setLoginTime(time);
         userCacheVo.setExpireTime(time + expireTime * MILLIS_MINUTE);
         redisService.putHash(getHashKey(), userId.toString(), userCacheVo);
+        redisService.expire(getHashKey(), expireTime, TimeUnit.MINUTES);
     }
 
     private static String getKey(Long userId) {

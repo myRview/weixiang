@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.entity.user.UserEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hk.param.UserSearchParam;
+import com.hk.vo.user.EditUserExpandVO;
 import com.hk.vo.user.UserAddVO;
 import com.hk.vo.user.UserEditVO;
 import com.hk.vo.user.UserVO;
@@ -45,4 +46,6 @@ public interface UserService extends IService<UserEntity> {
     int getContinuousSignCount();
 
     Map<LocalDate, Boolean> getSignRecord(Integer year);
+
+    boolean editUser(EditUserExpandVO expandVO);
 }

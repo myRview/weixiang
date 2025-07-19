@@ -1,6 +1,6 @@
 <template>
   <el-header class="app-header">
-    <div class="logo">xxxxx系统管理平台</div>
+    <div class="logo">维享平台</div>
     <div class="user-info">
       <el-icon class="notification-icon">
         <BellFilled />
@@ -68,7 +68,7 @@ import { ref, onMounted } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import { logout } from "@/api/loginController";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
-import { updatePassword } from "@/api/yonghuguanli";
+import {getUserById, updatePassword} from "@/api/yonghuguanli";
 
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
@@ -162,11 +162,20 @@ const handleClose = (done: () => void) => {
   passwordFormRef.value?.resetFields();
   done();
 };
+const getUserInfo = async () => {
+  try {
+    const res = await getUserById({id: loginUserStore.loginUser.id});
+    user.value = res.data.data;
+    loginUserStore.setLoginUser(res.data.data);
+  } catch (error) {
+    console.error("获取用户信息失败", error);
+  }
+};
 
 // 组件挂载时获取最新用户信息
 onMounted(async () => {
   await loginUserStore.fetchLoginUser();
-  user.value = loginUserStore.loginUser;
+  await getUserInfo();
 });
 </script>
 

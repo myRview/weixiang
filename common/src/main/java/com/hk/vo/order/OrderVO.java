@@ -47,6 +47,15 @@ public class OrderVO {
     @Schema(description = "套餐信息")
     private MemberPlanVO planVO;
 
+    @Schema(description = "用户名")
+    private String userName;
+
+    @Schema(description = "套餐名")
+    private String planName;
+
+    @Schema(description = "支付二维码")
+    private String qrCodeUrl;
+
     public static OrderVO converter(OrderInfoEntity orderInfo) {
         OrderVO orderVO = new OrderVO();
         orderVO.setId(orderInfo.getId());
@@ -56,6 +65,8 @@ public class OrderVO {
         orderVO.setOrderDate(orderInfo.getOrderDate());
         orderVO.setAmount(orderInfo.getAmount());
         orderVO.setStatus(orderInfo.getStatus());
+        orderVO.setPlanName(orderInfo.getPlanName());
+        orderVO.setUserName(orderInfo.getUserName());
         orderVO.setCreateTime(orderInfo.getCreateTime());
         return orderVO;
     }

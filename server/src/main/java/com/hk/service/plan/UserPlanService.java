@@ -20,5 +20,5 @@ public interface UserPlanService extends IService<UserPlanEntity> {
     UserPlan getPayPlan(Long userId);
 
 
-    boolean saveUserPlan(OrderVO orderVO);
+    boolean saveUserPlan(Long orderId);
 }

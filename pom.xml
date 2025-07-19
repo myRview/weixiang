@@ -36,6 +36,7 @@
         <apache-version>3.14.0</apache-version>
         <geoip2-version>3.0.1</geoip2-version>
         <alipay-version>4.40.298.ALL</alipay-version>
+        <zxing-version>3.5.3</zxing-version>
         <UserAgentUtils-version>1.21</UserAgentUtils-version>
     </properties>
     <dependencyManagement>
@@ -147,7 +148,22 @@
                 <artifactId>alipay-sdk-java</artifactId>
                 <version>${alipay-version}</version>
             </dependency>
-
+            <!-- https://mvnrepository.com/artifact/com.google.zxing/core -->
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>core</artifactId>
+                <version>${zxing-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>javase</artifactId>
+                <version>${zxing-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-amqp</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

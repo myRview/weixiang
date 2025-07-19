@@ -23,6 +23,33 @@ declare namespace API {
     id: number;
   };
 
+  type EditUserExpandVO = {
+    /** 用户id */
+    userId?: number;
+    /** 用户名 */
+    userName?: string;
+    /** 手机号 */
+    phone?: string;
+    /** 邮箱 */
+    email?: string;
+    /** 性别 0-女，1-男 */
+    gender?: number;
+    /** 头像 */
+    avatar?: string;
+    /** 生日 */
+    birthday?: string;
+    /** 省 */
+    province?: string;
+    /** 市 */
+    city?: string;
+    /** 区/县 */
+    district?: string;
+    /** 详细地址 */
+    address?: string;
+    /** 个人简介 */
+    bio?: string;
+  };
+
   type getLoginLogByIdParams = {
     id: number;
   };
@@ -32,6 +59,10 @@ declare namespace API {
   };
 
   type getOrderByIdParams = {
+    id: number;
+  };
+
+  type getOrderStatusByIdParams = {
     id: number;
   };
 
@@ -57,24 +88,24 @@ declare namespace API {
 
   type IPageLoginLogVO = {
     size?: number;
-    records?: LoginLogVO[];
     total?: number;
+    records?: LoginLogVO[];
     current?: number;
     pages?: number;
   };
 
   type IPageOperationLogVO = {
     size?: number;
-    records?: OperationLogVO[];
     total?: number;
+    records?: OperationLogVO[];
     current?: number;
     pages?: number;
   };
 
   type IPagePermissionVO = {
     size?: number;
-    records?: PermissionVO[];
     total?: number;
+    records?: PermissionVO[];
     current?: number;
     pages?: number;
   };
@@ -163,6 +194,10 @@ declare namespace API {
     createTime?: string;
     /** 更新时间 */
     updateTime?: string;
+    /** 用户名 */
+    userName?: string;
+    /** 套餐名 */
+    planName?: string;
   };
 
   type OrderItem = {
@@ -202,6 +237,12 @@ declare namespace API {
     userVO?: UserVO;
     /** 套餐信息 */
     planVO?: MemberPlanVO;
+    /** 用户名 */
+    userName?: string;
+    /** 套餐名 */
+    planName?: string;
+    /** 支付二维码 */
+    qrCodeUrl?: string;
   };
 
   type PageMemberPlanVO = {
@@ -284,6 +325,12 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: any;
+  };
+
+  type ResponseResultInteger = {
+    code?: number;
+    message?: string;
+    data?: number;
   };
 
   type ResponseResultIPageLoginLogVO = {
@@ -445,6 +492,25 @@ declare namespace API {
     phone?: string;
   };
 
+  type UserExpandVo = {
+    /** 主键id */
+    id?: number;
+    /** 用户id */
+    userId?: number;
+    /** 生日 */
+    birthday?: string;
+    /** 省 */
+    province?: string;
+    /** 市 */
+    city?: string;
+    /** 区/县 */
+    district?: string;
+    /** 详细地址 */
+    address?: string;
+    /** 个人简介 */
+    bio?: string;
+  };
+
   type UserLoginVO = {
     /** 账号 */
     account?: string;
@@ -521,5 +587,11 @@ declare namespace API {
     roleCode?: string;
     /** 角色 */
     roleVO?: RoleVO;
+    /** 性别 0-女，1-男 */
+    gender?: number;
+    /** 头像 */
+    avatar?: string;
+    /** 扩展信息 */
+    expandVo?: UserExpandVo;
   };
 }

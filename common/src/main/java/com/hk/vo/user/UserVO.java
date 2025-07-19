@@ -1,7 +1,5 @@
 package com.hk.vo.user;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -41,4 +39,14 @@ public class UserVO implements Serializable {
 
     @Schema(description = "角色")
     private RoleVO roleVO;
+
+    @Schema(description = "性别 0-女，1-男")
+    private Integer gender;
+
+    @Schema(description = "头像")
+    private String avatar;
+
+    @Schema(description = "扩展信息")
+    private UserExpandVo expandVo;
+
 }

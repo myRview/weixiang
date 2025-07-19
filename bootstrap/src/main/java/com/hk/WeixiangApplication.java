@@ -1,6 +1,7 @@
 package com.hk;
 
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @MapperScan("com.hk.mapper")
+@EnableRabbit
 public class WeixiangApplication {
 
     public static void main(String[] args) {
