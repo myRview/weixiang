@@ -1,12 +1,12 @@
 import { RouteRecordRaw } from "vue-router";
 import Home from "../views/Home.vue";
-import OrderManagement from "../views/OrderManagement.vue";
-import DataAnalysis from "../views/DataAnalysis.vue";
-import systemManagement from "../views/SystemManagementView.vue";
+import OrderManagement from "../views/system/OrderManagement.vue";
+import DataAnalysis from "../views/system/DataAnalysis.vue";
+import systemManagement from "../views/system/SystemManagementView.vue";
 import LoginLog from "../views/system/LoginLog.vue";
 import OperationLog from "../views/system/OperationLog.vue";
 import UserManagement from "../views/system/UserManagement.vue";
-import PlanManagement from "@/views/PlanManagement.vue";
+import PlanManagement from "@/views/system/PlanManagement.vue";
 import RoleManagement from "@/views/system/RoleManagement.vue";
 import PermissionManagement from "@/views/system/PermissionManagement.vue";
 import UserDetail from "../views/UserDetail.vue";

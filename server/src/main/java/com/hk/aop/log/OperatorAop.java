@@ -2,7 +2,6 @@ package com.hk.aop.log;
 
 import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.context.UserContext;
-import com.hk.entity.log.OperationLogEntity;
 import com.hk.enums.StatusEnum;
 import com.hk.service.log.OperationLogService;
 import com.hk.utils.IPUtil;

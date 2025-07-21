@@ -71,7 +71,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         queryWrapper.eq(searchParam.getUserId() != null, OrderInfoEntity::getUserId, searchParam.getUserId());
         queryWrapper.eq(searchParam.getStatus() != null, OrderInfoEntity::getStatus, searchParam.getStatus());
         queryWrapper.like(StringUtils.isNotBlank(searchParam.getOrderNo()), OrderInfoEntity::getOrderNumber, searchParam.getOrderNo());
-
+        queryWrapper.orderByDesc(OrderInfoEntity::getId);
         Page<OrderInfoEntity> page = this.page(new Page<>(searchParam.getPageNum(), searchParam.getPageSize()), queryWrapper);
         Page<OrderVO> pageResult = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         if (CollectionUtil.isNotEmpty(page.getRecords())) {
@@ -82,7 +82,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     @Override
     public OrderVO payPlan(PayPlanVo payPlanVo) {
-        Long userId = payPlanVo.getUserId();
+
+        OrderInfoEntity orderInfoEntity = new OrderInfoEntity();Long userId = payPlanVo.getUserId();
         Long planId = payPlanVo.getPlanId();
         UserVO userVO = userService.getInfo(userId);
         if (userVO == null) {
@@ -92,7 +93,6 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         if (planVO == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "套餐不存在");
         }
-        OrderInfoEntity orderInfoEntity = new OrderInfoEntity();
         String orderNumber = UUID.randomUUID().toString();
         orderInfoEntity.setOrderNumber(orderNumber);
         orderInfoEntity.setOrderDate(new Date());

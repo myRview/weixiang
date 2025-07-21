@@ -28,7 +28,7 @@ public class TokenManager {
     private static final long MILLIS_MINUTE = 60 * 1000L;
     private static final long MILLIS_MINUTE_TEN = 60 * 60 * 1000L;
 
-    @Value("${token.expireTime}")
+    @Value("${weixiang.token.expireTime}")
     private int expireTime = 30;
     @Autowired
     private RedisService redisService;

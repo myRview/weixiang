@@ -1,11 +1,7 @@
 package com.hk.service.plan.impl;
 
-import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hk.common.ErrorCode;
-import com.hk.common.ResponseResult;
-import com.hk.context.UserContext;
-import com.hk.entity.order.OrderInfoEntity;
 import com.hk.entity.plan.UserPlanEntity;
 import com.hk.enums.OrderStatusEnum;
 import com.hk.enums.StatusEnum;
@@ -15,18 +11,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.service.order.OrderInfoService;
 import com.hk.service.plan.MemberPlanService;
 import com.hk.service.plan.UserPlanService;
-import com.hk.service.user.UserService;
 import com.hk.vo.order.OrderVO;
 import com.hk.vo.plan.MemberPlanVO;
-import com.hk.vo.plan.PayPlanVo;
 import com.hk.vo.plan.UserPlan;
-import com.hk.vo.user.UserVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 /**
  * <p>
@@ -57,6 +49,7 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean saveUserPlan(Long orderId) {
         OrderVO order = orderInfoService.getOrderById(orderId);
         if (order == null) {
@@ -67,6 +60,7 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "套餐不存在");
         }
 
+        orderInfoService.updateStatus(orderId, OrderStatusEnum.FINISHED.getCode());
         UserPlanEntity userPlanEntity = new UserPlanEntity();
         userPlanEntity.setUserId(order.getUserId());
         userPlanEntity.setPlanId(order.getPlanId());

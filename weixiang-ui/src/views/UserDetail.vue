@@ -4,7 +4,11 @@
     <div class="user-card">
       <div class="avatar-section">
         <div class="avatar-wrapper">
-          <img :src="defaultAvatar" alt="用户头像" class="avatar" />
+          <img
+            :src="user?.avatar || defaultAvatar"
+            alt="用户头像"
+            class="avatar"
+          />
           <div class="avatar-badge" v-show="isVip">VIP</div>
         </div>
         <div class="follow-stats">
@@ -198,26 +202,23 @@
     <el-dialog
       v-model="editDialogVisible"
       title="编辑资料"
-      width="580px"
       class="edit-dialog"
       :close-on-click-modal="false"
     >
-      <el-form :model="userInfo" label-width="100px" class="user-form">
+      <el-form :model="userInfo" class="user-form" style="padding: 0 20px">
         <el-form-item label="账号" class="form-item-account">
           <el-input v-model="userInfo.account" disabled class="input-account" />
         </el-form-item>
         <el-form-item label="头像">
-          <el-upload
-            class="avatar-uploader"
-            :action="uploadUrl"
-            :show-file-list="false"
-            :on-success="handleAvatarSuccess"
-          >
-            <img v-if="userInfo.avatar" :src="userInfo.avatar" class="avatar" />
-            <el-icon v-else class="avatar-uploader-icon">
-              <Plus />
-            </el-icon>
-          </el-upload>
+          <FileUpload
+            class="avatar-upload-small"
+            style="margin-bottom: 15px"
+            fileType="image"
+            :autoUpload="true"
+            :clearAfterUpload="false"
+            @upload-success="handleAvatarSuccess"
+          />
+          <img v-if="userInfo.avatar" :src="userInfo.avatar" class="avatar" />
         </el-form-item>
         <el-form-item label="用户名">
           <el-input v-model="userInfo.userName" placeholder="请输入用户名" />
@@ -229,7 +230,7 @@
           <el-input v-model="userInfo.email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="10">
             <el-form-item label="性别">
               <el-select v-model="userInfo.gender" placeholder="请选择">
                 <el-option label="男" value="male" />
@@ -237,7 +238,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="14">
             <el-form-item label="生日">
               <el-date-picker
                 v-model="userInfo.birthday"
@@ -249,20 +250,24 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="地址" class="form-item-address">
+        <el-form-item
+          label="地址"
+          class="form-item-address"
+          style="margin-top: 15px"
+        >
           <el-input v-model="userInfo.address" placeholder="请输入详细地址" />
         </el-form-item>
         <el-form-item label="简介">
           <el-input
             v-model="userInfo.bio"
             type="textarea"
-            :rows="3"
+            :rows="4"
             placeholder="介绍一下自己吧～"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <span class="dialog-footer" style="text-align: center; width: 100%">
           <el-button @click="editDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitEdit">确认修改</el-button>
         </span>
@@ -297,13 +302,11 @@ import { selectPlanList } from "@/api/huiyuantaocanguanli";
 import { getPayPlan, payPlan } from "@/api/yonghutaocanbiaoguanli";
 import QRCode from "qrcode";
 import { getOrderById, getOrderStatusById } from "@/api/dingdanguanli";
+import FileUpload from "@/components/FileUpload.vue"; // 导入自定义文件上传组件
 
 // 默认头像
 const defaultAvatar =
   "http://gips2.baidu.com/it/u=195724436,3554684702&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=960";
-
-// 上传接口地址
-const uploadUrl = "实际的API地址"; // 请替换为真实上传接口
 
 const user = ref<API.UserVO>();
 const calendarRef = ref<HTMLDivElement | null>(null);
@@ -371,8 +374,10 @@ const handleEditProfile = () => {
   editDialogVisible.value = true;
 };
 
-const handleAvatarSuccess = (response: any) => {
-  userInfo.value.avatar = response.data.url;
+const handleAvatarSuccess = (data: any) => {
+  // 更新头像URL
+  console.log(data);
+  userInfo.value.avatar = data;
   ElMessage.success("头像上传成功");
 };
 
@@ -785,6 +790,13 @@ onMounted(async () => {
   await getVipInfo();
 });
 </script>
+
+<style scoped>
+.avatar-upload-small {
+  max-width: 180px;
+  width: 100%;
+}
+</style>
 
 <style scoped>
 .plan-table-container {
@@ -1223,16 +1235,6 @@ onMounted(async () => {
   }
 }
 
-.edit-dialog {
-  --el-dialog-border-radius: 12px;
-  --el-dialog-box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-}
-
-.user-form {
-  padding: 20px 30px;
-  transition: all 0.3s ease;
-}
-
 .user-form .el-form-item {
   margin-bottom: 22px;
   --el-form-label-font-size: 14px;
@@ -1276,17 +1278,6 @@ onMounted(async () => {
 
 .date-picker.el-date-editor {
   max-width: 300px;
-}
-
-@media (max-width: 768px) {
-  .user-form {
-    padding: 15px;
-  }
-
-  .el-col {
-    width: 100%;
-    margin-bottom: 15px;
-  }
 }
 
 .dialog-footer .el-button {

@@ -88,24 +88,24 @@ declare namespace API {
 
   type IPageLoginLogVO = {
     size?: number;
-    total?: number;
     records?: LoginLogVO[];
+    total?: number;
     current?: number;
     pages?: number;
   };
 
   type IPageOperationLogVO = {
     size?: number;
-    total?: number;
     records?: OperationLogVO[];
+    total?: number;
     current?: number;
     pages?: number;
   };
 
   type IPagePermissionVO = {
     size?: number;
-    total?: number;
     records?: PermissionVO[];
+    total?: number;
     current?: number;
     pages?: number;
   };
@@ -460,6 +460,10 @@ declare namespace API {
 
   type updatePasswordParams = {
     password: string;
+  };
+
+  type uploadParams = {
+    category: string;
   };
 
   type UserAddVO = {

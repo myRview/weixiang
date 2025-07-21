@@ -63,7 +63,7 @@ public class MessageConsumer {
                 break;
             case "ORDER_COMPLETE":
                 // 处理订单完成消息
-                orderInfoService.updateStatus(dataId, OrderStatusEnum.FINISHED.getCode());
+//                orderInfoService.updateStatus(dataId, OrderStatusEnum.FINISHED.getCode());
                 userPlanService.saveUserPlan(dataId);
                 break;
             default:

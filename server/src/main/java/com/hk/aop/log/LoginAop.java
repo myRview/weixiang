@@ -7,7 +7,6 @@ import com.hk.service.log.LoginLogService;
 import com.hk.utils.IPUtil;
 import com.hk.utils.RequestUtils;
 import com.hk.vo.log.LoginLogVO;
-import com.hk.vo.user.UserCacheVo;
 import com.hk.vo.user.UserLoginVO;
 import com.hk.vo.user.UserRegisterVO;
 import jakarta.servlet.http.HttpServletRequest;
