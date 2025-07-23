@@ -10,6 +10,7 @@ import com.hk.vo.log.LoginLogVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -31,19 +32,21 @@ public class LoginLogController {
     /**
      * 删除登录日志表
      */
-    @DeleteMapping("/{id}")
+    @GetMapping("/delete")
     @Operation(summary = "删除登录日志表")
     @OperatorLog(value = "登录日志", desc = "删除登录日志表")
-    public ResponseResult deleteLoginLog(@PathVariable Long id) {
+    @PreAuthorize("@ss.hasPermission('/login/log/delete')")
+    public ResponseResult deleteLoginLog(@RequestParam Long id) {
         return loginLogService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
     /**
      * 查询详情
      */
-    @GetMapping("/{id}")
-    @Operation(summary = "查询详情")
-    @OperatorLog(value = "登录日志", desc = "查询详情")
-    public ResponseResult<LoginLogVO> getLoginLogById(@PathVariable Long id) {
+    @GetMapping("/get")
+    @Operation(summary = "查询登录日志详情")
+    @PreAuthorize("@ss.hasPermission('/login/log/get')")
+//    @OperatorLog(value = "登录日志", desc = "查询详情")
+    public ResponseResult<LoginLogVO> getLoginLogById(@RequestParam Long id) {
         return ResponseResult.success(loginLogService.getInfoById(id));
     }
 
@@ -52,7 +55,8 @@ public class LoginLogController {
      */
     @PostMapping("/page")
     @Operation(summary = "查询列表")
-    @OperatorLog(value = "登录日志", desc = "查询列表")
+    @PreAuthorize("@ss.hasPermission('/login/log/page')")
+//    @OperatorLog(value = "登录日志", desc = "查询列表")
     public ResponseResult<IPage<LoginLogVO>> selectLoginPage(@RequestBody LogSearchParam searchParam) {
         return ResponseResult.success(loginLogService.selectLoginPage(searchParam));
     }

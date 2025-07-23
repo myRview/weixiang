@@ -5,7 +5,10 @@ import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hk.cache.RedisService;
 import com.hk.common.ErrorCode;
+import com.hk.constants.BaseConstant;
+import com.hk.context.UserContext;
 import com.hk.entity.order.OrderInfoEntity;
 import com.hk.enums.MessageTypeEnum;
 import com.hk.enums.OrderStatusEnum;
@@ -20,15 +23,21 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.service.user.UserService;
 import com.hk.vo.message.MessageVO;
 import com.hk.vo.order.AliPayVO;
+import com.hk.vo.order.OrderStatisticsVO;
 import com.hk.vo.order.OrderVO;
 import com.hk.vo.plan.MemberPlanVO;
 import com.hk.vo.plan.PayPlanVo;
+import com.hk.vo.plan.PlanStatisticsVO;
 import com.hk.vo.user.UserVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +59,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     private MessageProducer messageProducer;
     @Autowired
     private AlipayManager alipayManager;
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public OrderVO getOrderById(Long id) {
@@ -83,7 +94,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     @Override
     public OrderVO payPlan(PayPlanVo payPlanVo) {
 
-        OrderInfoEntity orderInfoEntity = new OrderInfoEntity();Long userId = payPlanVo.getUserId();
+        Long userId = payPlanVo.getUserId();
         Long planId = payPlanVo.getPlanId();
         UserVO userVO = userService.getInfo(userId);
         if (userVO == null) {
@@ -93,6 +104,11 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         if (planVO == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "套餐不存在");
         }
+        OrderVO vo = (OrderVO) redisService.getHash(getHashKey(), String.valueOf(userId));
+        if (vo != null) {
+            return vo;
+        }
+        OrderInfoEntity orderInfoEntity = new OrderInfoEntity();
         String orderNumber = UUID.randomUUID().toString();
         orderInfoEntity.setOrderNumber(orderNumber);
         orderInfoEntity.setOrderDate(new Date());
@@ -104,8 +120,6 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         orderInfoEntity.setAmount(planVO.getPrice());
         boolean save = this.save(orderInfoEntity);
         if (save) {
-            MessageVO messageVO = new MessageVO(MessageTypeEnum.ORDER_CREATE.getCode(), orderInfoEntity.getId());
-            messageProducer.sendDelayedMessage(messageVO, 15 * 60 * 1000);
             OrderVO orderVO = OrderVO.converter(orderInfoEntity);
             AliPayVO payVO = new AliPayVO();
             payVO.setOrderNo(orderNumber);
@@ -115,15 +129,21 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             payVO.setSubject(subject);
             String qrCodeUrl = alipayManager.generateQrCodeImage(payVO);
             orderVO.setQrCodeUrl(qrCodeUrl);
+            redisService.putHash(getHashKey(), String.valueOf(userId), orderVO);
+            redisService.expire(getHashKey(), 15 * 60);
+            MessageVO messageVO = new MessageVO(MessageTypeEnum.ORDER_CREATE.getCode(), orderInfoEntity.getId());
+            messageProducer.sendDelayedMessage(messageVO, 15 * 60 * 1000);
             return orderVO;
         }
         return null;
     }
 
+
     @Override
     public boolean updateStatus(Long orderId, Integer status) {
         OrderVO order = getOrderById(orderId);
         if (order == null || order.getStatus().equals(OrderStatusEnum.FINISHED.getCode())) return false;
+        redisService.deleteHash(getHashKey(), String.valueOf(order.getUserId()));
         LambdaUpdateWrapper<OrderInfoEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(OrderInfoEntity::getId, orderId);
         updateWrapper.set(OrderInfoEntity::getStatus, status);
@@ -132,10 +152,65 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     @Override
     public Integer getOrderStatusById(Long id) {
+        OrderVO vo = (OrderVO) redisService.getHash(getHashKey(), String.valueOf(UserContext.getCurrentUserId()));
+        if (vo != null) {
+            return vo.getStatus();
+        }
         OrderInfoEntity orderInfo = this.getById(id);
-        if (orderInfo==null) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR,"订单不存在");
+        if (orderInfo == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "订单不存在");
         }
         return orderInfo.getStatus();
+    }
+
+    @Override
+    public List<OrderStatisticsVO> getCount(String date) {
+        List<OrderStatisticsVO> statisticsVOList = new ArrayList<>(3);
+        //已支付
+        OrderStatisticsVO payVO = new OrderStatisticsVO(0, OrderStatusEnum.FINISHED.getCode(), BigDecimal.ZERO);
+        //待支付
+        OrderStatisticsVO waitPayVO = new OrderStatisticsVO(0, OrderStatusEnum.WAIT_PAY.getCode(), BigDecimal.ZERO);
+        //已取消
+        OrderStatisticsVO cancelVO = new OrderStatisticsVO(0, OrderStatusEnum.CANCEL.getCode(), BigDecimal.ZERO);
+        statisticsVOList.add(payVO);
+        statisticsVOList.add(waitPayVO);
+        statisticsVOList.add(cancelVO);
+        //查询订单时间是date的所有订单
+        LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.isNotBlank(date)) queryWrapper.eq(OrderInfoEntity::getOrderDate, date);
+        queryWrapper.select(OrderInfoEntity::getStatus, OrderInfoEntity::getAmount);
+        List<OrderInfoEntity> orderList = this.list(queryWrapper);
+        if (CollectionUtil.isNotEmpty(orderList)) {
+            Map<Integer, List<OrderInfoEntity>> map = orderList.parallelStream().collect(Collectors.groupingBy(OrderInfoEntity::getStatus));
+            for (OrderStatisticsVO statisticsVO : statisticsVOList) {
+                List<OrderInfoEntity> list = map.get(statisticsVO.getStatus());
+                if (CollectionUtil.isEmpty(list)) continue;
+                statisticsVO.setTotal(list.size());
+                statisticsVO.setTotalAmount(list.stream().map(OrderInfoEntity::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
+            }
+        }
+        return statisticsVOList;
+    }
+
+    @Override
+    public List<PlanStatisticsVO> planCount(String date) {
+        List<PlanStatisticsVO> planStatisticsVOS = new ArrayList<>();
+        LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.isNotBlank(date)) queryWrapper.eq(OrderInfoEntity::getOrderDate, date);
+        queryWrapper.eq(OrderInfoEntity::getStatus, OrderStatusEnum.FINISHED.getCode());
+        queryWrapper.select(OrderInfoEntity::getPlanName, OrderInfoEntity::getId);
+        List<OrderInfoEntity> orderList = this.list(queryWrapper);
+        if (CollectionUtil.isNotEmpty(orderList)) {
+            Map<String, List<OrderInfoEntity>> map = orderList.parallelStream().collect(Collectors.groupingBy(OrderInfoEntity::getPlanName));
+            for (Map.Entry<String, List<OrderInfoEntity>> entry : map.entrySet()) {
+                PlanStatisticsVO planStatisticsVO = new PlanStatisticsVO(entry.getKey(), entry.getValue().size());
+                planStatisticsVOS.add(planStatisticsVO);
+            }
+        }
+        return planStatisticsVOS;
+    }
+
+    private String getHashKey() {
+        return String.format("%s:order", BaseConstant.CACHE_PREFIX);
     }
 }

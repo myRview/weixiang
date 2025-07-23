@@ -2,34 +2,6 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** 查询用户详情 GET /user/${param0} */
-export async function getUserById(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserByIdParams,
-  options?: { [key: string]: any }
-) {
-  const { id: param0, ...queryParams } = params;
-  return request<API.ResponseResultUserVO>(`/user/${param0}`, {
-    method: "GET",
-    params: { ...queryParams },
-    ...(options || {}),
-  });
-}
-
-/** 删除用户 DELETE /user/${param0} */
-export async function deleteUser(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.deleteUserParams,
-  options?: { [key: string]: any }
-) {
-  const { id: param0, ...queryParams } = params;
-  return request<API.ResponseResult>(`/user/${param0}`, {
-    method: "DELETE",
-    params: { ...queryParams },
-    ...(options || {}),
-  });
-}
-
 /** 添加用户 POST /user/add */
 export async function addUser(
   body: API.UserAddVO,
@@ -53,6 +25,21 @@ export async function getContinuousSignCount(options?: { [key: string]: any }) {
   });
 }
 
+/** 删除用户 GET /user/delete */
+export async function deleteUser(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.deleteUserParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/delete", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 编辑用户资料 POST /user/edit */
 export async function editUser(
   body: API.EditUserExpandVO,
@@ -64,6 +51,21 @@ export async function editUser(
       "Content-Type": "application/json",
     },
     data: body,
+    ...(options || {}),
+  });
+}
+
+/** 查询用户详情 GET /user/get/info */
+export async function getUserById(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserByIdParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultUserVO>("/user/get/info", {
+    method: "GET",
+    params: {
+      ...params,
+    },
     ...(options || {}),
   });
 }

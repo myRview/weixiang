@@ -55,30 +55,32 @@ export async function savePermission(
   });
 }
 
-/** 查询角色权限详情 GET /role/${param0} */
-export async function getRolePermission(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getRolePermissionParams,
-  options?: { [key: string]: any }
-) {
-  const { id: param0, ...queryParams } = params;
-  return request<API.ResponseResultListPermissionVO>(`/role/${param0}`, {
-    method: "GET",
-    params: { ...queryParams },
-    ...(options || {}),
-  });
-}
-
-/** 删除角色 DELETE /role/${param0} */
+/** 删除角色 GET /role/delete */
 export async function deleteRole(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.deleteRoleParams,
   options?: { [key: string]: any }
 ) {
-  const { id: param0, ...queryParams } = params;
-  return request<API.ResponseResult>(`/role/${param0}`, {
-    method: "DELETE",
-    params: { ...queryParams },
+  return request<API.ResponseResult>("/role/delete", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 查询角色权限详情 GET /role/get */
+export async function getRolePermission(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getRolePermissionParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultListPermissionVO>("/role/get", {
+    method: "GET",
+    params: {
+      ...params,
+    },
     ...(options || {}),
   });
 }

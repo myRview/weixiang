@@ -13,6 +13,7 @@ import com.hk.vo.user.RoleVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,27 +39,31 @@ public class RolePermissionController {
     @PostMapping("/role/save")
     @Operation(summary = "添加角色")
     @OperatorLog(value = "角色权限管理", desc = "添加角色")
+    @PreAuthorize("@ss.hasPermission('/role/save')")
     public ResponseResult saveRole(@RequestBody RoleVO roleVO) {
         return roleService.saveRole(roleVO) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
 
-    @DeleteMapping("/role/{id}")
+    @GetMapping("/role/delete")
     @Operation(summary = "删除角色")
     @OperatorLog(value = "角色权限管理", desc = "删除角色")
-    public ResponseResult deleteRole(@PathVariable Long id) {
+    @PreAuthorize("@ss.hasPermission('/role/delete')")
+    public ResponseResult deleteRole(@RequestParam Long id) {
         return roleService.deleteRole(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
-    @GetMapping("/role/{id}")
+    @GetMapping("/role/get")
     @Operation(summary = "查询角色权限详情")
-    @OperatorLog(value = "角色权限管理", desc = "查询角色权限详情")
-    public ResponseResult<List<PermissionVO>> getRolePermission(@PathVariable Long id) {
+    @PreAuthorize("@ss.hasPermission('/role/get')")
+//    @OperatorLog(value = "角色权限管理", desc = "查询角色权限详情")
+    public ResponseResult<List<PermissionVO>> getRolePermission(@RequestParam Long id) {
         return ResponseResult.success(roleService.getRolePermission(id));
     }
 
     @GetMapping("/role/list")
     @Operation(summary = "查询角色列表")
-    @OperatorLog(value = "角色权限管理", desc = "查询角色列表")
+    @PreAuthorize("@ss.hasPermission('/role/list')")
+//    @OperatorLog(value = "角色权限管理", desc = "查询角色列表")
     public ResponseResult<List<RoleVO>> selectAllRole() {
         return ResponseResult.success(roleService.getAll());
     }
@@ -67,6 +72,7 @@ public class RolePermissionController {
     @PostMapping("/permission/save")
     @Operation(summary = "添加权限")
     @OperatorLog(value = "角色权限管理", desc = "添加权限")
+    @PreAuthorize("@ss.hasPermission('/permission/save')")
     public ResponseResult savePermission(@RequestBody PermissionVO permissionVO) {
         PermissionEntity permission = new PermissionEntity();
         permission.setPermissionName(permissionVO.getPermissionName());
@@ -77,20 +83,23 @@ public class RolePermissionController {
     @PostMapping("/permission/delete")
     @Operation(summary = "删除权限")
     @OperatorLog(value = "角色权限管理", desc = "删除权限")
+    @PreAuthorize("@ss.hasPermission('/permission/delete')")
     public ResponseResult deletePermission(@RequestBody List<Long> permissionIds) {
         return permissionService.removeBatchByIds(permissionIds) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
     @PostMapping("/permission/page")
     @Operation(summary = "权限分页列表")
-    @OperatorLog(value = "角色权限管理", desc = "权限分页列表")
+    @PreAuthorize("@ss.hasPermission('/permission/page')")
+//    @OperatorLog(value = "角色权限管理", desc = "权限分页列表")
     public ResponseResult<IPage<PermissionVO>> getPermissionPage(@RequestBody PermissionSearchParam searchParam) {
         return ResponseResult.success(permissionService.getPermissionPage(searchParam));
     }
 
     @PostMapping("/permission/list")
+    @PreAuthorize("@ss.hasPermission('/permission/list')")
     @Operation(summary = "权限列表")
-    @OperatorLog(value = "角色权限管理", desc = "权限列表")
+//    @OperatorLog(value = "角色权限管理", desc = "权限列表")
     public ResponseResult<List<PermissionVO>> getPermissionList() {
         return ResponseResult.success(permissionService.getPermissionList());
     }
@@ -98,6 +107,7 @@ public class RolePermissionController {
     @PostMapping("/role/permission")
     @Operation(summary = "角色添加权限")
     @OperatorLog(value = "角色权限管理", desc = "角色添加权限")
+    @PreAuthorize("@ss.hasPermission('/role/permission')")
     public ResponseResult saveRolePermission(@RequestBody RolePermissionVO rolePermissionVO) {
         boolean result = roleService.saveRolePermission(rolePermissionVO);
         return result ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");

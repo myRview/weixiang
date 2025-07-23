@@ -9,6 +9,7 @@ import com.hk.vo.plan.UserPlan;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -32,12 +33,14 @@ public class UserPlanController {
 
     @PostMapping("/pay/plan")
     @Operation(summary = "用户购买套餐")
+    @PreAuthorize("@ss.hasPermission('/user/plan/pay/plan')")
     public ResponseResult<OrderVO> payPlan(@RequestBody PayPlanVo payPlanVo) {
         return ResponseResult.success(orderInfoService.payPlan(payPlanVo));
     }
 
-    @GetMapping("/user/plan")
+    @GetMapping("/get/plan")
     @Operation(summary = "查询用户套餐详情")
+    @PreAuthorize("@ss.hasPermission('/user/plan/get/plan')")
     public ResponseResult<UserPlan> getPayPlan(@RequestParam Long userId) {
         UserPlan userPlan = userPlanService.getPayPlan(userId);
         return ResponseResult.success(userPlan);

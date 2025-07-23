@@ -33,25 +33,7 @@ public class LoginController {
     @Operation(summary = "登录")
     @LoginLog(value = "login")
     public ResponseResult<?> login(@RequestBody UserLoginVO loginVO) {
-        String account = loginVO.getAccount();
-        String email = loginVO.getEmail();
-        String phone = loginVO.getPhone();
-        String password = loginVO.getPassword();
-        String code = loginVO.getCode();
-        UserEntity user = userService.selectOneByAccount(account);
-        if (user == null) {
-            return ResponseResult.fail("用户不存在");
-        }
-        String salt = user.getSalt();
-        String md5 = Md5Utils.md5(salt, password);
-        if (!md5.equals(user.getPassword())){
-            return ResponseResult.fail("密码错误");
-        }
-        UserVO userVO = new UserVO();
-        userVO.setId(user.getId());
-        userVO.setAccount(user.getAccount());
-        userVO.setUserName(user.getUserName());
-        String token = tokenManager.createToken(userVO);
+        String token = userService.login(loginVO);
         return ResponseResult.success(token, "登录成功");
     }
 

@@ -6,6 +6,7 @@ import * as yonghuguanli from "./yonghuguanli";
 import * as yonghutaocanbiaoguanli from "./yonghutaocanbiaoguanli";
 import * as jiaosequanxianguanli from "./jiaosequanxianguanli";
 import * as userRegisterController from "./userRegisterController";
+import * as dingdantongji from "./dingdantongji";
 import * as dingdanguanli from "./dingdanguanli";
 import * as caozuorizhiguanli from "./caozuorizhiguanli";
 import * as huiyuantaocanguanli from "./huiyuantaocanguanli";
@@ -18,6 +19,7 @@ export default {
   yonghutaocanbiaoguanli,
   jiaosequanxianguanli,
   userRegisterController,
+  dingdantongji,
   dingdanguanli,
   caozuorizhiguanli,
   huiyuantaocanguanli,

@@ -12,6 +12,7 @@ import com.hk.vo.user.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -39,6 +40,7 @@ public class UserController {
     @PostMapping("/add")
     @Operation(summary = "添加用户")
     @OperatorLog(value = "用户管理", desc = "添加用户")
+    @PreAuthorize("@ss.hasPermission('/user/add')")
     public ResponseResult addUser(@RequestBody UserAddVO addVO) {
         return userService.saveUser(addVO) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
@@ -46,10 +48,11 @@ public class UserController {
     /**
      * 删除用户
      */
-    @DeleteMapping("/{id}")
+    @GetMapping("/delete")
     @Operation(summary = "删除用户")
     @OperatorLog(value = "用户管理", desc = "删除用户")
-    public ResponseResult deleteUser(@PathVariable Long id) {
+    @PreAuthorize("@ss.hasPermission('/user/delete')")
+    public ResponseResult deleteUser(@RequestParam Long id) {
         return userService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
@@ -59,6 +62,7 @@ public class UserController {
     @PostMapping("/update")
     @Operation(summary = "修改用户")
     @OperatorLog(value = "用户管理", desc = "修改用户")
+    @PreAuthorize("@ss.hasPermission('/user/update')")
     public ResponseResult updateUser(@RequestBody UserEditVO editVO) {
         return userService.updateUser(editVO) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
@@ -68,7 +72,8 @@ public class UserController {
      */
     @PostMapping("/edit")
     @Operation(summary = "编辑用户资料")
-//    @OperatorLog(value = "用户管理", desc = "编辑用户资料")
+    @PreAuthorize("@ss.hasPermission('/user/edit')")
+    @OperatorLog(value = "用户管理", desc = "编辑用户资料")
     public ResponseResult editUser(@RequestBody EditUserExpandVO expandVO) {
         return userService.editUser(expandVO) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
@@ -76,10 +81,11 @@ public class UserController {
     /**
      * 查询详情
      */
-    @GetMapping("/{id}")
+    @GetMapping("/get/info")
     @Operation(summary = "查询用户详情")
-    @OperatorLog(value = "用户管理", desc = "查询用户详情")
-    public ResponseResult<UserVO> getUserById(@PathVariable Long id) {
+//    @PreAuthorize("@ss.hasPermission('/user/get/info')")
+//    @OperatorLog(value = "用户管理", desc = "查询用户详情")
+    public ResponseResult<UserVO> getUserById(@RequestParam Long id) {
         return ResponseResult.success(userService.getInfo(id));
     }
 
@@ -88,7 +94,8 @@ public class UserController {
      */
     @PostMapping("/list")
     @Operation(summary = "查询用户列表")
-    @OperatorLog(value = "用户管理", desc = "查询用户列表")
+    @PreAuthorize("@ss.hasPermission('/user/list')")
+//    @OperatorLog(value = "用户管理", desc = "查询用户列表")
     public ResponseResult<Page<UserVO>> getUserList(@RequestBody UserSearchParam userSearchParam) {
         return ResponseResult.success(userService.getUserList(userSearchParam));
     }
@@ -99,7 +106,8 @@ public class UserController {
      */
     @PostMapping("/status")
     @Operation(summary = "启用/禁用用户")
-    @OperatorLog(value = "用户管理", desc = "查询用户列表")
+    @PreAuthorize("@ss.hasPermission('/user/status')")
+//    @OperatorLog(value = "用户管理", desc = "查询用户列表")
     public ResponseResult transStatus(Long userId, Integer status) {
         return userService.transStatus(userId, status) ? ResponseResult.success("操作成功") : ResponseResult.fail("操作失败");
     }
@@ -110,6 +118,7 @@ public class UserController {
     @PostMapping("/pwd")
     @Operation(summary = "修改密码")
     @OperatorLog(value = "用户管理", desc = "修改密码")
+    @PreAuthorize("@ss.hasPermission('/user/pwd')")
     public ResponseResult updatePassword(String password) {
         UserCacheVo userCacheVo = UserContext.getCurrentUser();
         if (userCacheVo == null) {
@@ -126,6 +135,7 @@ public class UserController {
     @PostMapping("/reset/pwd")
     @Operation(summary = "重置密码")
     @OperatorLog(value = "用户管理", desc = "重置密码")
+    @PreAuthorize("@ss.hasPermission('/user/reset/pwd')")
     public ResponseResult resetPassword(Long userId) {
         return userService.resetPassword(userId) ? ResponseResult.success("操作成功") : ResponseResult.fail("操作失败");
     }
@@ -148,7 +158,7 @@ public class UserController {
      */
     @PostMapping("/sign")
     @Operation(summary = "用户签到")
-    @OperatorLog(value = "用户签到", desc = "用户签到")
+//    @OperatorLog(value = "用户签到", desc = "用户签到")
     public ResponseResult sign() {
         return userService.sign() ? ResponseResult.success("签到成功") : ResponseResult.fail("签到失败");
     }

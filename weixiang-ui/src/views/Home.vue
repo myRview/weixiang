@@ -63,25 +63,65 @@
 import { useRouter, useRoute } from "vue-router";
 import { ref, computed, watch } from "vue";
 import { ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
-import AppHeader from "../components/AppHeader.vue";
+import AppHeader from "@/components/AppHeader.vue";
+import { useLoginUserStore } from "@/store/loginUser";
 
 const router = useRouter();
 const route = useRoute();
 const isCollapsed = ref(false);
+const store = useLoginUserStore();
 
 // 计算属性：是否显示布局
 const showLayout = computed(() => {
   return route.matched.some((record) => record.meta.requiresAuth);
 });
+// 计算角色标签
+const roleLabel = computed(() => {
+  if (!store.loginUser.roleCode) return "未设置角色";
+  const roles: Record<string, string> = {
+    admin: "管理员",
+    user: "普通用户",
+  };
+  return roles[store.loginUser.roleCode] || store.loginUser.roleCode;
+});
+// 检查用户权限
+const hasPermission = (requiresAdmin: boolean | undefined) => {
+  // 如果路由不需要特定权限，则直接返回true
+  if (requiresAdmin === undefined) return true;
+
+  // 检查用户角色是否为管理员
+  return store.loginUser.roleCode === "admin";
+};
 
 // 获取菜单路由
+// const menuRoutes = computed(() => {
+//   const layoutRoute = router.options.routes.find((r) => r.name === "Layout");
+//   return (
+//     layoutRoute?.children?.filter(
+//       (route) => !route.meta?.hidden && route.meta?.title && route.meta?.icon
+//     ) || []
+//   );
+// });
 const menuRoutes = computed(() => {
   const layoutRoute = router.options.routes.find((r) => r.name === "Layout");
-  return (
-    layoutRoute?.children?.filter(
-      (route) => !route.meta?.hidden && route.meta?.title && route.meta?.icon
-    ) || []
-  );
+  const routes = layoutRoute?.children || [];
+
+  return routes.filter((route) => {
+    // 添加空对象保护
+    if (!route.meta) return false;
+
+    if (route.meta?.hidden) return false;
+    if (!hasPermission(route.meta?.requiresAdmin)) return false;
+    if (route.children) {
+      route.children = route.children.filter((child) => {
+        if (!route.meta) return false;
+        return !child.meta?.hidden && hasPermission(child.meta?.requiresAdmin);
+      });
+      return route.children.length > 0;
+    }
+
+    return true;
+  });
 });
 
 const toggleCollapse = () => {

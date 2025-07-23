@@ -80,4 +80,7 @@ knife4j:
 #    accessKeySecret:
 #    bucket:
 #    region:
-
+logging:
+  level:
+    root: error
+    com.hk: debug

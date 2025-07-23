@@ -92,7 +92,6 @@ import {
   Upload,
   Picture,
   VideoCamera,
-  Music,
   Document,
 } from "@element-plus/icons-vue";
 import {
@@ -212,7 +211,6 @@ const getFileIconComponent = (): Component => {
   const iconMap = {
     image: Picture,
     video: VideoCamera,
-    audio: Music,
     document: Document,
   };
   return iconMap[props.fileType] || Document;

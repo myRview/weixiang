@@ -76,7 +76,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, RoleEntity> impleme
             List<Long> permissionIds = permissionEntityList.stream().map(RolePermissionEntity::getPermissionId).collect(Collectors.toList());
             return permissionService.selectByIds(permissionIds);
         }
-        return null;
+        return new ArrayList<>();
     }
 
     @Override

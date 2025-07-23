@@ -64,16 +64,27 @@
 
 <script setup lang="ts">
 import { ArrowDown, BellFilled } from "@element-plus/icons-vue";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import { logout } from "@/api/loginController";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
-import {getUserById, updatePassword} from "@/api/yonghuguanli";
+import { getUserById, updatePassword } from "@/api/yonghuguanli";
 
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
 // 使用存储中的响应式用户信息
 const user = ref<API.UserVO>(loginUserStore.loginUser);
+
+// 计算角色标签
+const roleLabel = computed(() => {
+  if (!user.value.roleCode) return "";
+  const roles: Record<string, string> = {
+    admin: "管理员",
+    user: "普通用户",
+    guest: "访客",
+  };
+  return roles[user.value.roleCode] || user.value.roleCode;
+});
 
 // 退出登录
 const handlerLogout = async () => {
@@ -148,7 +159,6 @@ const handleUpdatePwd = () => {
         ElMessage.success("密码修改成功");
         showPwdDialog.value = false;
         passwordFormRef.value?.resetFields();
-        
       } catch (error) {
         console.error("密码修改失败:", error);
         ElMessage.error("密码修改失败");
@@ -162,11 +172,14 @@ const handleClose = (done: () => void) => {
   passwordFormRef.value?.resetFields();
   done();
 };
+
 const getUserInfo = async () => {
   try {
-    const res = await getUserById({id: loginUserStore.loginUser.id});
-    user.value = res.data.data;
-    loginUserStore.setLoginUser(res.data.data);
+    const res = await getUserById({ id: loginUserStore.loginUser.id });
+    if (res.data.code === 200 && res.data.data) {
+      user.value = res.data.data;
+      loginUserStore.setLoginUser(res.data.data);
+    }
   } catch (error) {
     console.error("获取用户信息失败", error);
   }
@@ -181,56 +194,79 @@ onMounted(async () => {
 
 <style scoped>
 .app-header {
-  background-color: #fdfdfd;
+  background: linear-gradient(to right, #ffffff, #f8fbff);
   color: #333;
   padding: 0 30px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   height: 64px;
   transition: all 0.3s ease;
+  border-bottom: 1px solid #eef1f6;
 }
 
 .logo {
   font-size: 22px;
-  font-weight: 600;
-  color: #1890ff;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4a6cf7 0%, #3050e3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   padding: 0 15px;
   height: 100%;
   display: flex;
   align-items: center;
   letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .user-info {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
 .notification-icon {
-  margin-right: 16px;
   font-size: 20px;
-  color: #909399;
+  color: #7a7f9a;
   cursor: pointer;
-  transition: color 0.2s ease;
-}
+  transition: all 0.3s ease;
+  position: relative;
 
-.notification-icon:hover {
-  color: #1890ff;
+  /* &:hover {
+    color: #4a6cf7;
+    transform: scale(1.1);
+  } */
+
+  /* &::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background-color: #ff4d4f;
+    border-radius: 50%;
+    border: 2px solid #fff;
+  } */
 }
 
 .user-avatar {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 20px;
-  transition: background-color 0.2s ease;
-}
+  padding: 6px 12px;
+  border-radius: 24px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ebeef5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
-.user-avatar:hover {
-  background-color: #f5f7fa;
+  /* &:hover {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(74, 108, 247, 0.15);
+    transform: translateY(-1px);
+  } */
 }
 
 .user-name {
@@ -238,15 +274,54 @@ onMounted(async () => {
   font-size: 14px;
   color: #303133;
   font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role-tag {
+  background: linear-gradient(135deg, #4a6cf7 0%, #3050e3 100%);
+  color: white;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  font-weight: 500;
 }
 
 .arrow-down {
   font-size: 14px;
   color: #909399;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s ease;
+  margin-left: 4px;
 }
 
 .el-dropdown.open .arrow-down {
   transform: rotate(180deg);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 15px;
+  }
+
+  .logo {
+    font-size: 18px;
+    padding: 0 8px;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .user-role-tag {
+    display: none;
+  }
+
+  .notification-icon {
+    margin-right: 8px;
+  }
 }
 </style>

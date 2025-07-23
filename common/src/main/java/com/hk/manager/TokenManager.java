@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -57,10 +59,11 @@ public class TokenManager {
     /**
      * 创建令牌
      *
-     * @param userVO 登录用户
+     * @param userVO        登录用户
+     * @param permissionSet
      * @return
      */
-    public String createToken(UserVO userVO) {
+    public String createToken(UserVO userVO, Set<String> permissionSet) {
         Map<String, Object> map = new HashMap<>();
         Long userId = userVO.getId();
         map.put(BaseConstant.USER_ID, userId);
@@ -69,6 +72,7 @@ public class TokenManager {
         userCacheVo.setUser(userVO);
         userCacheVo.setUserId(userId);
         userCacheVo.setToken(token);
+        userCacheVo.setPermissions(permissionSet);
         refreshToken(userCacheVo);
         return token;
     }

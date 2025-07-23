@@ -3,6 +3,9 @@ package com.hk.vo.user;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author huangkun
@@ -36,5 +39,7 @@ public class UserCacheVo implements Serializable {
      * 过期时间
      */
     private Long expireTime;
+
+    private Set<String> permissions = new HashSet<>();
 
 }

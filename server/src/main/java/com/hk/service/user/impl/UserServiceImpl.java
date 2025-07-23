@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.cache.RedisService;
 import com.hk.common.ErrorCode;
+import com.hk.common.ResponseResult;
 import com.hk.constants.BaseConstant;
 import com.hk.context.UserContext;
 import com.hk.entity.user.RoleEntity;
@@ -15,6 +16,7 @@ import com.hk.entity.user.UserInfoEntity;
 import com.hk.entity.user.UserRoleEntity;
 import com.hk.enums.StatusEnum;
 import com.hk.exception.BusinessException;
+import com.hk.manager.TokenManager;
 import com.hk.mapper.user.UserMapper;
 import com.hk.param.UserSearchParam;
 import com.hk.service.user.RoleService;
@@ -55,6 +57,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     private RedisService redisService;
     @Autowired
     private UserInfoService userInfoService;
+    @Autowired
+    private TokenManager tokenManager;
 
     @Override
     public Page<UserVO> getUserList(UserSearchParam userSearchParam) {
@@ -361,6 +365,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         }
         userExpandEntity.setUserId(userId);
         return userInfoService.saveOrUpdate(userExpandEntity);
+    }
+
+    @Override
+    public String login(UserLoginVO loginVO) {
+        String account = loginVO.getAccount();
+        String email = loginVO.getEmail();
+        String phone = loginVO.getPhone();
+        String password = loginVO.getPassword();
+        String code = loginVO.getCode();
+        UserEntity user = this.selectOneByAccount(account);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "用户不存在");
+        }
+        String salt = user.getSalt();
+        String md5 = Md5Utils.md5(salt, password);
+        if (!md5.equals(user.getPassword())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "密码错误");
+        }
+        UserVO userVO = new UserVO();
+        userVO.setId(user.getId());
+        userVO.setAccount(user.getAccount());
+        userVO.setUserName(user.getUserName());
+        UserRoleEntity userRole = userRoleService.selectByUserId(user.getId());
+        List<PermissionVO> permissionVOS = roleService.getRolePermission(userRole.getRoleId());
+        Set<String> permissionSet = permissionVOS.stream().map(PermissionVO::getPermissionCode).collect(Collectors.toSet());
+        String token = tokenManager.createToken(userVO,permissionSet);
+        return token;
     }
 
     private void buildRecord(LocalDate startDate, LocalDate endDate, String signInKey, Map<LocalDate, Boolean> signRecord) {

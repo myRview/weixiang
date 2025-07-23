@@ -15,7 +15,7 @@ import java.util.List;
 */
 public interface UserRoleService extends IService<UserRoleEntity> {
 
-    UserRoleEntity selectByUserId(Long id);
+    UserRoleEntity selectByUserId(Long userId);
 
     List<UserRoleEntity> selectByUserIds(List<Long> userIds);
 }

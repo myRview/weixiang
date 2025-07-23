@@ -5,6 +5,7 @@ import com.hk.service.file.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +26,7 @@ public class FileUploadController {
 
     @PostMapping("/upload")
     @Operation(summary = "文件上传")
+    @PreAuthorize("@ss.hasPermission('/file/upload')")
     public ResponseResult<?> upload(@RequestParam("file") MultipartFile file, @RequestParam("category") String category) {
         String fileUrl = fileUploadService.upload(file, category);
         return ResponseResult.success(fileUrl, "上传成功");

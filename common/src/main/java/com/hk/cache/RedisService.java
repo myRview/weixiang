@@ -109,6 +109,10 @@ public class RedisService<T> {
         return redisTemplate.expire(key, timeout, unit);
     }
 
+    public Boolean expire(String key, long timeout) {
+        return redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
+    }
+
     // 判断键是否存在
     public Boolean hasKey(String key) {
         return redisTemplate.hasKey(key);

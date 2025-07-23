@@ -4,8 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.entity.order.OrderInfoEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hk.param.OrderSearchParam;
+import com.hk.vo.order.OrderStatisticsVO;
 import com.hk.vo.order.OrderVO;
 import com.hk.vo.plan.PayPlanVo;
+import com.hk.vo.plan.PlanStatisticsVO;
+
+import java.util.List;
 
 /**
 * <p>
@@ -26,4 +30,8 @@ public interface OrderInfoService extends IService<OrderInfoEntity> {
     boolean updateStatus(Long orderId, Integer status);
 
     Integer getOrderStatusById(Long id);
+
+    List<OrderStatisticsVO> getCount(String date);
+
+    List<PlanStatisticsVO> planCount(String date);
 }

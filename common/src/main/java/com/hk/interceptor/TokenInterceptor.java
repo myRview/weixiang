@@ -22,9 +22,10 @@ import java.io.IOException;
  * @author huangkun
  * @date 2025/7/6 14:16
  */
-@Component
+//@Component
 @Slf4j
 @Order(1)
+@Deprecated
 public class TokenInterceptor implements HandlerInterceptor {
 
     @Override

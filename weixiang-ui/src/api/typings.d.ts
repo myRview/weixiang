@@ -1,4 +1,8 @@
 declare namespace API {
+  type countParams = {
+    date: string;
+  };
+
   type deleteLoginLogParams = {
     id: number;
   };
@@ -176,30 +180,6 @@ declare namespace API {
     status?: number;
   };
 
-  type OrderInfoEntityduixiang = {
-    id?: number;
-    /** 订单编号 */
-    orderNumber?: string;
-    /** 用户id */
-    userId?: number;
-    /** 套餐id */
-    planId?: number;
-    /** 下单日期 */
-    orderDate?: string;
-    /** 订单金额 */
-    amount?: number;
-    /** 订单状态,0未支付，1-已支付 */
-    status?: number;
-    /** 创建时间 */
-    createTime?: string;
-    /** 更新时间 */
-    updateTime?: string;
-    /** 用户名 */
-    userName?: string;
-    /** 套餐名 */
-    planName?: string;
-  };
-
   type OrderItem = {
     column?: string;
     asc?: boolean;
@@ -214,6 +194,15 @@ declare namespace API {
     orderNo?: string;
     /** 订单状态 */
     status?: number;
+  };
+
+  type OrderStatisticsVO = {
+    /** 数量 */
+    total?: number;
+    /** 订单状态,0未支付，1-已支付,2-已取消 */
+    status?: number;
+    /** 订单金额 */
+    totalAmount?: number;
   };
 
   type OrderVO = {
@@ -308,6 +297,10 @@ declare namespace API {
     permissionCode?: string;
   };
 
+  type planCountParams = {
+    date: string;
+  };
+
   type PlanSearchParam = {
     pageNum?: number;
     pageSize?: number;
@@ -315,6 +308,13 @@ declare namespace API {
     name?: string;
     /** 0-禁用，1-启用 */
     status?: number;
+  };
+
+  type PlanStatisticsVO = {
+    /** 套餐名称 */
+    planName?: string;
+    /** 购买数量 */
+    total?: number;
   };
 
   type resetPasswordParams = {
@@ -357,10 +357,22 @@ declare namespace API {
     data?: MemberPlanVO[];
   };
 
+  type ResponseResultListOrderStatisticsVO = {
+    code?: number;
+    message?: string;
+    data?: OrderStatisticsVO[];
+  };
+
   type ResponseResultListPermissionVO = {
     code?: number;
     message?: string;
     data?: PermissionVO[];
+  };
+
+  type ResponseResultListPlanStatisticsVO = {
+    code?: number;
+    message?: string;
+    data?: PlanStatisticsVO[];
   };
 
   type ResponseResultListRoleVO = {

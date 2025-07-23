@@ -43,25 +43,25 @@ public class MyConfig implements WebMvcConfigurer {
         return interceptor;
     }
 
-    @Autowired
-    private TokenInterceptor tokenInterceptor;
+//    @Autowired
+//    private TokenInterceptor tokenInterceptor;
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        String[] EXCLUDE_PATHS = {
-                "/api/swagger-ui/**",
-                "/api/swagger-resources/**",
-                "/api/v2/api-docs",
-                "/api/v3/api-docs/**",
-                "/api/webjars/**",
-                "/api/doc.html",
-                "/api/favicon.ico"
-        };
-
-        registry.addInterceptor(tokenInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/login")
-                .excludePathPatterns("/api/register")
-                .excludePathPatterns(EXCLUDE_PATHS);
-    }
+//    @Override
+//    public void addInterceptors(InterceptorRegistry registry) {
+//        String[] EXCLUDE_PATHS = {
+//                "/api/swagger-ui/**",
+//                "/api/swagger-resources/**",
+//                "/api/v2/api-docs",
+//                "/api/v3/api-docs/**",
+//                "/api/webjars/**",
+//                "/api/doc.html",
+//                "/api/favicon.ico"
+//        };
+//
+//        registry.addInterceptor(tokenInterceptor)
+//                .addPathPatterns("/api/**")
+//                .excludePathPatterns("/api/login")
+//                .excludePathPatterns("/api/register")
+//                .excludePathPatterns(EXCLUDE_PATHS);
+//    }
 }

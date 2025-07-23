@@ -34,7 +34,7 @@ export const routes: Array<RouteRecordRaw> = [
     meta: {
       title: "登录",
       hidden: true,
-      requiresAuth: false, // 添加认证标识
+      requiresAuth: false,
     },
   },
   {
@@ -44,7 +44,7 @@ export const routes: Array<RouteRecordRaw> = [
     meta: {
       title: "注册",
       hidden: true,
-      requiresAuth: false, // 添加认证标识
+      requiresAuth: false,
     },
   },
   // 布局路由（需要登录）
@@ -52,9 +52,6 @@ export const routes: Array<RouteRecordRaw> = [
     path: "/",
     name: "Layout",
     component: Home,
-    meta: {
-      requiresAuth: true, // 需要登录
-    },
     children: [
       {
         path: "",
@@ -67,6 +64,7 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "个人中心",
           icon: User,
+          requiresAuth: true,
         },
       },
       {
@@ -76,7 +74,8 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "数据分析",
           icon: TrendCharts,
-          requiresAdmin: true,
+          requiresAuth: true,
+          requiresAdmin: true, // 需要管理员权限
         },
       },
       {
@@ -86,7 +85,8 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "订单管理",
           icon: ShoppingCart,
-          requiresAdmin: true,
+          requiresAuth: true,
+          requiresAdmin: true, // 需要管理员权限
         },
       },
       {
@@ -96,7 +96,8 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "套餐管理",
           icon: Ticket,
-          requiresAdmin: true,
+          requiresAuth: true,
+          requiresAdmin: true, // 需要管理员权限
         },
       },
       {
@@ -106,7 +107,8 @@ export const routes: Array<RouteRecordRaw> = [
         meta: {
           title: "系统管理",
           icon: Setting,
-          requiresAdmin: true,
+          requiresAuth: true,
+          requiresAdmin: true, // 需要管理员权限
         },
         children: [
           {
