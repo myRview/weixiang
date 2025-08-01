@@ -1,0 +1,88 @@
+package com.hk.service.article.impl;
+
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hk.common.ErrorCode;
+import com.hk.context.UserContext;
+import com.hk.entity.article.ArticleCommentEntity;
+import com.hk.entity.article.ArticleEntity;
+import com.hk.exception.BusinessException;
+import com.hk.mapper.article.ArticleCommentMapper;
+import com.hk.service.article.ArticleCommentService;
+import com.hk.service.article.ArticleService;
+import com.hk.vo.article.ArticleCommentVO;
+import com.hk.vo.article.ArticleVO;
+import com.hk.vo.user.UserCacheVo;
+import com.hk.vo.user.UserVO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * <p>
+ * 文章评论表 服务实现类
+ * </p>
+ *
+ * @author hk
+ * @since 2025-07-29
+ */
+@Service
+public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper, ArticleCommentEntity> implements ArticleCommentService {
+
+    @Autowired
+    private ArticleService articleService;
+
+    @Override
+    public List<ArticleCommentVO> getArticleCommentList(Long articleId) {
+        LambdaQueryWrapper<ArticleCommentEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ArticleCommentEntity::getArticleId, articleId);
+        queryWrapper.select(ArticleCommentEntity::getId, ArticleCommentEntity::getContent,
+                ArticleCommentEntity::getUserId, ArticleCommentEntity::getCreateTime);
+        List<ArticleCommentEntity> commentEntityList = this.list(queryWrapper);
+        return commentEntityList.stream().map(ArticleCommentVO::convert).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean addArticleComment(ArticleCommentVO articleCommentVO) {
+        Long articleId = articleCommentVO.getArticleId();
+        ArticleEntity article = articleService.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "文章不存在");
+        }
+        Long currentUserId = UserContext.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN, "用户未登录");
+        }
+        ArticleCommentEntity articleCommentEntity = new ArticleCommentEntity();
+        articleCommentEntity.setUserId(currentUserId);
+        articleCommentEntity.setArticleId(articleId);
+        articleCommentEntity.setContent(articleCommentVO.getContent());
+        return this.save(articleCommentEntity);
+    }
+
+    @Override
+    public boolean deleteArticleComment(Long id) {
+        ArticleCommentEntity comment = this.getById(id);
+        if (comment == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "评论不存在");
+        }
+        Long userId = UserContext.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN, "用户未登录");
+        }
+        if (userId.equals(comment.getUserId())) {
+            return this.removeById(id);
+        }
+        ArticleEntity article = articleService.getById(comment.getArticleId());
+        if (article != null && article.getUserId().equals(userId)) {
+            return this.removeById(id);
+        }
+        if (UserContext.isAdmin()) {
+            return this.removeById(id);
+        }
+        return false;
+    }
+}

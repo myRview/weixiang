@@ -1,53 +1,62 @@
 package ${package.Controller};
 
+<#import "common.ftl" as common>
+<#assign restControllerStyle = true>
 import ${package.Entity}.${entity};
 import ${package.Service}.${table.serviceName};
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.annotation.Resource;
 import java.util.List;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 
-/**
-* <p>
-    * ${table.comment!} 前端控制器
-    * </p>
-*
-* @author ${author}
-* @since ${date}
-*/
-@Tag(name = "${table.comment!}管理")
-@RestController
-@RequestMapping("<#if restControllerStyle>/${table.name?replace('sys_','')?replace('_','/')}<#else>/${table.name?replace('sys_','')?replace('_','/')}</#if>")
+<#if restControllerStyle>
+    @RestController
+<#else>
+    @Controller
+</#if>
+@RequestMapping("<#if package.ModuleName??>/${package.ModuleName}</#if>/<#if controllerMappingHyphenStyle??>${controllerMappingHyphen}<#else>${table.entityPath}</#if>")
+@Tag(name = "${entity}控制器", description = "${table.comment!}接口")
 public class ${table.controllerName} {
 
-@Autowired
+@Resource
 private ${table.serviceName} ${table.serviceName?uncap_first};
 
-@PostMapping("/add")
-@Operation(summary ="添加${table.comment!}")
-public boolean add(@RequestBody ${entity} ${entity?uncap_first}) {
-return ${table.serviceName?uncap_first}.save(${entity?uncap_first});
+@Operation(summary = "新增${entity}")
+@PostMapping
+public Boolean save(@RequestBody ${entity} entity) {
+return ${table.serviceName?uncap_first}.save(entity);
 }
 
+@Operation(summary = "删除${entity}")
 @DeleteMapping("/{id}")
-@Operation(summary ="删除${table.comment!}")
-public boolean delete(@PathVariable Long id) {
+public Boolean delete(@PathVariable Long id) {
 return ${table.serviceName?uncap_first}.removeById(id);
 }
 
-@PostMapping("/update")
-@Operation(summary ="修改${table.comment!}")
-public boolean update(@RequestBody ${entity} ${entity?uncap_first}) {
-return ${table.serviceName?uncap_first}.updateById(${entity?uncap_first});
+@Operation(summary = "更新${entity}")
+@PutMapping
+public Boolean update(@RequestBody ${entity} entity) {
+return ${table.serviceName?uncap_first}.updateById(entity);
 }
 
+@Operation(summary = "查询${entity}详情")
 @GetMapping("/{id}")
-@Operation(summary ="查询${table.comment!}详情")
-public ${entity} getById(@PathVariable Long id) {
+public ${entity} get(@PathVariable Long id) {
 return ${table.serviceName?uncap_first}.getById(id);
 }
 
+@Operation(summary = "分页查询${entity}")
+@GetMapping("/page")
+public IPage<${entity}> page(@RequestParam Integer pageNum,
+@RequestParam Integer pageSize) {
+return ${table.serviceName?uncap_first}.page(new Page<>(pageNum, pageSize));
+}
+
+@Operation(summary = "查询${entity}列表")
 @GetMapping("/list")
-@Operation(summary ="查询${table.comment!}列表")
 public List<${entity}> list() {
 return ${table.serviceName?uncap_first}.list();
 }

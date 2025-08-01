@@ -1,7 +1,9 @@
 package com.hk.context;
 
+import com.hk.enums.UserRoleEnum;
 import com.hk.manager.TokenManager;
 import com.hk.vo.user.UserCacheVo;
+import com.hk.vo.user.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -46,6 +48,15 @@ public class UserContext {
     public static String getCurrentUsername() {
         UserCacheVo user = getCurrentUser();
         return (user != null && user.getUser() != null) ? user.getUser().getUserName() : "anonymous";
+    }
+
+    public static boolean isAdmin() {
+        UserCacheVo user = getCurrentUser();
+        if (user != null) {
+            UserVO userVO = user.getUser();
+            return UserRoleEnum.ADMIN.getValue().equals(userVO.getRoleCode());
+        }
+        return false;
     }
 
     /**

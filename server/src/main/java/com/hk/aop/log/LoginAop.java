@@ -42,7 +42,7 @@ public class LoginAop {
     }
 
     @Around("loginPointCut()")
-    public Object recordLoginLog(ProceedingJoinPoint joinPoint) {
+    public Object recordLoginLog(ProceedingJoinPoint joinPoint) throws Exception {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         LoginLog loginLog = method.getAnnotation(LoginLog.class);
@@ -83,6 +83,7 @@ public class LoginAop {
         } catch (Exception e) {
             loginLogVO.setStatus(StatusEnum.DISABLE.getCode());
             log.error("目标方法执行异常:{}", e);
+            throw e;
         } catch (Throwable e) {
             loginLogVO.setStatus(StatusEnum.DISABLE.getCode());
             log.error("目标方法执行异常:{}", e);

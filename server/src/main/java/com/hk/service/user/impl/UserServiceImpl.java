@@ -388,10 +388,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         userVO.setAccount(user.getAccount());
         userVO.setUserName(user.getUserName());
         UserRoleEntity userRole = userRoleService.selectByUserId(user.getId());
-        List<PermissionVO> permissionVOS = roleService.getRolePermission(userRole.getRoleId());
-        Set<String> permissionSet = permissionVOS.stream().map(PermissionVO::getPermissionCode).collect(Collectors.toSet());
-        String token = tokenManager.createToken(userVO,permissionSet);
+        RoleVO roleVO = roleService.selectById(userRole.getRoleId());
+        Set<String> permissionSet = new HashSet<>();
+        if (roleVO != null) {
+            List<PermissionVO> permissionVOS = roleVO.getPermissionVOList();
+            permissionSet = permissionVOS.stream().map(PermissionVO::getPermissionCode).collect(Collectors.toSet());
+            userVO.setRoleCode(roleVO.getRoleCode());
+        }
+        String token = tokenManager.createToken(userVO, permissionSet);
         return token;
+    }
+
+    @Override
+    public List<UserVO> selectByIds(List<Long> userIds) {
+        if (CollectionUtil.isEmpty(userIds)) {
+            return new ArrayList<>();
+        }
+        LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(UserEntity::getId, userIds);
+        queryWrapper.select(UserEntity::getId, UserEntity::getUserName, UserEntity::getAvatar);
+        List<UserEntity> userEntityList = this.list(queryWrapper);
+        return converterVO(userEntityList);
     }
 
     private void buildRecord(LocalDate startDate, LocalDate endDate, String signInKey, Map<LocalDate, Boolean> signRecord) {

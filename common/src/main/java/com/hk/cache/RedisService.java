@@ -93,6 +93,16 @@ public class RedisService<T> {
 
     }
 
+    // 从集合中移除元素
+    public void removeSet(String key, String value) {
+        redisTemplate.opsForSet().remove(key, value);
+    }
+
+    //判断set中是否有元素
+    public Boolean isMemberSet(String key, String value) {
+        return redisTemplate.opsForSet().isMember(key, value);
+    }
+
     // 向有序集合中添加元素
     public void addZSet(String key, T value, double score) {
         redisTemplate.opsForZSet().add(key, value, score);
@@ -156,7 +166,7 @@ public class RedisService<T> {
     /**
      * 统计范围内位值为1的数量
      *
-     * @param key   键
+     * @param key      键
      * @param startBit 起始字节位置
      * @param endBit   结束字节位置
      * @return 1的数量

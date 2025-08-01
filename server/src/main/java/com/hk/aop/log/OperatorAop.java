@@ -68,6 +68,7 @@ public class OperatorAop {
         } catch (Exception e) {
             operationLog.setStatus(StatusEnum.DISABLE.getCode());
             log.error("目标方法执行异常:{}", e);
+            throw e;
         } finally {
             // 保存日志
             operationLogService.addLog(operationLog);

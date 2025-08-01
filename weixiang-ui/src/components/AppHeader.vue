@@ -1,6 +1,6 @@
 <template>
   <el-header class="app-header">
-    <div class="logo">维享平台</div>
+    <div class="logo">维享空间</div>
     <div class="user-info">
       <el-icon class="notification-icon">
         <BellFilled />

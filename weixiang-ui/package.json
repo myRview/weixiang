@@ -12,6 +12,7 @@
     "@bytemd/plugin-gfm": "^1.22.0",
     "@bytemd/plugin-highlight": "^1.22.0",
     "@bytemd/vue-next": "^1.22.0",
+    "@tinymce/tinymce-vue": "^6.3.0",
     "axios": "^1.8.4",
     "core-js": "^3.8.3",
     "dayjs": "^1.11.13",
@@ -20,6 +21,7 @@
     "pinia": "^3.0.1",
     "pinia-plugin-persistedstate": "^4.2.0",
     "qrcode": "^1.5.4",
+    "tinymce": "^8.0.1",
     "vue": "^3.2.13",
     "vue-echarts": "^7.0.3",
     "vue-router": "^4.0.3"

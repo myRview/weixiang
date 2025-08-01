@@ -1,6 +1,99 @@
 declare namespace API {
+  type ArticleAuditVO = {
+    /** 文章id */
+    articleId: number;
+    /** 审核状态:1-审核通过，2-审核不通过 */
+    auditStatus: number;
+    /** 审核原因 */
+    auditReason?: string;
+  };
+
+  type ArticleEditVO = {
+    /** 主键 */
+    id?: number;
+    /** 标题 */
+    title: string;
+    /** 内容 */
+    content: string;
+    /** 分类id */
+    categoryId?: number;
+    /** 标签id列表 */
+    tagIds?: number[];
+  };
+
+  type ArticleSearchParam = {
+    pageNum?: number;
+    pageSize?: number;
+    /** 标题 */
+    title?: string;
+    /** 状态，0-草稿，1-已发布 */
+    publishStatus?: number;
+    /** 审核状态，0-待审核，1-审核通过，2-审核不通过 */
+    auditStatus?: number;
+    /** 分类id */
+    categoryId?: number;
+    /** 标签Id集合 */
+    tagIds?: number[];
+  };
+
+  type ArticleVO = {
+    /** 主键 */
+    id?: number;
+    /** 标题 */
+    title?: string;
+    /** 内容 */
+    content?: string;
+    /** 用户id */
+    userId?: number;
+    /** 用户名 */
+    userName?: string;
+    /** 状态，0-草稿，1-已发布 */
+    publishStatus?: number;
+    /** 审核状态，0-待审核，1-审核通过，2-审核不通过 */
+    auditStatus?: number;
+    /** 审核原因 */
+    auditReason?: string;
+    /** 浏览量 */
+    viewCount?: number;
+    /** 点赞量 */
+    likeCount?: number;
+    /** 分类id */
+    categoryId?: number;
+    /** 创建时间 */
+    createTime?: string;
+    /** 标签id */
+    tagIds?: number[];
+  };
+
+  type CategorySearchParam = {
+    pageNum?: number;
+    pageSize?: number;
+    categoryName?: string;
+  };
+
+  type CategoryVO = {
+    /** 主键 */
+    id?: number;
+    /** 父分类Id */
+    parentId?: number;
+    /** 分类名称 */
+    name?: string;
+    /** 分类描述 */
+    description?: string;
+    /** 创建时间 */
+    createTime?: string;
+  };
+
   type countParams = {
     date: string;
+  };
+
+  type deleteArticleParams = {
+    id: number;
+  };
+
+  type deleteCategoryParams = {
+    id: number;
   };
 
   type deleteLoginLogParams = {
@@ -20,6 +113,10 @@ declare namespace API {
   };
 
   type deleteRoleParams = {
+    id: number;
+  };
+
+  type deleteTagParams = {
     id: number;
   };
 
@@ -54,6 +151,10 @@ declare namespace API {
     bio?: string;
   };
 
+  type getCategoryListParams = {
+    categoryName: string;
+  };
+
   type getLoginLogByIdParams = {
     id: number;
   };
@@ -86,8 +187,28 @@ declare namespace API {
     year?: number;
   };
 
+  type getTagListParams = {
+    tagName: string;
+  };
+
   type getUserByIdParams = {
     id: number;
+  };
+
+  type IPageArticleVO = {
+    size?: number;
+    records?: ArticleVO[];
+    total?: number;
+    current?: number;
+    pages?: number;
+  };
+
+  type IPageCategoryVO = {
+    size?: number;
+    records?: CategoryVO[];
+    total?: number;
+    current?: number;
+    pages?: number;
   };
 
   type IPageLoginLogVO = {
@@ -109,6 +230,14 @@ declare namespace API {
   type IPagePermissionVO = {
     size?: number;
     records?: PermissionVO[];
+    total?: number;
+    current?: number;
+    pages?: number;
+  };
+
+  type IPageTagVO = {
+    size?: number;
+    records?: TagVO[];
     total?: number;
     current?: number;
     pages?: number;
@@ -317,6 +446,10 @@ declare namespace API {
     total?: number;
   };
 
+  type publishArticleParams = {
+    id: number;
+  };
+
   type resetPasswordParams = {
     userId: number;
   };
@@ -327,10 +460,28 @@ declare namespace API {
     data?: any;
   };
 
+  type ResponseResultArticleVO = {
+    code?: number;
+    message?: string;
+    data?: ArticleVO;
+  };
+
   type ResponseResultInteger = {
     code?: number;
     message?: string;
     data?: number;
+  };
+
+  type ResponseResultIPageArticleVO = {
+    code?: number;
+    message?: string;
+    data?: IPageArticleVO;
+  };
+
+  type ResponseResultIPageCategoryVO = {
+    code?: number;
+    message?: string;
+    data?: IPageCategoryVO;
   };
 
   type ResponseResultIPageLoginLogVO = {
@@ -349,6 +500,18 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: IPagePermissionVO;
+  };
+
+  type ResponseResultIPageTagVO = {
+    code?: number;
+    message?: string;
+    data?: IPageTagVO;
+  };
+
+  type ResponseResultListCategoryVO = {
+    code?: number;
+    message?: string;
+    data?: CategoryVO[];
   };
 
   type ResponseResultListMemberPlanVO = {
@@ -379,6 +542,12 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: RoleVO[];
+  };
+
+  type ResponseResultListTagVO = {
+    code?: number;
+    message?: string;
+    data?: TagVO[];
   };
 
   type ResponseResultLoginLogVO = {
@@ -463,6 +632,25 @@ declare namespace API {
     roleCode?: string;
     /** 角色权限 */
     permissionVOList?: PermissionVO[];
+  };
+
+  type selectArticleDetailParams = {
+    id: number;
+  };
+
+  type TagSearchParam = {
+    pageNum?: number;
+    pageSize?: number;
+    tagName?: string;
+  };
+
+  type TagVO = {
+    /** 主键 */
+    id?: number;
+    /** 标签名称 */
+    name?: string;
+    /** 创建时间 */
+    createTime?: string;
   };
 
   type transStatusParams = {
