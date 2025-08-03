@@ -14,6 +14,7 @@ import * as huiyuantaocanguanli from "./huiyuantaocanguanli";
 import * as loginController from "./loginController";
 import * as denglurizhi from "./denglurizhi";
 import * as wenjianshangchuan from "./wenjianshangchuan";
+import * as wenzhangpinglunguanli from "./wenzhangpinglunguanli";
 import * as wenzhangfenleiguanli from "./wenzhangfenleiguanli";
 import * as wenzhangguanli from "./wenzhangguanli";
 import * as aliPayController from "./aliPayController";
@@ -30,6 +31,7 @@ export default {
   loginController,
   denglurizhi,
   wenjianshangchuan,
+  wenzhangpinglunguanli,
   wenzhangfenleiguanli,
   wenzhangguanli,
   aliPayController,

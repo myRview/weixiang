@@ -1,4 +1,12 @@
 declare namespace API {
+  type addArticleCommentParams = {
+    articleCommentVO: ArticleCommentVO;
+  };
+
+  type addArticleViewCountParams = {
+    articleId: number;
+  };
+
   type ArticleAuditVO = {
     /** 文章id */
     articleId: number;
@@ -6,6 +14,23 @@ declare namespace API {
     auditStatus: number;
     /** 审核原因 */
     auditReason?: string;
+  };
+
+  type ArticleCommentVO = {
+    /** 主键 */
+    id?: number;
+    /** 文章id */
+    articleId?: number;
+    /** 用户id */
+    userId?: number;
+    /** 评论内容 */
+    content?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 用户名 */
+    userName?: string;
+    /** 用户头像 */
+    userAvatar?: string;
   };
 
   type ArticleEditVO = {
@@ -19,6 +44,16 @@ declare namespace API {
     categoryId?: number;
     /** 标签id列表 */
     tagIds?: number[];
+    /** 状态，0-草稿，1-已发布 */
+    publishStatus: number;
+  };
+
+  type articleLikeCountParams = {
+    articleId: number;
+  };
+
+  type articleLikeStatusParams = {
+    articleId: number;
   };
 
   type ArticleSearchParam = {
@@ -36,6 +71,10 @@ declare namespace API {
     tagIds?: number[];
   };
 
+  type articleViewCountParams = {
+    articleId: number;
+  };
+
   type ArticleVO = {
     /** 主键 */
     id?: number;
@@ -47,6 +86,8 @@ declare namespace API {
     userId?: number;
     /** 用户名 */
     userName?: string;
+    /** 用户头像 */
+    userAvatar?: string;
     /** 状态，0-草稿，1-已发布 */
     publishStatus?: number;
     /** 审核状态，0-待审核，1-审核通过，2-审核不通过 */
@@ -86,6 +127,10 @@ declare namespace API {
 
   type countParams = {
     date: string;
+  };
+
+  type deleteArticleCommentParams = {
+    id: number;
   };
 
   type deleteArticleParams = {
@@ -149,6 +194,10 @@ declare namespace API {
     address?: string;
     /** 个人简介 */
     bio?: string;
+  };
+
+  type getArticleCommentListParams = {
+    articleId: number;
   };
 
   type getCategoryListParams = {
@@ -241,6 +290,11 @@ declare namespace API {
     total?: number;
     current?: number;
     pages?: number;
+  };
+
+  type likeArticleParams = {
+    articleId: number;
+    isLike: number;
   };
 
   type LoginLogVO = {
@@ -466,6 +520,12 @@ declare namespace API {
     data?: ArticleVO;
   };
 
+  type ResponseResultBoolean = {
+    code?: number;
+    message?: string;
+    data?: boolean;
+  };
+
   type ResponseResultInteger = {
     code?: number;
     message?: string;
@@ -506,6 +566,12 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: IPageTagVO;
+  };
+
+  type ResponseResultListArticleCommentVO = {
+    code?: number;
+    message?: string;
+    data?: ArticleCommentVO[];
   };
 
   type ResponseResultListCategoryVO = {

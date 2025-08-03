@@ -16,6 +16,7 @@ import Register from "../views/Register.vue";
 import MyArticles from "@/views/user/MyArticles.vue";
 import ArticleDetail from "@/views/user/ArticleDetail.vue";
 import EditArticle from "@/views/user/EditArticle.vue";
+import HomePage from "@/views/user/HomePage.vue";
 import {
   House,
   Edit,
@@ -30,6 +31,7 @@ import {
   Reading,
   Goods,
 } from "@element-plus/icons-vue";
+
 
 
 export const routes: Array<RouteRecordRaw> = [
@@ -62,7 +64,19 @@ export const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: "",
-        redirect: "/profile"
+        redirect: "home" // 修改默认重定向到子路由home
+      },
+      // 首页作为Layout的子路由，显示在main区域
+      {
+        path: "home",
+        name: "HomePage",
+        component: HomePage,
+        meta: {
+          title: "首页",
+          icon: House,
+          requiresAuth: true,
+          requiresAdmin: false // 普通用户可见
+        },
       },
       {
         path: "profile",
@@ -72,6 +86,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "个人中心",
           icon: User,
           requiresAuth: true,
+          requiresAdmin: false // 普通用户可见
         },
       },
       {
@@ -82,6 +97,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "我的文章",
           icon: List,
           requiresAuth: true,
+          requiresAdmin: false // 普通用户可见
         },
       },
       {
@@ -104,6 +120,7 @@ export const routes: Array<RouteRecordRaw> = [
           hidden: true
         },
       },
+      // 管理员专属菜单
       {
         path: "data-analysis",
         name: "DataAnalysis",
@@ -112,7 +129,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "数据分析",
           icon: TrendCharts,
           requiresAuth: true,
-          requiresAdmin: true, // 需要管理员权限
+          requiresAdmin: true, // 仅管理员可见
         },
       },
       {
@@ -123,7 +140,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "订单管理",
           icon: ShoppingCart,
           requiresAuth: true,
-          requiresAdmin: true, // 需要管理员权限
+          requiresAdmin: true, // 仅管理员可见
         },
       },
       {
@@ -134,7 +151,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "套餐管理",
           icon: Goods,
           requiresAuth: true,
-          requiresAdmin: true, // 需要管理员权限
+          requiresAdmin: true, // 仅管理员可见
         },
       },
       {
@@ -145,7 +162,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "文章审批",
           icon: Reading,
           requiresAuth: true,
-          requiresAdmin: true, // 需要管理员权限
+          requiresAdmin: true, // 仅管理员可见
         },
       },
       {
@@ -156,7 +173,7 @@ export const routes: Array<RouteRecordRaw> = [
           title: "系统管理",
           icon: Setting,
           requiresAuth: true,
-          requiresAdmin: true, // 需要管理员权限
+          requiresAdmin: true, // 仅管理员可见
         },
         children: [
           {
@@ -166,6 +183,7 @@ export const routes: Array<RouteRecordRaw> = [
             meta: {
               title: "用户管理",
               icon: User,
+              requiresAdmin: true
             },
           },
           {
@@ -175,6 +193,7 @@ export const routes: Array<RouteRecordRaw> = [
             meta: {
               title: "角色管理",
               icon: UserFilled,
+              requiresAdmin: true
             },
           },
           {
@@ -184,6 +203,7 @@ export const routes: Array<RouteRecordRaw> = [
             meta: {
               title: "权限管理",
               icon: Menu,
+              requiresAdmin: true
             },
           },
           {
@@ -193,6 +213,7 @@ export const routes: Array<RouteRecordRaw> = [
             meta: {
               title: "登录日志",
               icon: Document,
+              requiresAdmin: true
             },
           },
           {
@@ -202,6 +223,7 @@ export const routes: Array<RouteRecordRaw> = [
             meta: {
               title: "操作日志",
               icon: Edit,
+              requiresAdmin: true
             },
           },
         ],

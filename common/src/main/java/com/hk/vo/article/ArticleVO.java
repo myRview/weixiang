@@ -37,6 +37,9 @@ public class ArticleVO implements Serializable {
     @Schema(description = "用户名")
     private String userName;
 
+    @Schema(description = "用户头像")
+    private String userAvatar;
+
     @Schema(description = "状态，0-草稿，1-已发布")
     private Integer publishStatus;
 

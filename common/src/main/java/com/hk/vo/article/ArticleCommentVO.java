@@ -34,6 +34,12 @@ public class ArticleCommentVO implements Serializable {
 
     @Schema(description = "创建时间")
     private Date createTime;
+
+    @Schema(description = "用户名")
+    private String userName;
+
+    @Schema(description = "用户头像")
+    private String userAvatar;
     public static ArticleCommentVO convert(ArticleCommentEntity articleCommentEntity) {
         if (articleCommentEntity == null) return null;
         ArticleCommentVO articleCommentVO = new ArticleCommentVO();

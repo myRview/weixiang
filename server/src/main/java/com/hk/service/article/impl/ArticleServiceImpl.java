@@ -13,7 +13,6 @@ import com.hk.constants.BaseConstant;
 import com.hk.context.UserContext;
 import com.hk.entity.article.ArticleEntity;
 import com.hk.entity.article.ArticleTagEntity;
-import com.hk.entity.article.CategoryEntity;
 import com.hk.enums.ArticleAuditStatus;
 import com.hk.enums.ArticlePublishStatus;
 import com.hk.exception.BusinessException;
@@ -21,8 +20,6 @@ import com.hk.mapper.article.ArticleMapper;
 import com.hk.param.ArticleSearchParam;
 import com.hk.service.article.ArticleService;
 import com.hk.service.article.ArticleTagService;
-import com.hk.service.article.CategoryService;
-import com.hk.service.article.TagService;
 import com.hk.service.user.UserService;
 import com.hk.vo.article.*;
 import com.hk.vo.user.UserCacheVo;
@@ -32,10 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +52,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean saveArticle(ArticleEditVO articleEditVO) {
+    public Boolean saveArticle(ArticleEditVO articleEditVO) {
         Long id = articleEditVO.getId();
 
         ArticleEntity newArticle = new ArticleEntity();
@@ -95,14 +89,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean deleteArticle(Long id) {
+    public Boolean deleteArticle(Long id) {
         checkPermission(id);
         articleTagService.deleteByArticleId(id);
         return this.removeById(id);
     }
 
     @Override
-    public boolean publishArticle(Long id) {
+    public Boolean publishArticle(Long id) {
         checkPermission(id);
         ArticleEntity entity = new ArticleEntity();
         entity.setId(id);
@@ -146,29 +140,56 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             articleVO.setTagIds(tagVOList.stream().map(ArticleTagVO::getTagId).collect(Collectors.toList()));
         }
         UserVO userVO = userService.getInfo(articleVO.getUserId());
-        articleVO.setUserName(userVO.getUserName());
+        if (userVO != null) {
+            articleVO.setUserName(userVO.getUserName());
+            articleVO.setUserAvatar(userVO.getAvatar());
+        }
         return articleVO;
     }
 
     @Override
-    public boolean likeArticle(Long articleId, Integer isLike) {
+    public Boolean likeArticle(Long articleId, Integer isLike) {
         Long currentUserId = UserContext.getCurrentUserId();
         if (currentUserId == null) throw new BusinessException(ErrorCode.NOT_LOGIN, "用户未登录");
+        String value = String.valueOf(currentUserId);
         if (isLike != null && isLike == 1) {
-            redisService.addSet(getKey(articleId), currentUserId.toString());
+            redisService.addSet(getLikeKey(articleId), value);
         } else {
-            redisService.removeSet(getKey(articleId), currentUserId.toString());
+            redisService.removeSet(getLikeKey(articleId), value);
         }
         return true;
     }
 
     @Override
-    public boolean articleLikeStatus(Long articleId) {
+    public Boolean articleLikeStatus(Long articleId) {
         Long currentUserId = UserContext.getCurrentUserId();
         if (currentUserId == null) return false;
-        return redisService.isMemberSet(getKey(articleId), currentUserId.toString());
+        String value = String.valueOf(currentUserId);
+        return redisService.isMemberSet(getLikeKey(articleId), value);
     }
 
+    @Override
+    public Integer articleLikeCount(Long articleId) {
+        Set<String> membersSet = redisService.membersSet(getLikeKey(articleId));
+        return CollectionUtil.isEmpty(membersSet) ? 0 : membersSet.size();
+    }
+
+    @Override
+    public Integer articleViewCount(Long articleId) {
+        Set<String> membersSet = redisService.membersSet(getViewKey(articleId));
+        return CollectionUtil.isEmpty(membersSet) ? 0 : membersSet.size();
+    }
+
+    @Override
+    public Boolean addArticleViewCount(Long articleId) {
+        Long currentUserId = UserContext.getCurrentUserId();
+        if (currentUserId == null) return false;
+        String value = String.valueOf(currentUserId);
+        Boolean isRead = redisService.isMemberSet(getViewKey(articleId), value);
+        if (isRead) return false;
+        redisService.addSet(getViewKey(articleId), value);
+        return true;
+    }
 
     @Override
     public IPage<ArticleVO> selectArticlePage(ArticleSearchParam param) {
@@ -184,7 +205,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     @Override
-    public boolean auditArticle(ArticleAuditVO auditVO) {
+    public Boolean auditArticle(ArticleAuditVO auditVO) {
         ArticleEntity article = this.getById(auditVO.getArticleId());
         if (article == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "文章不存在");
@@ -201,8 +222,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         return this.updateById(article);
     }
 
-    private String getKey(Long articleId) {
+    private String getLikeKey(Long articleId) {
         return String.format("%s:%s:%s", BaseConstant.CACHE_PREFIX, "article:like", articleId);
+    }
+
+    private String getViewKey(Long articleId) {
+        return String.format("%s:%s:%s", BaseConstant.CACHE_PREFIX, "article:view", articleId);
     }
 
     private IPage<ArticleVO> buildPage(Page<ArticleEntity> page, Map<Long, List<ArticleTagVO>> articleTagMap) {
@@ -217,6 +242,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             UserVO userVO = userVOMap.get(articleEntity.getUserId());
             if (userVO != null) {
                 articleVO.setUserName(userVO.getUserName());
+                articleVO.setUserAvatar(userVO.getAvatar());
             }
             return articleVO;
         });
@@ -234,6 +260,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     private LambdaQueryWrapper<ArticleEntity> getQueryWrapper(Map<Long, List<ArticleTagVO>> articleTagMap, ArticleSearchParam param) {
         List<ArticleTagVO> articleTagVOS = articleTagService.selectList(param.getTagIds());
         List<Long> articleIds = new ArrayList<>();
+        articleIds.add(0L);
         if (CollectionUtil.isNotEmpty(articleTagVOS)) {
             articleIds = articleTagVOS.stream().map(ArticleTagVO::getArticleId).distinct().collect(Collectors.toList());
             Map<Long, List<ArticleTagVO>> map = articleTagVOS.stream().collect(Collectors.groupingBy(ArticleTagVO::getArticleId));
@@ -252,9 +279,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         if (param.getCategoryId() != null) {
             queryWrapper.eq(ArticleEntity::getCategoryId, param.getCategoryId());
         }
-        if (CollectionUtil.isNotEmpty(articleIds)) {
-            queryWrapper.in(ArticleEntity::getId, articleIds);
-        }
+        queryWrapper.in(ArticleEntity::getId, articleIds);
         queryWrapper.orderByDesc(ArticleEntity::getId);
         return queryWrapper;
     }

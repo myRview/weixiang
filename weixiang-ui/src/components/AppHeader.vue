@@ -13,10 +13,22 @@
         </div>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="updatePwd">修改密码</el-dropdown-item>
-            <el-dropdown-item @click="handlerLogout" divided
-              >退出登录</el-dropdown-item
-            >
+            <el-dropdown-item @click="updatePwd">
+              <el-icon><Lock /></el-icon>
+              <span>修改密码</span>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <el-icon><HomeFilled /></el-icon>
+              <span>我的主页</span>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <el-icon><Postcard /></el-icon>
+              <span>会员中心</span>
+            </el-dropdown-item>
+            <el-dropdown-item @click="handlerLogout" divided>
+              <el-icon><SwitchButton /></el-icon>
+              <span>退出登录</span>
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -63,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, BellFilled } from "@element-plus/icons-vue";
+import { ArrowDown, BellFilled, Lock, HomeFilled, SwitchButton, Postcard } from "@element-plus/icons-vue";
 import { ref, onMounted, computed } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import { logout } from "@/api/loginController";
@@ -227,28 +239,13 @@ onMounted(async () => {
 }
 
 .notification-icon {
-  font-size: 20px;
+  font-size: 22px;
   color: #7a7f9a;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-
-  /* &:hover {
-    color: #4a6cf7;
-    transform: scale(1.1);
-  } */
-
-  /* &::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 8px;
-    height: 8px;
-    background-color: #ff4d4f;
-    border-radius: 50%;
-    border: 2px solid #fff;
-  } */
+  padding: 8px;
+  border-radius: 50%;
 }
 
 .user-avatar {
@@ -261,12 +258,6 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid #ebeef5;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-
-  /* &:hover {
-    background: #ffffff;
-    box-shadow: 0 4px 12px rgba(74, 108, 247, 0.15);
-    transform: translateY(-1px);
-  } */
 }
 
 .user-name {
@@ -299,6 +290,41 @@ onMounted(async () => {
 
 .el-dropdown.open .arrow-down {
   transform: rotate(180deg);
+}
+
+.el-dropdown-menu {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.3s ease;
+}
+
+.el-dropdown-item {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f0f5ff;
+    color: #4a6cf7;
+  }
+}
+
+.el-dropdown-item .el-icon {
+  font-size: 16px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 响应式调整 */

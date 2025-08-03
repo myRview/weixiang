@@ -77,6 +77,51 @@ export async function selectArticleDetail(
   });
 }
 
+/** 点赞和取消点赞 POST /article/like */
+export async function likeArticle(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.likeArticleParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultObject>("/article/like", {
+    method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 点赞数量 GET /article/like/count */
+export async function articleLikeCount(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.articleLikeCountParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultInteger>("/article/like/count", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 点赞状态 GET /article/like/status */
+export async function articleLikeStatus(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.articleLikeStatusParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultBoolean>("/article/like/status", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 获取已发布文章分页列表(管理员) POST /article/page */
 export async function selectArticlePage(
   body: API.ArticleSearchParam,
@@ -115,6 +160,36 @@ export async function publishArticle(
 ) {
   return request<API.ResponseResult>("/article/publish", {
     method: "POST",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 添加阅读数量 GET /article/view/add */
+export async function addArticleViewCount(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.addArticleViewCountParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultBoolean>("/article/view/add", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 阅读数量 GET /article/view/count */
+export async function articleViewCount(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.articleViewCountParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultInteger>("/article/view/count", {
+    method: "GET",
     params: {
       ...params,
     },

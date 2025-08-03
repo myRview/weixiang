@@ -18,25 +18,30 @@ import com.hk.vo.article.ArticleVO;
  */
 public interface ArticleService extends IService<ArticleEntity> {
 
-    boolean saveArticle(ArticleEditVO articleEditVO);
+    Boolean saveArticle(ArticleEditVO articleEditVO);
 
-    boolean deleteArticle(Long id);
+    Boolean deleteArticle(Long id);
 
-    boolean publishArticle(Long id);
+    Boolean publishArticle(Long id);
 
     IPage<ArticleVO> selectArticlePageByAuthor(ArticleSearchParam param);
-
 
     IPage<ArticleVO> selectPassArticlePage(ArticleSearchParam param);
 
     ArticleVO selectArticleDetail(Long id);
 
-    boolean likeArticle(Long articleId, Integer isLike);
+    Boolean likeArticle(Long articleId, Integer isLike);
 
-    boolean auditArticle(ArticleAuditVO auditVO);
+    Boolean articleLikeStatus(Long articleId);
 
+    Boolean auditArticle(ArticleAuditVO auditVO);
+
+    Integer articleLikeCount(Long articleId);
+
+    Integer articleViewCount(Long articleId);
+
+    Boolean addArticleViewCount(Long articleId);
 
     IPage<ArticleVO> selectArticlePage(ArticleSearchParam param);
 
-    boolean articleLikeStatus(Long articleId);
 }

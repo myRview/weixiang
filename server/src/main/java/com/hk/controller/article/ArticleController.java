@@ -116,6 +116,40 @@ public class ArticleController {
     }
 
     /**
+     * 点赞数量
+     */
+    @GetMapping("/like/count")
+    @Operation(summary = "点赞数量")
+//    @PreAuthorize("@ss.hasPermission('/article/like/count')")
+    public ResponseResult<Integer> articleLikeCount(Long articleId) {
+        return ResponseResult.success(articleService.articleLikeCount(articleId));
+    }
+
+    /**
+     * 获取阅读数量
+     * @param articleId
+     * @return
+     */
+    @GetMapping("/view/count")
+    @Operation(summary = "阅读数量")
+//    @PreAuthorize("@ss.hasPermission('/article/view/count')")
+    public ResponseResult<Integer> articleViewCount(Long articleId) {
+        return ResponseResult.success(articleService.articleViewCount(articleId));
+    }
+
+    /**
+     * 添加阅读数量
+     * @param articleId
+     * @return
+     */
+    @GetMapping("/view/add")
+    @Operation(summary = "添加阅读数量")
+//    @PreAuthorize("@ss.hasPermission('/article/view/add')")
+    public ResponseResult<Boolean> addArticleViewCount(Long articleId) {
+        return ResponseResult.success(articleService.addArticleViewCount(articleId));
+    }
+
+    /**
      * 获取已发布文章分页列表
      */
     @PostMapping("/page")

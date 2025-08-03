@@ -1,6 +1,7 @@
 package com.hk.service.article.impl;
 
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.common.ErrorCode;
@@ -11,6 +12,7 @@ import com.hk.exception.BusinessException;
 import com.hk.mapper.article.ArticleCommentMapper;
 import com.hk.service.article.ArticleCommentService;
 import com.hk.service.article.ArticleService;
+import com.hk.service.user.UserService;
 import com.hk.vo.article.ArticleCommentVO;
 import com.hk.vo.article.ArticleVO;
 import com.hk.vo.user.UserCacheVo;
@@ -18,7 +20,9 @@ import com.hk.vo.user.UserVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +38,8 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
 
     @Autowired
     private ArticleService articleService;
+    @Autowired
+    private UserService userService;
 
     @Override
     public List<ArticleCommentVO> getArticleCommentList(Long articleId) {
@@ -42,7 +48,27 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
         queryWrapper.select(ArticleCommentEntity::getId, ArticleCommentEntity::getContent,
                 ArticleCommentEntity::getUserId, ArticleCommentEntity::getCreateTime);
         List<ArticleCommentEntity> commentEntityList = this.list(queryWrapper);
-        return commentEntityList.stream().map(ArticleCommentVO::convert).collect(Collectors.toList());
+        if (CollectionUtil.isEmpty(commentEntityList)) return new ArrayList<>();
+
+        List<Long> userIds = commentEntityList.stream().map(ArticleCommentEntity::getUserId).collect(Collectors.toList());
+        List<UserVO> userVOS = userService.selectByIds(userIds);
+
+        List<ArticleCommentVO> commentVOS = commentEntityList.parallelStream().map(
+                commentEntity -> {
+                    ArticleCommentVO commentVO = ArticleCommentVO.convert(commentEntity);
+                    if (CollectionUtil.isNotEmpty(userVOS)) {
+                        Optional<UserVO> optional = userVOS.stream().filter(userVO -> userVO.getId().equals(commentEntity.getUserId())).findFirst();
+                        if (optional.isPresent()) {
+                            UserVO userVO = optional.get();
+                            commentVO.setUserName(userVO.getUserName());
+                            commentVO.setUserAvatar(userVO.getAvatar());
+                        }
+                    }
+                    return commentVO;
+                }
+        ).collect(Collectors.toList());
+
+        return commentVOS;
     }
 
     @Override

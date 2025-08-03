@@ -26,6 +26,18 @@
               ></el-option>
             </el-select>
           </el-form-item>
+          <el-form-item label="审核状态">
+            <el-select
+              v-model="searchParam.auditStatus"
+              style="width: 180px"
+              placeholder="请选择审核状态"
+              clearable
+            >
+              <el-option value="0" label="待审核"></el-option>
+              <el-option value="1" label="通过"></el-option>
+              <el-option value="2" label="驳回"></el-option>
+            </el-select>
+          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="selectPage">搜索</el-button>
             <el-button @click="handleReset">重置</el-button>
@@ -209,9 +221,9 @@ const getAuditStatusText = (status: number) => {
     case 0:
       return "待审核";
     case 1:
-      return "审核通过";
+      return "通过";
     case 2:
-      return "审核不通过";
+      return "驳回";
     default:
       return "未知";
   }

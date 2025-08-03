@@ -1,56 +1,91 @@
 <template>
-  <div class="article-detail">
+  <div class="article-detail-container">
     <!-- 文章标题 -->
     <div class="article-title">
-      {{ articleDetail.title }}
-      <el-tag v-if="articleDetail.categoryId" size="small" :style="{ backgroundColor: '#FFA500', color: '#FFF' }">
-        {{ getCategoryName(articleDetail.categoryId) }}
-      </el-tag>
-      <!-- 标题后的标签 -->
-      <div
-        class="title-tags"
-        v-if="articleDetail.tagIds && articleDetail.tagIds.length > 0"
-      >
+      <h1>{{ articleDetail.title }}</h1>
+      <div class="title-meta">
         <el-tag
-          v-for="tag in articleDetail.tagIds"
-          :key="tag"
+          v-if="articleDetail.categoryId"
           size="small"
-          style="margin-left: 8px; margin-bottom: 8px"
+          class="category-tag"
         >
-          {{ getTagName(tag) }}
+          {{ getCategoryName(articleDetail.categoryId) }}
         </el-tag>
+
+        <!-- 标题后的标签 -->
+        <div
+          class="title-tags"
+          v-if="articleDetail.tagIds && articleDetail.tagIds.length > 0"
+        >
+          <el-tag
+            v-for="tag in articleDetail.tagIds"
+            :key="tag"
+            size="small"
+            class="article-tag"
+          >
+            {{ getTagName(tag) }}
+          </el-tag>
+        </div>
       </div>
     </div>
+
     <!-- 文章信息 -->
     <div class="article-info">
-      <span class="author-info">
+      <div class="author-info">
         <el-avatar
-          :size="24"
-          :src="articleDetail.authorAvatar || defaultAvatar"
+          :size="32"
+          :src="articleDetail.userAvatar || defaultAvatar"
+          class="author-avatar"
         ></el-avatar>
-        <span>{{ articleDetail.userName }}</span>
-      </span>
-      <span class="publish-time">{{
-        formatDate(articleDetail.createTime || new Date())
-      }}</span>
+        <div class="author-details">
+          <span class="author-name">{{ articleDetail.userName }}</span>
+          <span class="publish-time">{{
+            formatDate(articleDetail.createTime || new Date())
+          }}</span>
+        </div>
+        <div class="follow-btn-container">
+          <el-button
+            v-if="showFollowBtn"
+            :type="isFollowing ? 'default' : 'primary'"
+            size="small"
+            @click="handleFollow"
+            :loading="loadingFollow"
+          >
+            {{ isFollowing ? '已关注' : '关注' }}
+          </el-button>
+        </div>
+      </div>
+
       <div class="article-stats">
-        <span
+        <span class="stat-item"
           ><i class="el-icon-view"></i>
           阅读量：
-          {{ articleDetail.viewCount || 0 }}</span
+          {{ viewCount || 0 }}</span
         >
-        <span
+        <span class="stat-item"
           ><i class="el-icon-thumbs-up"></i>
           点赞数：
-          {{ articleDetail.likeCount || 0 }}</span
+          {{ likeCount || 0 }}</span
+        >
+        <span class="stat-item"
+          ><i class="el-icon-comment"></i>
+          评论数：
+          {{ commentCount || 0 }}</span
         >
       </div>
     </div>
+
     <!-- 文章内容 -->
     <div class="article-content" v-html="articleDetail.content"></div>
+
     <!-- 文章操作图标 -->
-    <div class="article-action-icons">
-      <div class="icon-btn" @click="handleEdit" title="编辑" v-show="showEditDelete">
+    <div class="article-action-bar">
+      <div
+        class="action-btn"
+        @click="handleEdit"
+        title="编辑"
+        v-show="showEditDelete"
+      >
         <svg
           t="1753931545287"
           class="icon"
@@ -60,7 +95,7 @@
           p-id="6335"
         >
           <path
-            d="M181.11 816.38a27.6 27.6 0 0 1-26.79-34.32l55.24-221a27.58 27.58 0 0 1 7.26-12.84l441.94-441.9a27.61 27.61 0 0 1 39.06 0L863.55 272a27.62 27.62 0 0 1 0 39.07L421.61 753a27.66 27.66 0 0 1-12.83 7.27l-221 55.24a27.51 27.51 0 0 1-6.7 0.83z m80.19-234.47l-42.22 168.88L388 708.57l417-417-126.71-126.66z"
+            d="M181.11 816.38a27.6 27.6 0 0 1-26.79-34.32l55.24-221a27.58 27.58 0 0 1 7.26-12.84l441.94-441.9a27.61 27.61 0 0 1 39.06 0L863.55 272a27.62 272a27.62 0 0 1 0 39.07L421.61 753a27.66 27.66 0 0 1-12.83 7.27l-221 55.24a27.51 27.51 0 0 1-6.7 0.83z m80.19-234.47l-42.22 168.88L388 708.57l417-417-126.71-126.66z"
             p-id="6336"
           ></path>
           <path
@@ -68,8 +103,15 @@
             p-id="6337"
           ></path>
         </svg>
+        <span>编辑</span>
       </div>
-      <div class="icon-btn" @click="handleDelete" title="删除" v-show="showEditDelete">
+
+      <div
+        class="action-btn danger"
+        @click="handleDelete"
+        title="删除"
+        v-show="showEditDelete"
+      >
         <svg
           t="1753931575604"
           class="icon"
@@ -89,9 +131,11 @@
             p-id="7353"
           ></path>
         </svg>
+        <span>删除</span>
       </div>
+
       <div
-        class="icon-btn like-btn"
+        class="action-btn"
         :class="{ liked: isLiked }"
         @click="handleLike"
         title="点赞"
@@ -110,8 +154,15 @@
             p-id="2990"
           ></path>
         </svg>
+        <span>点赞</span>
       </div>
-      <div class="icon-btn" @click="handleComment" title="评论"  v-show="showLikeComment">
+
+      <div
+        class="action-btn"
+        @click="handleComment"
+        title="评论"
+        v-show="showLikeComment"
+      >
         <svg
           t="1753931611023"
           class="icon"
@@ -126,21 +177,127 @@
             p-id="8442"
           ></path>
         </svg>
-        <span class="count">{{ 0 }}</span>
+        <span>评论</span>
+        <span class="count">{{ commentCount || 0 }}</span>
       </div>
     </div>
+    <!-- 评论抽屉组件 -->
+    <el-drawer
+      v-model="commentDrawerVisible"
+      direction="rtl"
+      size="50%"
+      title="文章评论"
+      :before-close="handleClose"
+      class="comment-drawer-container"
+    >
+      <div class="comment-drawer-content">
+        <!-- 评论输入区 -->
+        <div class="comment-input-area">
+          <el-avatar
+            :size="40"
+            :src="userAvatar || defaultAvatar"
+            class="comment-avatar"
+          ></el-avatar>
+          <div class="input-wrapper">
+            <el-input
+              v-model="commentContent"
+              type="textarea"
+              placeholder="写下你的评论..."
+              :rows="4"
+              resize="none"
+              class="comment-textarea"
+            ></el-input>
+            <div class="submit-btn">
+              <el-button
+                type="primary"
+                :loading="submittingComment"
+                @click="submitComment"
+                :disabled="!commentContent.trim()"
+                class="submit-button"
+              >
+                提交评论
+              </el-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 评论列表 -->
+        <div class="comment-list-container" v-if="commentList.length > 0">
+          <h3 class="comment-title">全部评论 ({{ commentList.length }})</h3>
+          <div class="comment-list">
+            <div
+              class="comment-item"
+              v-for="comment in commentList"
+              :key="comment.id"
+            >
+              <el-avatar
+                :size="32"
+                :src="comment.userAvatar || defaultAvatar"
+                class="comment-item-avatar"
+              ></el-avatar>
+              <div class="comment-item-content">
+                <div class="comment-header">
+                  <span class="comment-username">{{ comment.userName }}</span>
+                  <span class="comment-time">{{
+                    formatDate(comment.createTime)
+                  }}</span>
+                </div>
+                <div class="comment-text">{{ comment.content }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="no-comment" v-else>
+          <div class="no-comment-icon">
+            <svg
+              t="1753931611023"
+              class="icon"
+              viewBox="0 0 1024 1024"
+              version="1.1"
+              xmlns="http://www.w3.org/2000/svg"
+              p-id="8441"
+            >
+              <path
+                d="M157.568 751.296c-11.008-18.688-18.218667-31.221333-21.802667-37.909333A424.885333 424.885333 0 0 1 85.333333 512C85.333333 276.362667 276.362667 85.333333 512 85.333333s426.666667 191.029333 426.666667 426.666667-191.029333 426.666667-426.666667 426.666667a424.778667 424.778667 0 0 1-219.125333-60.501334 2786.56 2786.56 0 0 0-20.053334-11.765333l-104.405333 28.48c-23.893333 6.506667-45.802667-15.413333-39.285333-39.296l28.437333-104.288z m65.301333 3.786667l-17.258666 63.306666 63.306666-17.258666a32 32 0 0 1 24.522667 3.210666 4515.84 4515.84 0 0 1 32.352 18.944A360.789333 360.789333 0 0 0 512 874.666667c200.298667 0 362.666667-162.368 362.666667-362.666667S712.298667 149.333333 512 149.333333 149.333333 311.701333 149.333333 512c0 60.586667 14.848 118.954667 42.826667 171.136 3.712 6.912 12.928 22.826667 27.370667 47.232a32 32 0 0 1 3.338666 24.714667z m145.994667-70.773334a32 32 0 1 1 40.917333-49.205333A159.189333 159.189333 0 0 0 512 672c37.888 0 73.674667-13.173333 102.186667-36.885333a32 32 0 0 1 40.917333 49.216A223.178667 223.178667 0 0 1 512 736a223.178667 223.178667 0 0 1-143.136-51.690667z"
+                fill="#ccc"
+                p-id="8442"
+              ></path>
+            </svg>
+          </div>
+          <p>暂无评论，快来抢沙发吧！</p>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  ElMessage,
+  ElMessageBox,
+  ElDrawer,
+  ElInput,
+  ElButton,
+} from "element-plus";
 import dayjs from "dayjs";
-import { selectArticleDetail, deleteArticle } from "@/api/wenzhangguanli";
+import {
+  selectArticleDetail,
+  deleteArticle,
+  articleLikeStatus,
+  likeArticle,
+  articleLikeCount,
+  articleViewCount,
+  addArticleViewCount,
+} from "@/api/wenzhangguanli";
 import { getCategoryList } from "@/api/wenzhangfenleiguanli";
 import { getTagList } from "@/api/wenzhangbiaoqianguanli";
 import { useLoginUserStore } from "@/store/loginUser";
+import {
+  addArticleComment,
+  getArticleCommentList,
+} from "@/api/wenzhangpinglunguanli";
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
 // 使用存储中的响应式用户信息
@@ -153,12 +310,27 @@ const router = useRouter();
 const defaultAvatar =
   "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
 
-
 // 文章详情数据
 const articleDetail = ref<API.ArticleVO>({} as API.ArticleVO);
 const loading = ref(false);
 const loadingLike = ref(false);
 const isLiked = ref(false);
+// 关注相关状态
+const isFollowing = ref(false);
+const loadingFollow = ref(false);
+const showFollowBtn = computed(() => {
+  // 不显示自己的关注按钮
+  return true;
+  // return user.value.id && articleDetail.value.userId !== user.value.id;
+});
+// 评论抽屉状态
+const commentDrawerVisible = ref(false);
+// 评论数据
+const commentList = ref<API.ArticleCommentVO[]>([]);
+const commentContent = ref("");
+const userAvatar = ref(user.value.avatar || "");
+const submittingComment = ref(false);
+const commentCount = ref(0);
 
 // 是否显示编辑和删除按钮
 const showEditDelete = computed(() => {
@@ -167,13 +339,8 @@ const showEditDelete = computed(() => {
 
 // 是否显示点赞和评论按钮
 const showLikeComment = computed(() => {
-  return  articleDetail.value.auditStatus === 1;
+  return articleDetail.value.auditStatus === 1;
 });
-
-// 评论数据
-// const commentList = ref<API.CommentVO[]>([]);
-const commentContent = ref("");
-const userAvatar = ref("");
 
 // 格式化日期
 const formatDate = (date: string | number | Date) => {
@@ -245,16 +412,103 @@ const handleDelete = () => {
     });
 };
 
+// 获取点赞状态
+const getLikeStatus = async () => {
+  const id = route.query.id;
+  if (!id) {
+    ElMessage.error("文章ID不存在");
+    router.push("/my-articles");
+    return;
+  }
+  try {
+    const res = await articleLikeStatus({ articleId: id });
+    if (res.data.code === 200) {
+      isLiked.value = res.data.data ?? false;
+    }
+  } catch (err) {}
+};
+const likeCount = ref(0);
+//获取点赞数量
+const getLikeCount = async () => {
+  const id = route.query.id;
+  if (!id) {
+    ElMessage.error("文章ID不存在");
+    router.push("/my-articles");
+    return;
+  }
+  try {
+    const res = await articleLikeCount({ articleId: id });
+    if (res.data.code === 200) {
+      likeCount.value = res.data.data ?? 0;
+    }
+  } catch (err) {}
+};
+const viewCount = ref(0);
+//获取阅读量
+const getViewCount = async () => {
+  const id = route.query.id;
+  if (!id) {
+    ElMessage.error("文章ID不存在");
+    router.push("/my-articles");
+    return;
+  }
+  try {
+    const res = await articleViewCount({ articleId: id });
+    if (res.data.code === 200) {
+      viewCount.value = res.data.data ?? 0;
+    }
+  } catch (err) {}
+};
+// 关注/取消关注作者
+const handleFollow = async () => {
+  loadingFollow.value = true;
+  try {
+    // 这里只是前端实现，暂时不调用后端接口
+    isFollowing.value = !isFollowing.value;
+    ElMessage.success(isFollowing.value ? '关注成功' : '取消关注成功');
+  } catch (err) {
+    ElMessage.error('操作失败');
+  } finally {
+    loadingFollow.value = false;
+  }
+};
+
 // 点赞文章
 const handleLike = async () => {
   loadingLike.value = true;
   try {
-    isLiked.value = !isLiked.value;
-    ElMessage.success(isLiked.value ? "点赞成功" : "取消点赞成功");
+    //如果点赞状态是已点赞，取消点赞 isLiek=1表示点赞，isLike=0表示取消点赞
+    const likeStatus = isLiked.value ? 0 : 1;
+    const res = await likeArticle({
+      articleId: articleDetail.value.id,
+      isLike: likeStatus,
+    });
+    if (res.data.code === 200) {
+      isLiked.value = !isLiked.value;
+      getLikeCount();
+    }
   } catch (err) {
     ElMessage.error("点赞操作失败");
   } finally {
     loadingLike.value = false;
+  }
+};
+
+// 获取文章评论
+const getArticleComments = async () => {
+  const id = route.query.id;
+  if (!id) {
+    ElMessage.error("文章ID不存在");
+    return;
+  }
+  try {
+    const res = await getArticleCommentList({ articleId: id });
+    if (res.data.code === 200) {
+      commentList.value = res.data.data || [];
+      commentCount.value = commentList.value.length;
+    }
+  } catch (err) {
+    ElMessage.error("获取评论失败");
   }
 };
 
@@ -265,20 +519,36 @@ const submitComment = async () => {
     return;
   }
 
+  submittingComment.value = true;
   try {
-    commentContent.value = "";
-    ElMessage.success("评论成功");
+    const res = await addArticleComment({
+      articleId: articleDetail.value.id,
+      content: commentContent.value,
+    });
+    if (res.data.code === 200) {
+      commentContent.value = "";
+      ElMessage.success("评论成功");
+      getArticleComments(); // 重新获取评论列表
+    } else {
+      ElMessage.error(res.data.message || "评论失败");
+    }
   } catch (err) {
     ElMessage.error("评论失败");
+  } finally {
+    submittingComment.value = false;
   }
 };
 
-// 评论按钮点击事件（占位实现）
+// 打开评论抽屉
 const handleComment = () => {
-  // 评论功能的占位实现
-  // 后续可以在这里打开评论对话框或跳转到评论页面
-  ElMessage.info("评论功能待实现");
+  commentDrawerVisible.value = true;
 };
+
+// 关闭抽屉的回调
+const handleClose = () => {
+  commentDrawerVisible.value = false;
+};
+
 const categoryData = ref<API.CategoryVO[]>([]); // 分类数据
 const tagData = ref<API.TagVO[]>([]); // 标签数
 const getCategoryData = async () => {
@@ -294,161 +564,395 @@ const getTagData = async () => {
   }
 };
 // 页面加载时获取数据
+// 定时器变量
+let viewTimer: number | null = null;
+// 是否已增加阅读量
+const hasAddedView = ref(false);
+
 onMounted(async () => {
   await Promise.all([getCategoryData(), getTagData()]);
   getArticleDetail();
+  getLikeStatus();
+  getLikeCount();
+  getViewCount();
+  getArticleComments();
+  // 初始化用户头像
+  userAvatar.value = user.value.avatar || "";
+
+  // 监听文章审核状态变化，设置定时任务
+  watch(
+    () => articleDetail.value.auditStatus,
+    (newStatus) => {
+      if (newStatus === 1 && !hasAddedView.value && !viewTimer) {
+        // 审核通过，设置10秒定时器增加阅读量
+        viewTimer = window.setTimeout(async () => {
+          if (!hasAddedView.value) {
+            // 调用增加阅读量的接口
+            try {
+              const res = await addArticleViewCount({
+                articleId: articleDetail.value.id,
+              });
+              console.log(res.data);
+              if (res.data.code === 200 && res.data.data) {
+                // 更新本地阅读量显示
+                viewCount.value += 1;
+              }
+              hasAddedView.value = true;
+            } catch (err) {
+              console.error("增加阅读量失败:", err);
+            }
+          }
+        }, 10000); // 10秒
+      }
+    }
+  );
+});
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (viewTimer) {
+    clearTimeout(viewTimer);
+    viewTimer = null;
+  }
 });
 </script>
 
 <style scoped>
-.article-detail {
-  padding: 20px;
-  margin: 0 auto;
-}
-
-.article-card {
-  margin-bottom: 20px;
-  border-radius: 8px;
-  overflow: hidden;
+.article-detail-container {
+  max-height: 100%;
 }
 
 .article-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-  margin: 20px 0;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  margin-bottom: 8px;
+  position: relative;
 }
 
-.title-tags {
-  margin-left: 10px;
+.article-title h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d2129;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.title-meta {
   display: flex;
   flex-wrap: wrap;
-  margin-bottom: -8px; /* 抵消tag的margin-bottom */
+  align-items: center;
+  gap: 10px;
+}
+
+.category-tag {
+  background-color: #3498db !important;
+  color: #fff !important;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.article-tag {
+  background-color: #f5f5f5 !important;
+  color: #555 !important;
+  border-color: #e5e5e5 !important;
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: all 0.2s ease;
+}
+
+.article-tag:hover {
+  background-color: #e9e9e9 !important;
 }
 
 .article-info {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  color: #999;
-  font-size: 14px;
+  padding: 15px 0;
+  border-top: 1px solid #f2f3f5;
+  border-bottom: 1px solid #f2f3f5;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .author-info {
   display: flex;
   align-items: center;
-  margin-right: 20px;
+  margin-bottom: 16px;
 }
 
-.author-info .el-avatar {
-  margin-right: 8px;
+.follow-btn-container {
+  margin-left: 20px;
+}
+
+.author-details {
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.author-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  margin-right: 12px;
+  border: 1px solid #f0f2f5;
+}
+
+.author-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.author-name {
+  color: #1d2129;
+  font-weight: 500;
+  margin-bottom: 4px;
 }
 
 .publish-time {
-  margin-right: 20px;
+  color: #86909c;
+  font-size: 13px;
 }
 
 .article-stats {
   display: flex;
-  margin-left: auto;
+  align-items: center;
+  gap: 20px;
+  color: #86909c;
+  font-size: 14px;
 }
 
-.article-stats span {
-  margin-left: 15px;
+.stat-item {
   display: flex;
   align-items: center;
+  gap: 5px;
+  transition: color 0.2s ease;
 }
 
-.article-stats i {
-  margin-right: 5px;
+.stat-item:hover {
+  color: #1890ff;
 }
 
 .article-content {
-  margin: 20px 0;
-  line-height: 1.8;
   font-size: 16px;
   color: #333;
+  line-height: 1.8;
+}
+
+.article-content p {
+  margin-bottom: 1.2em;
 }
 
 .article-content img {
   max-width: 100%;
-  margin: 15px 0;
+  border-radius: 8px;
+  margin: 20px auto;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.article-tags {
-  margin: 20px 0;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
+.article-content h2,
+.article-content h3 {
+  margin: 1.5em 0 0.8em;
+  color: #1d2129;
 }
 
-.tag-label {
-  color: #999;
-  margin-right: 10px;
-}
-
-.article-action-icons {
+.article-action-bar {
   display: flex;
-  justify-content: flex-end;
   gap: 15px;
-  margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
+  padding-top: 20px;
+  border-top: 1px solid #f2f3f5;
+  padding-bottom: 15px;
 }
 
-.icon-btn {
-  display: flex;
+.action-btn {
+  display: inline-flex;
   align-items: center;
-  cursor: pointer;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
   color: #606266;
-  transition: color 0.3s;
-  padding: 4px;
-  border-radius: 50%;
-}
-
-.icon-btn:hover {
-  color: #409eff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
   background-color: #f5f7fa;
 }
 
-.icon-btn i {
-  margin-right: 5px;
-  font-size: 16px;
+.action-btn:hover {
+  background-color: #e9e9eb;
+  color: #303133;
+  transform: translateY(-1px);
 }
 
-.icon-btn .count {
-  margin-left: 5px;
-  font-size: 12px;
-  color: #909399;
-}
-
-.icon-btn.liked {
+.action-btn.danger {
   color: #f56c6c;
 }
 
-/* 点赞按钮背景切换 */
-.like-btn.liked {
-  background-color: #fef0f0 !important;
+.action-btn.danger:hover {
+  background-color: #fef0f0;
+  color: #e53e3e;
 }
 
-/* 图标大小统一设置为16px */
-.icon {
-  width: 20px;
-  height: 20px;
+.action-btn.liked {
+  color: #f56c6c;
+  background-color: #fef0f0;
 }
 
+.action-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.action-btn .count {
+  background-color: rgba(0, 0, 0, 0.06);
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+/* 评论抽屉样式 */
+.comment-drawer-container {
+  --el-drawer-bg-color: #fafafa;
+}
+
+.comment-drawer-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.comment-input-area {
+  display: flex;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.comment-avatar {
+  margin-right: 15px;
+  border: 1px solid #f0f2f5;
+}
+
+.input-wrapper {
+  flex: 1;
+}
+
+.comment-textarea {
+  border-radius: 8px !important;
+  border-color: #e5e6eb !important;
+  transition: all 0.2s ease !important;
+}
+
+.comment-textarea:focus {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.submit-btn {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.submit-button {
+  border-radius: 20px !important;
+  padding: 6px 20px !important;
+  transition: all 0.2s ease !important;
+}
+
+.comment-list-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.comment-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d2129;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f2f3f5;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.comment-item {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid #f7f8fa;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-item-avatar {
+  margin-right: 12px;
+  border: 1px solid #f0f2f5;
+}
+
+.comment-item-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.comment-username {
+  font-weight: 500;
+  color: #1d2129;
+  font-size: 14px;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #86909c;
+}
+
+.comment-text {
+  color: #333;
+  line-height: 1.6;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.no-comment {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #86909c;
+  font-size: 14px;
+  padding: 40px 0;
+}
+
+.no-comment-icon .icon {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .article-detail {
-    padding: 10px;
+  .article-detail-container {
+    padding: 15px 0;
   }
 
-  .article-title {
-    font-size: 20px;
+  .article-title h1 {
+    font-size: 22px;
   }
 
   .article-info {
@@ -456,29 +960,26 @@ onMounted(async () => {
     align-items: flex-start;
   }
 
-  .article-info > span {
-    margin-bottom: 8px;
-  }
-
   .article-stats {
-    margin-left: 0;
-    margin-top: 10px;
-  }
-
-  .article-actions {
-    flex-direction: column;
-  }
-
-  .article-actions .el-button {
     width: 100%;
+    justify-content: space-between;
   }
 
-  .comment-input {
-    flex-direction: column;
+  .article-content {
+    font-size: 15px;
   }
 
-  .comment-input .el-avatar {
-    margin-bottom: 10px;
+  .action-btn span {
+    display: none;
+  }
+
+  .action-btn {
+    padding: 8px;
+    border-radius: 50%;
+  }
+
+  .comment-drawer-container {
+    width: 100% !important;
   }
 }
 </style>
