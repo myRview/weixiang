@@ -36,6 +36,8 @@
           :size="32"
           :src="articleDetail.userAvatar || defaultAvatar"
           class="author-avatar"
+          @click="handleAvatarClick(articleDetail.userId)"
+          style="cursor: pointer"
         ></el-avatar>
         <div class="author-details">
           <span class="author-name">{{ articleDetail.userName }}</span>
@@ -51,7 +53,7 @@
             @click="handleFollow"
             :loading="loadingFollow"
           >
-            {{ isFollowing ? '已关注' : '关注' }}
+            {{ isFollowing ? "已关注" : "关注" }}
           </el-button>
         </div>
       </div>
@@ -233,13 +235,14 @@
               <el-avatar
                 :size="32"
                 :src="comment.userAvatar || defaultAvatar"
+                @click="handleAvatarClick(comment.userId)"
                 class="comment-item-avatar"
               ></el-avatar>
               <div class="comment-item-content">
                 <div class="comment-header">
                   <span class="comment-username">{{ comment.userName }}</span>
                   <span class="comment-time">{{
-                    formatDate(comment.createTime)
+                    formatDate(comment.createTime || new Date())
                   }}</span>
                 </div>
                 <div class="comment-text">{{ comment.content }}</div>
@@ -298,6 +301,7 @@ import {
   addArticleComment,
   getArticleCommentList,
 } from "@/api/wenzhangpinglunguanli";
+import { changStatus, status } from "@/api/guanzhuguanli";
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
 // 使用存储中的响应式用户信息
@@ -320,8 +324,7 @@ const isFollowing = ref(false);
 const loadingFollow = ref(false);
 const showFollowBtn = computed(() => {
   // 不显示自己的关注按钮
-  return true;
-  // return user.value.id && articleDetail.value.userId !== user.value.id;
+  return user.value.id && articleDetail.value.userId !== user.value.id;
 });
 // 评论抽屉状态
 const commentDrawerVisible = ref(false);
@@ -361,6 +364,7 @@ const getArticleDetail = async () => {
     const res = await selectArticleDetail({ id: id });
     if (res.data.code === 200) {
       articleDetail.value = res.data.data || ({} as API.ArticleVO);
+      getFlowStatus();
     } else {
       ElMessage.error(res.data.message || "获取文章详情失败");
     }
@@ -463,13 +467,30 @@ const getViewCount = async () => {
 const handleFollow = async () => {
   loadingFollow.value = true;
   try {
-    // 这里只是前端实现，暂时不调用后端接口
-    isFollowing.value = !isFollowing.value;
-    ElMessage.success(isFollowing.value ? '关注成功' : '取消关注成功');
+    const res = await changStatus({
+      userId: articleDetail.value.userId,
+      status: isFollowing.value ? 0 : 1,
+    });
+    if (res.data.code === 200) {
+      isFollowing.value = !isFollowing.value;
+      ElMessage.success(isFollowing.value ? "关注成功" : "取消关注成功");
+    }
   } catch (err) {
-    ElMessage.error('操作失败');
+    ElMessage.error("操作失败");
   } finally {
     loadingFollow.value = false;
+  }
+};
+//获取关注状态
+const getFlowStatus = async () => {
+  const userId = articleDetail.value.userId;
+  try {
+    const res = await status({ userId: userId });
+    if (res.data.code === 200) {
+      isFollowing.value = res.data.data;
+    }
+  } catch (err) {
+    console.log(err);
   }
 };
 
@@ -542,6 +563,14 @@ const submitComment = async () => {
 // 打开评论抽屉
 const handleComment = () => {
   commentDrawerVisible.value = true;
+};
+
+// 处理头像点击事件，跳转到用户主页
+const handleAvatarClick = (userId: number) => {
+  router.push({
+    path: "/user-home",
+    query: { id: userId },
+  });
 };
 
 // 关闭抽屉的回调

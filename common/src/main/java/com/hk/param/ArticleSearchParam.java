@@ -2,6 +2,7 @@ package com.hk.param;
 
 import com.hk.common.PageBaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,4 +26,7 @@ public class ArticleSearchParam extends PageBaseVO {
     private Long categoryId;
     @Schema(description = "标签Id集合")
     private List<Long> tagIds;
+    @Schema(description = "作者Id")
+    @NotNull
+    private Long userId;
 }

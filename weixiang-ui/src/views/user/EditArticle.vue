@@ -79,7 +79,7 @@
       <el-button @click="handleCancel" class="cancel-btn">取消</el-button>
       <el-button type="primary" @click="handleSubmit" class="submit-btn">
         <el-icon v-if="submitting" class="loading-icon"><Loading /></el-icon>
-        {{ submitting ? "提交中..." : isEdit.value ? "更新文章" : "发布文章" }}
+        {{ submitting ? "提交中..." : isEdit ? "更新文章" : "发布文章" }}
       </el-button>
     </div>
   </div>

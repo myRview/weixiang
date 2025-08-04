@@ -106,11 +106,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
     @Override
     public IPage<ArticleVO> selectArticlePageByAuthor(ArticleSearchParam param) {
-        Long currentUserId = UserContext.getCurrentUserId();
-        if (currentUserId == null) throw new BusinessException(ErrorCode.NOT_LOGIN, "用户未登录");
         Map<Long, List<ArticleTagVO>> articleTagMap = new HashMap<>();
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
-        queryWrapper.eq(ArticleEntity::getUserId, currentUserId);
+        queryWrapper.eq(ArticleEntity::getUserId, param.getUserId());
         queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus, ArticleEntity::getAuditReason,
                 ArticleEntity::getPublishStatus, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);

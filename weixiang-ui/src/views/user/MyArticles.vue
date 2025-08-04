@@ -63,7 +63,9 @@
           show-overflow-tooltip="true"
         >
           <template #default="scope">
-            <div class="title-cell" @click="handleView(scope.row)">{{ scope.row.title }}</div>
+            <div class="title-cell" @click="handleView(scope.row)">
+              {{ scope.row.title }}
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="分类" width="100" show-overflow-tooltip="true">
@@ -80,7 +82,7 @@
         </el-table-column>
         <el-table-column prop="auditStatus" label="审核状态" width="140">
           <template #default="scope">
-            <el-tag 
+            <el-tag
               :type="getAuditStatusTagType(scope.row.auditStatus)"
               @click="handleAuditReason(scope.row)"
               :class="scope.row.auditStatus === 2 ? 'clickable-tag' : ''"
@@ -147,7 +149,11 @@
     </el-dialog>
 
     <!-- 审核原因弹窗 -->
-    <el-dialog v-model="auditReasonDialogVisible" title="审核不通过原因" width="40%">
+    <el-dialog
+      v-model="auditReasonDialogVisible"
+      title="审核不通过原因"
+      width="40%"
+    >
       <div class="audit-reason-content">
         <p>{{ currentAuditReason }}</p>
       </div>
@@ -161,16 +167,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
 import dayjs from "dayjs";
-import {
-  deleteArticle,
-  selectArticlePageByAuthor,
-} from "@/api/wenzhangguanli";
+import { deleteArticle, selectArticlePageByAuthor } from "@/api/wenzhangguanli";
 import { getCategoryList } from "@/api/wenzhangfenleiguanli";
 import router from "@/router";
-
+import { useLoginUserStore } from "@/store/loginUser";
+const loginUserStore = useLoginUserStore();
 // 格式化日期
 const formatDate = (date: string | number | Date) => {
   return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
@@ -238,6 +242,7 @@ const getCategoryName = (categoryId: number) => {
 const searchParam = ref<API.ArticleSearchParam>({
   pageNum: 1,
   pageSize: 10,
+  userId: 0,
 });
 
 // 表格数据
@@ -252,13 +257,16 @@ const selectPage = async () => {
   try {
     searchParam.value.pageNum = currentPage.value;
     searchParam.value.pageSize = pageSize.value;
-    const res = await selectArticlePageByAuthor({ ...searchParam.value });
+    const res = await selectArticlePageByAuthor({
+      ...searchParam.value,
+      userId: loginUserStore.loginUser.id,
+    });
     if (res.data.code === 200) {
       tableData.value = res.data.data?.records || [];
       total.value = Number(res.data.data?.total) || 0;
     }
   } catch (err) {
-    ElMessage.error("获取文章列表失败");
+    console.error("加载文章列表失败", err);
   }
 };
 
@@ -286,13 +294,13 @@ const handleReset = () => {
 const deleteDialogVisible = ref(false);
 const auditReasonDialogVisible = ref(false);
 const currentArticle = ref<API.ArticleVO>();
-const currentAuditReason = ref('');
+const currentAuditReason = ref("");
 
 // 查看审核原因
 const handleAuditReason = (row: API.ArticleVO) => {
   if (row.auditStatus === 2) {
     currentArticle.value = row;
-    currentAuditReason.value = row.auditReason || '未提供审核原因';
+    currentAuditReason.value = row.auditReason || "未提供审核原因";
     auditReasonDialogVisible.value = true;
   }
 };
@@ -300,23 +308,23 @@ const handleAuditReason = (row: API.ArticleVO) => {
 // 查看文章
 const handleView = async (row: API.ArticleVO) => {
   router.push({
-    path: '/article-detail',
-    query: { id: row.id }
+    path: "/article-detail",
+    query: { id: row.id },
   });
 };
 
 // 新增文章
 const handleAddArticle = () => {
   router.push({
-    path: '/edit-article'
+    path: "/edit-article",
   });
 };
 
 // 编辑文章
 const handleEdit = async (row: API.ArticleVO) => {
   router.push({
-    path: '/edit-article',
-    query: { id: row.id }
+    path: "/edit-article",
+    query: { id: row.id },
   });
 };
 
@@ -334,7 +342,7 @@ const handleDeleteConfirm = async () => {
   }
 
   try {
-    const res = await deleteArticle({id: currentArticle.value.id});
+    const res = await deleteArticle({ id: currentArticle.value.id });
     if (res.data.code === 200) {
       ElMessage.success("删除成功");
       deleteDialogVisible.value = false;

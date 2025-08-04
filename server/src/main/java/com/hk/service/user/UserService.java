@@ -7,6 +7,7 @@ import com.hk.param.UserSearchParam;
 import com.hk.vo.user.*;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -49,5 +50,5 @@ public interface UserService extends IService<UserEntity> {
 
     String login(UserLoginVO loginVO);
 
-    List<UserVO> selectByIds(List<Long> userIds);
+    List<UserVO> selectByIds(Collection<Long> userIds);
 }

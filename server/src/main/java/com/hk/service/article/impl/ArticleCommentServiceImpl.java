@@ -47,6 +47,7 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
         queryWrapper.eq(ArticleCommentEntity::getArticleId, articleId);
         queryWrapper.select(ArticleCommentEntity::getId, ArticleCommentEntity::getContent,
                 ArticleCommentEntity::getUserId, ArticleCommentEntity::getCreateTime);
+        queryWrapper.orderByDesc(ArticleCommentEntity::getId);
         List<ArticleCommentEntity> commentEntityList = this.list(queryWrapper);
         if (CollectionUtil.isEmpty(commentEntityList)) return new ArrayList<>();
 

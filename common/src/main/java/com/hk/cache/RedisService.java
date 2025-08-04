@@ -94,12 +94,12 @@ public class RedisService<T> {
     }
 
     // 从集合中移除元素
-    public void removeSet(String key, String value) {
+    public void removeSet(String key, T value) {
         redisTemplate.opsForSet().remove(key, value);
     }
 
     //判断set中是否有元素
-    public Boolean isMemberSet(String key, String value) {
+    public Boolean isMemberSet(String key, T value) {
         return redisTemplate.opsForSet().isMember(key, value);
     }
 

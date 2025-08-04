@@ -17,6 +17,7 @@ import MyArticles from "@/views/user/MyArticles.vue";
 import ArticleDetail from "@/views/user/ArticleDetail.vue";
 import EditArticle from "@/views/user/EditArticle.vue";
 import HomePage from "@/views/user/HomePage.vue";
+import MemberCenter from "@/views/user/MemberCenter.vue";
 import {
   House,
   Edit,
@@ -31,6 +32,7 @@ import {
   Reading,
   Goods,
 } from "@element-plus/icons-vue";
+import UserHome from "@/views/user/UserHome.vue";
 
 
 
@@ -118,6 +120,26 @@ export const routes: Array<RouteRecordRaw> = [
           title: "编辑文章",
           requiresAuth: true,
           hidden: true
+        },
+      },
+      {
+        path: "member-center",
+        name: "MemberCenter",
+        component: MemberCenter,
+        meta: {
+          title: "会员中心",
+          requiresAuth: true,
+          hidden: true,
+        },
+      },
+      {
+        path: "user-home/:id?",
+        name: "UserHome",
+        component: UserHome,
+        meta: {
+          title: "我的主页",
+          requiresAuth: true,
+          hidden: true,
         },
       },
       // 管理员专属菜单

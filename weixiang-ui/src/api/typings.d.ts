@@ -69,6 +69,8 @@ declare namespace API {
     categoryId?: number;
     /** 标签Id集合 */
     tagIds?: number[];
+    /** 作者Id */
+    userId: number;
   };
 
   type articleViewCountParams = {
@@ -123,6 +125,11 @@ declare namespace API {
     description?: string;
     /** 创建时间 */
     createTime?: string;
+  };
+
+  type changStatusParams = {
+    userId: number;
+    status: number;
   };
 
   type countParams = {
@@ -194,6 +201,10 @@ declare namespace API {
     address?: string;
     /** 个人简介 */
     bio?: string;
+  };
+
+  type fansListParams = {
+    userId: number;
   };
 
   type getArticleCommentListParams = {
@@ -295,6 +306,10 @@ declare namespace API {
   type likeArticleParams = {
     articleId: number;
     isLike: number;
+  };
+
+  type listParams = {
+    userId: number;
   };
 
   type LoginLogVO = {
@@ -616,6 +631,12 @@ declare namespace API {
     data?: TagVO[];
   };
 
+  type ResponseResultListUserVO = {
+    code?: number;
+    message?: string;
+    data?: UserVO[];
+  };
+
   type ResponseResultLoginLogVO = {
     code?: number;
     message?: string;
@@ -702,6 +723,10 @@ declare namespace API {
 
   type selectArticleDetailParams = {
     id: number;
+  };
+
+  type statusParams = {
+    userId: number;
   };
 
   type TagSearchParam = {

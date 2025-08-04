@@ -70,7 +70,7 @@ public class ArticleController {
     @PostMapping("/author/page")
     @Operation(summary = "获取当前作者的文章分页列表(作者)")
 //    @PreAuthorize("@ss.hasPermission('/article/author/page')")
-    public ResponseResult<IPage<ArticleVO>> selectArticlePageByAuthor(@RequestBody ArticleSearchParam param) {
+    public ResponseResult<IPage<ArticleVO>> selectArticlePageByAuthor(@RequestBody @Validated ArticleSearchParam param) {
         return ResponseResult.success(articleService.selectArticlePageByAuthor(param));
     }
 

@@ -17,11 +17,11 @@
               <el-icon><Lock /></el-icon>
               <span>修改密码</span>
             </el-dropdown-item>
-            <el-dropdown-item>
+            <el-dropdown-item @click="goToHome">
               <el-icon><HomeFilled /></el-icon>
               <span>我的主页</span>
             </el-dropdown-item>
-            <el-dropdown-item>
+            <el-dropdown-item @click="goToMemberCenter">
               <el-icon><Postcard /></el-icon>
               <span>会员中心</span>
             </el-dropdown-item>
@@ -75,17 +75,27 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, BellFilled, Lock, HomeFilled, SwitchButton, Postcard } from "@element-plus/icons-vue";
+import {
+  ArrowDown,
+  BellFilled,
+  Lock,
+  HomeFilled,
+  SwitchButton,
+  Postcard,
+} from "@element-plus/icons-vue";
 import { ref, onMounted, computed } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import { logout } from "@/api/loginController";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import { getUserById, updatePassword } from "@/api/yonghuguanli";
+import { useRouter } from "vue-router";
 
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
 // 使用存储中的响应式用户信息
 const user = ref<API.UserVO>(loginUserStore.loginUser);
+// 初始化路由器
+const router = useRouter();
 
 // 计算角色标签
 const roleLabel = computed(() => {
@@ -154,6 +164,26 @@ const rules = ref<FormRules>({
 // 打开修改密码对话框
 const updatePwd = () => {
   showPwdDialog.value = true;
+};
+
+// 跳转到会员中心
+const goToMemberCenter = () => {
+  if (user.value && user.value.id) {
+    router.push(
+      "member-center",
+    );
+  } else {
+    ElMessage.error("无法获取用户信息，无法进入会员中心");
+  }
+};
+// 跳转到用户主页
+const goToHome = () => {
+  if (user.value && user.value.id) {
+    router.push({
+      path: "/user-home",
+      query: { id: user.value.id },
+    });
+  }
 };
 
 // 处理密码修改

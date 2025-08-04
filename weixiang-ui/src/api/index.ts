@@ -13,6 +13,7 @@ import * as caozuorizhiguanli from "./caozuorizhiguanli";
 import * as huiyuantaocanguanli from "./huiyuantaocanguanli";
 import * as loginController from "./loginController";
 import * as denglurizhi from "./denglurizhi";
+import * as guanzhuguanli from "./guanzhuguanli";
 import * as wenjianshangchuan from "./wenjianshangchuan";
 import * as wenzhangpinglunguanli from "./wenzhangpinglunguanli";
 import * as wenzhangfenleiguanli from "./wenzhangfenleiguanli";
@@ -30,6 +31,7 @@ export default {
   huiyuantaocanguanli,
   loginController,
   denglurizhi,
+  guanzhuguanli,
   wenjianshangchuan,
   wenzhangpinglunguanli,
   wenzhangfenleiguanli,

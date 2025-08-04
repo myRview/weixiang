@@ -400,7 +400,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     }
 
     @Override
-    public List<UserVO> selectByIds(List<Long> userIds) {
+    public List<UserVO> selectByIds(Collection<Long> userIds) {
         if (CollectionUtil.isEmpty(userIds)) {
             return new ArrayList<>();
         }
