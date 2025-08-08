@@ -7,6 +7,8 @@ import com.hk.vo.order.OrderVO;
 import com.hk.vo.plan.PayPlanVo;
 import com.hk.vo.plan.UserPlan;
 
+import java.util.List;
+
 /**
 * <p>
     * 用户套餐表 服务类
@@ -21,4 +23,6 @@ public interface UserPlanService extends IService<UserPlanEntity> {
 
 
     boolean saveUserPlan(Long orderId);
+
+    List<UserPlan> selectByStatus(int code);
 }

@@ -11,6 +11,7 @@ import com.hk.vo.article.ArticleVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -90,7 +91,7 @@ public class ArticleController {
      */
     @GetMapping("/detail")
     @Operation(summary = "获取文章详情")
-    //    @PreAuthorize("@ss.hasPermission('/article/detail')")
+//        @PreAuthorize("@ss.hasPermission('/article/detail')")
     public ResponseResult<ArticleVO> selectArticleDetail(@RequestParam Long id) {
         return ResponseResult.success(articleService.selectArticleDetail(id));
     }
@@ -165,7 +166,7 @@ public class ArticleController {
     @PostMapping("/audit")
     @Operation(summary = "审核文章(管理员)")
     @OperatorLog(value = "文章管理", desc = "审核文章")
-//    @PreAuthorize("@ss.hasPermission('/article/audit')")
+    @PreAuthorize("@ss.hasPermission('/article/audit')")
     public ResponseResult<?> auditArticle(@RequestBody ArticleAuditVO auditVO) {
         return articleService.auditArticle(auditVO) ? ResponseResult.success("审核成功") : ResponseResult.fail("审核失败");
     }

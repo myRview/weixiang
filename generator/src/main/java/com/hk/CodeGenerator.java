@@ -37,7 +37,7 @@ public class CodeGenerator {
                             .pathInfo(Collections.singletonMap(OutputFile.xml, xmlPath)); // XML位置
                 })
                 .strategyConfig(builder -> {
-                    builder.addInclude("member_plan")
+                    builder.addInclude("user_message")
                             .addTablePrefix("sys_") // 表前缀过滤
 
                             // 实体类配置

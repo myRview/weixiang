@@ -9,6 +9,7 @@ import com.hk.vo.article.CategoryVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class CategoryController {
     @PostMapping("/add")
     @Operation(summary = "添加分类")
 //    @OperatorLog(value = "文章分类管理", desc = "添加分类")
-//    @PreAuthorize("@ss.hasPermission('/category/add')")
+    @PreAuthorize("@ss.hasPermission('/category/add')")
     public ResponseResult saveCategory(@RequestBody CategoryVO categoryVO) {
         return categoryService.saveCategory(categoryVO) ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
     }
@@ -46,7 +47,7 @@ public class CategoryController {
     @GetMapping("/delete")
     @Operation(summary = "删除分类")
 //    @OperatorLog(value = "文章分类管理", desc = "删除分类")
-//    @PreAuthorize("@ss.hasPermission('/category/delete')")
+    @PreAuthorize("@ss.hasPermission('/category/delete')")
     public ResponseResult deleteCategory(@RequestParam Long id) {
         return categoryService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
@@ -57,7 +58,7 @@ public class CategoryController {
     @PostMapping("/update")
     @Operation(summary = "修改分类")
 //    @OperatorLog(value = "文章分类管理", desc = "修改分类")
-//    @PreAuthorize("@ss.hasPermission('/category/update')")
+    @PreAuthorize("@ss.hasPermission('/category/update')")
     public ResponseResult updateCategory(@RequestBody CategoryVO categoryVO) {
         return categoryService.updateCategory(categoryVO) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
     }
@@ -79,7 +80,7 @@ public class CategoryController {
     @PostMapping("/page")
     @Operation(summary = "获取分类分页列表")
 //    @OperatorLog(value = "文章分类管理", desc = "获取分类分页列表")
-//    @PreAuthorize("@ss.hasPermission('/category/page')")
+    @PreAuthorize("@ss.hasPermission('/category/page')")
     public ResponseResult<IPage<CategoryVO>> selectCategoryPage(@RequestBody CategorySearchParam param) {
         return ResponseResult.success(categoryService.selectCategoryPage(param));
     }

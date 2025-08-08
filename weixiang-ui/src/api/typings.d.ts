@@ -390,12 +390,18 @@ declare namespace API {
   type OrderSearchParam = {
     pageNum?: number;
     pageSize?: number;
-    /** 用户id */
-    userId?: number;
     /** 订单号 */
     orderNo?: string;
     /** 订单状态 */
     status?: number;
+    /** 用户名 */
+    userName?: string;
+    /** 套餐名 */
+    planName?: string;
+    /** 开始时间 */
+    startDate?: string;
+    /** 结束时间 */
+    endDate?: string;
   };
 
   type OrderStatisticsVO = {

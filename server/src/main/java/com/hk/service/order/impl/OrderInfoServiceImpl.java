@@ -79,7 +79,11 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     @Override
     public Page<OrderVO> selectOrderPage(OrderSearchParam searchParam) {
         LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(searchParam.getUserId() != null, OrderInfoEntity::getUserId, searchParam.getUserId());
+        queryWrapper.eq(StringUtils.isNotBlank(searchParam.getUserName()), OrderInfoEntity::getUserName, searchParam.getUserName());
+        queryWrapper.eq(StringUtils.isNotBlank(searchParam.getPlanName()), OrderInfoEntity::getPlanName, searchParam.getPlanName());
+        if (searchParam.getStartDate() != null && searchParam.getEndDate() != null) {
+            queryWrapper.between(OrderInfoEntity::getOrderDate, searchParam.getStartDate(), searchParam.getEndDate());
+        }
         queryWrapper.eq(searchParam.getStatus() != null, OrderInfoEntity::getStatus, searchParam.getStatus());
         queryWrapper.like(StringUtils.isNotBlank(searchParam.getOrderNo()), OrderInfoEntity::getOrderNumber, searchParam.getOrderNo());
         queryWrapper.orderByDesc(OrderInfoEntity::getId);

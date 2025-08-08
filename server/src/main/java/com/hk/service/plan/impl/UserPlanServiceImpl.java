@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -71,5 +73,14 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
         userPlanEntity.setEndDate(endDate);
         userPlanEntity.setStatus(StatusEnum.NORMAL.getCode());
         return this.save(userPlanEntity);
+    }
+
+    @Override
+    public List<UserPlan> selectByStatus(int code) {
+        LambdaQueryWrapper<UserPlanEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserPlanEntity::getStatus, code);
+        queryWrapper.select(UserPlanEntity::getId, UserPlanEntity::getEndDate, UserPlanEntity::getStatus);
+        List<UserPlanEntity> userPlanEntityList = this.list(queryWrapper);
+        return userPlanEntityList.stream().map(UserPlan::convert).collect(Collectors.toList());
     }
 }

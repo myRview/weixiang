@@ -7,7 +7,7 @@
             <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6">
               <el-form-item label="订单编号">
                 <el-input
-                  v-model="searchOrderNo"
+                  v-model="searchParam.orderNo"
                   placeholder="请输入订单编号"
                   clearable
                 ></el-input>
@@ -16,17 +16,17 @@
             <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6">
               <el-form-item label="用户姓名">
                 <el-input
-                  v-model="searchUserName"
+                  v-model="searchParam.userName"
                   placeholder="请输入用户姓名"
                   clearable
                 ></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6">
-              <el-form-item label="商品名称">
+              <el-form-item label="套餐名称">
                 <el-input
-                  v-model="searchProduct"
-                  placeholder="请输入商品名称"
+                  v-model="searchParam.planName"
+                  placeholder="请输入套餐名称"
                   clearable
                 ></el-input>
               </el-form-item>
@@ -34,7 +34,7 @@
             <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6">
               <el-form-item label="订单状态">
                 <el-select
-                  v-model="searchOrderStatus"
+                  v-model="searchParam.status"
                   placeholder="请选择订单状态"
                   clearable
                   style="width: 100%"
@@ -81,10 +81,10 @@
     <div class="card-container">
       <el-table :data="tableData" stripe border style="width: 100%">
         <el-table-column
-            prop="id"
-            label="订单ID"
-            width="100"
-            show-overflow-tooltip="true"
+          prop="id"
+          label="订单ID"
+          width="100"
+          show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
           prop="orderNumber"
@@ -99,14 +99,11 @@
           show-overflow-tooltip="true"
         ></el-table-column>
         <el-table-column
-            prop="planName"
+          prop="planName"
           label="套餐名称"
           show-overflow-tooltip="true"
         ></el-table-column>
-        <el-table-column
-          label="下单日期"
-          show-overflow-tooltip="true"
-        >
+        <el-table-column label="下单日期" show-overflow-tooltip="true">
           <template #default="scope">
             {{ formatDate(scope.row.createTime) }}
           </template>
@@ -126,12 +123,11 @@
         <el-table-column label="操作">
           <template #default="scope">
             <el-button
-                type="danger"
-                size="small"
-                @click="handleDelete(scope.row.id)"
-            >删除
-            </el-button
-            >
+              type="danger"
+              size="small"
+              @click="handleDelete(scope.row.id)"
+              >删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -151,9 +147,9 @@
 </template>
 
 <script setup lang="ts">
-import {selectOrderPage, deleteOrder} from "@/api/dingdanguanli";
+import { selectOrderPage, deleteOrder } from "@/api/dingdanguanli";
 import { ORDER_STATUS_MAP, ORDER_STATUS_OPTIONS } from "@/enums/order.enum";
-import {ElMessage, ElMessageBox} from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { ref, onMounted } from "vue";
 import dayjs from "dayjs";
 
@@ -161,11 +157,6 @@ const formatDate = (date: string | number | Date) => {
   return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
 };
 
-// 搜索条件
-const searchOrderNo = ref("");
-const searchUserName = ref("");
-const searchProduct = ref("");
-const searchOrderStatus = ref("");
 const searchDateRange = ref<[Date | null, Date | null]>([null, null]);
 
 const getTagType = (status: string) => {
@@ -191,6 +182,12 @@ const searchParam = ref<API.OrderSearchParam>({});
 // 初始化所有订单数据
 const initAllOrders = async () => {
   try {
+    searchParam.value.startDate = searchDateRange.value[0]
+      ? dayjs(searchDateRange.value[0]).format("YYYY-MM-DD")
+      : undefined;
+    searchParam.value.endDate = searchDateRange.value[1]
+      ? dayjs(searchDateRange.value[1]).format("YYYY-MM-DD")
+      : undefined;
     searchParam.value.pageNum = currentPage.value;
     searchParam.value.pageSize = pageSize.value;
     const res = await selectOrderPage(searchParam.value);
@@ -211,6 +208,7 @@ const handleSearch = () => {
 // 重置搜索
 const resetSearch = () => {
   searchParam.value = {};
+  searchDateRange.value = [null, null];
   handleSearch();
 };
 
@@ -230,17 +228,17 @@ const handleCurrentChange = (val: number) => {
 const handleDelete = async (id: number) => {
   try {
     const confirmResult = await ElMessageBox.confirm(
-        "确定要删除该订单吗？",
-        "警告",
-        {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        }
+      "确定要删除该订单吗？",
+      "警告",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
     );
 
     if (confirmResult === "confirm") {
-      const res = await deleteOrder({id: id});
+      const res = await deleteOrder({ id: id });
       if (res.data.code === 200) {
         ElMessage.success("订单删除成功");
         handleSearch();
