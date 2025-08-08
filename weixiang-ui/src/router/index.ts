@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import { routes } from "./routes";
 import { useLoginUserStore } from '../store/loginUser'; 
+import { webSocketService } from '@/utils/websocket'; 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
@@ -20,7 +21,19 @@ router.beforeEach((to, from, next) => {
   // 3. 白名单路由（无需登录）
   const authWhiteList = ["/login", "/register"];
   
-  // 4. 判断逻辑
+  // 4. WebSocket连接逻辑
+  // if (isAuthenticated) {
+  //   // 已登录状态
+  //   // 如果WebSocket未连接，则建立连接
+  //   if (!webSocketService.getConnectionStatus()) {
+  //     webSocketService.connect();
+  //   }
+  // } else {
+  //   // 未登录状态，断开WebSocket连接
+  //   webSocketService.disconnect();
+  // }
+  
+  // 5. 路由访问控制逻辑
   if (requiresAuth && !isAuthenticated) {
     // 需要认证但未登录 → 重定向到登录页
     next({

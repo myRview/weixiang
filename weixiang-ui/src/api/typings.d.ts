@@ -219,6 +219,10 @@ declare namespace API {
     id: number;
   };
 
+  type getMessageByIdParams = {
+    id: number;
+  };
+
   type getOperationLogByIdParams = {
     id: number;
   };
@@ -631,6 +635,12 @@ declare namespace API {
     data?: TagVO[];
   };
 
+  type ResponseResultListUserMessageVO = {
+    code?: number;
+    message?: string;
+    data?: UserMessageVO[];
+  };
+
   type ResponseResultListUserVO = {
     code?: number;
     message?: string;
@@ -691,6 +701,12 @@ declare namespace API {
     data?: PageUserVO;
   };
 
+  type ResponseResultUserMessageVO = {
+    code?: number;
+    message?: string;
+    data?: UserMessageVO;
+  };
+
   type ResponseResultUserPlan = {
     code?: number;
     message?: string;
@@ -723,6 +739,10 @@ declare namespace API {
 
   type selectArticleDetailParams = {
     id: number;
+  };
+
+  type selectMessageListParams = {
+    userId: number;
   };
 
   type statusParams = {
@@ -817,6 +837,21 @@ declare namespace API {
     password?: string;
     /** 验证码 */
     code?: string;
+  };
+
+  type UserMessageVO = {
+    /** 主键 */
+    id?: number;
+    /** 用户id */
+    userId?: number;
+    /** 消息内容 */
+    message?: string;
+    /** 阅读状态，0-未读，1-已读 */
+    readStatus?: number;
+    /** 创建时间 */
+    createTime?: string;
+    /** 删除标识,0-正常，1-已删除 */
+    deleteFlag?: number;
   };
 
   type UserPlan = {

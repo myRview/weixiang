@@ -13,12 +13,12 @@
         </div>
         <div class="follow-stats">
           <div class="stat-item hover-effect">
-            <div class="stat-value">{{ user?.followCount || 0 }}</div>
+            <div class="stat-value">{{ flowData.length }}</div>
             <div class="stat-label">关注</div>
           </div>
           <div class="divider"></div>
           <div class="stat-item hover-effect">
-            <div class="stat-value">{{ user?.fansCount || 0 }}</div>
+            <div class="stat-value">{{ fensData.length }}</div>
             <div class="stat-label">粉丝</div>
           </div>
         </div>
@@ -46,18 +46,29 @@
           </div>
         </div>
       </div>
-      <div class="action-buttons">
+      <div
+        class="action-buttons"
+        style="display: flex; align-items: center; gap: 10px"
+      >
         <el-button type="default" class="action-btn" @click="handleEditProfile">
           <el-icon>
             <Edit />
           </el-icon>
           编辑资料
         </el-button>
-        <el-button type="success" class="action-btn" @click="handleSignIn">
-          <el-icon>
+        <el-button
+          :type="isTodaySigned ? 'default' : 'success'"
+          class="action-btn"
+          :disabled="isTodaySigned"
+          @click="handleSignIn"
+        >
+          <el-icon v-if="!isTodaySigned">
             <Check />
           </el-icon>
-          立即签到
+          <el-icon v-if="isTodaySigned">
+            <CircleCheckFilled />
+          </el-icon>
+          {{ isTodaySigned ? "已签到" : "立即签到" }}
         </el-button>
         <el-button
           type="primary"
@@ -303,11 +314,14 @@ import { getPayPlan, payPlan } from "@/api/yonghutaocanbiaoguanli";
 import QRCode from "qrcode";
 import { getOrderById, getOrderStatusById } from "@/api/dingdanguanli";
 import FileUpload from "@/components/FileUpload.vue"; // 导入自定义文件上传组件
+import { fansList, list } from "@/api/guanzhuguanli";
 
 // 默认头像
 const defaultAvatar =
   "http://gips2.baidu.com/it/u=195724436,3554684702&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=960";
 
+// 添加今天是否签到的状态
+const isTodaySigned = ref(false);
 const user = ref<API.UserVO>();
 const calendarRef = ref<HTMLDivElement | null>(null);
 // 图表实例
@@ -417,11 +431,20 @@ const handleSignIn = async () => {
       await getSignInRecords();
       await getContinuousCount();
       await getMonthSignInDays();
+      // 更新今天签到状态
+      isTodaySigned.value = true;
     }
   } catch (error) {
     console.error("签到失败", error);
   }
 };
+
+// 检查今天是否已签到
+const checkTodaySign = () => {
+  const today = dayjs().format("YYYY-MM-DD");
+  isTodaySigned.value = !!signInRecords.value[today];
+};
+
 const getPlanList = async () => {
   try {
     const res = await selectPlanList();
@@ -655,6 +678,9 @@ const getSignInRecords = async () => {
     // 计算总签到次数
     totalSignCount.value = Object.keys(signInRecords.value).length;
 
+    // 检查今天是否已签到
+    checkTodaySign();
+
     // 渲染热力图
     renderCalendarHeatmap();
   } catch (error) {
@@ -730,7 +756,7 @@ const renderCalendarHeatmap = () => {
       min: 0,
       max: 1,
       inRange: {
-        color: ["#f3f3f3", "#30a14e"], // 未签到/签到
+        color: ["#f3f3f3", "#4af07caa"], // 未签到/签到
       },
     },
     calendar: {
@@ -782,12 +808,37 @@ const renderCalendarHeatmap = () => {
   chartInstance.value.setOption(option);
 };
 
+const flowData = ref<API.UserVO[]>([]);
+const fensData = ref<API.UserVO[]>([]);
+const getFlowList = async () => {
+  try {
+    const res = await list({ userId: loginUserStore.loginUser.id });
+    if (res.data.code === 200) {
+      flowData.value = res.data.data || [];
+    }
+  } catch (error) {
+    console.error("获取用户关注列表", error);
+  }
+};
+const getFensList = async () => {
+  try {
+    const res = await fansList({ userId: loginUserStore.loginUser.id });
+    if (res.data.code === 200) {
+      fensData.value = res.data.data || [];
+    }
+  } catch (error) {
+    console.error("获取用户粉丝列表", error);
+  }
+};
+
 onMounted(async () => {
   await getUserInfo();
   await getMonthSignInDays();
   await getContinuousCount();
   await getSignInRecords();
   await getVipInfo();
+  await getFlowList();
+  await getFensList();
 });
 </script>
 
@@ -837,7 +888,7 @@ onMounted(async () => {
 
 .price-symbol {
   font-size: 14px;
-  color: #ff4d4f;
+  color: #77ff4d;
 }
 
 .price-value {
@@ -892,17 +943,50 @@ onMounted(async () => {
 
 .user-card {
   display: flex;
-  gap: 30px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  gap: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f5ff 100%);
   border-radius: 16px;
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
-  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  margin-bottom: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(5px);
+  max-height: 280px;
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+.user-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 70%
+  );
+  transform: rotate(30deg);
+  animation: shimmer 8s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .avatar-section {
@@ -924,8 +1008,14 @@ onMounted(async () => {
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  transition: transform 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.5);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05) rotate(3deg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
 }
 
 .avatar-badge {
@@ -976,16 +1066,19 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.8);
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .info-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border-color: rgba(145, 213, 255, 0.5);
+  background: rgba(255, 255, 255, 1);
 }
 
 .info-label {
@@ -1056,12 +1149,47 @@ onMounted(async () => {
 
 .action-btn {
   width: 180px !important;
-  height: 40px;
+  height: 44px !important;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 15px;
   margin: 0 auto;
+  border-radius: 22px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.action-btn::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  ) !important;
+  transition: all 0.5s !important;
+}
+
+.action-btn:hover::before {
+  left: 100% !important;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #409eff 0%, #3375b9 100%) !important;
+  border: none !important;
 }
 
 @media (max-width: 768px) {
@@ -1156,7 +1284,7 @@ onMounted(async () => {
 
 .calendar-chart {
   width: 100%;
-  height: 200px;
+  height: 160px;
   margin-top: 10px;
 }
 
@@ -1165,7 +1293,8 @@ onMounted(async () => {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 20px;
+    padding: 16px;
+    max-height: none;
   }
 
   .avatar-section {
@@ -1183,7 +1312,7 @@ onMounted(async () => {
   }
 
   .calendar-chart {
-    height: 180px;
+    height: 140px;
   }
 
   .follow-stats {

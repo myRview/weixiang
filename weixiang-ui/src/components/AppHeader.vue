@@ -2,9 +2,22 @@
   <el-header class="app-header">
     <div class="logo">维享空间</div>
     <div class="user-info">
-      <el-icon class="notification-icon">
-        <BellFilled />
-      </el-icon>
+      <div class="notification-container" @click="openMessageSidebar">
+        <el-icon class="notification-icon">
+          <BellFilled />
+        </el-icon>
+        <span
+          v-if="unreadCount > 0"
+          :class="['notification-badge', unreadCount > 99 ? 'high-count' : '']"
+          :title="
+            unreadCount > 99
+              ? `+${unreadCount} 条未读消息`
+              : `${unreadCount} 条未读消息`
+          "
+        >
+          {{ unreadCount > 99 ? "99+" : unreadCount }}
+        </span>
+      </div>
       <el-dropdown trigger="click">
         <div class="user-avatar">
           <el-avatar :src="user.avatar" size="medium"></el-avatar>
@@ -72,9 +85,18 @@
       </template>
     </el-dialog>
   </el-header>
+  <MessageSidebar
+    :is-open="messageSidebarOpen"
+    @close="closeMessageSidebar"
+    @update:unreadCount="updateUnreadCount"
+    @update:messages="updateMessages"
+  />
+  
 </template>
 
 <script setup lang="ts">
+import MessageSidebar from './MessageSidebar.vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import {
   ArrowDown,
   BellFilled,
@@ -83,12 +105,17 @@ import {
   SwitchButton,
   Postcard,
 } from "@element-plus/icons-vue";
-import { ref, onMounted, computed } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import { logout } from "@/api/loginController";
-import { ElMessage, type FormInstance, type FormRules } from "element-plus";
+import {
+  ElMessage,
+  ElMessageBox,
+  type FormInstance,
+  type FormRules,
+} from "element-plus";
 import { getUserById, updatePassword } from "@/api/yonghuguanli";
 import { useRouter } from "vue-router";
+import { selectMessageList } from "@/api/yonghuxiaoxiguanli";
 
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
@@ -111,12 +138,22 @@ const roleLabel = computed(() => {
 // 退出登录
 const handlerLogout = async () => {
   try {
-    const res = await logout();
-    // 清空本地存储
-    localStorage.removeItem("token");
-    loginUserStore.clearLoginUser();
-    // 跳转到登录页
-    window.location.href = "/login";
+    ElMessageBox.confirm("确定要退出登录吗？", "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+      .then(async () => {
+        const res = await logout();
+        // 清空本地存储
+        localStorage.removeItem("token");
+        loginUserStore.clearLoginUser();
+        // 跳转到登录页
+        window.location.href = "/login";
+      })
+      .catch(() => {
+        // 用户取消操作
+      });
   } catch (error) {
     console.error("退出登录失败:", error);
   }
@@ -169,9 +206,7 @@ const updatePwd = () => {
 // 跳转到会员中心
 const goToMemberCenter = () => {
   if (user.value && user.value.id) {
-    router.push(
-      "member-center",
-    );
+    router.push("member-center");
   } else {
     ElMessage.error("无法获取用户信息，无法进入会员中心");
   }
@@ -226,11 +261,67 @@ const getUserInfo = async () => {
     console.error("获取用户信息失败", error);
   }
 };
+// 消息侧边栏
+const messageSidebarOpen = ref(false);
+const unreadCount = ref(0); // 未读消息数量
+
+// 打开消息侧边栏
+const openMessageSidebar = () => {
+  messageSidebarOpen.value = true;
+};
+
+// 关闭消息侧边栏
+const closeMessageSidebar = () => {
+  messageSidebarOpen.value = false;
+};
+
+// 更新未读消息数量
+const updateUnreadCount = (count: number) => {
+  unreadCount.value = count;
+};
+
+// 更新消息数据
+const updateMessages = (messages: API.UserMessageVO[]) => {
+  messageData.value = messages;
+};
+
+// 消息
+const messageData = ref<API.UserMessageVO[]>([]); // 消息数据
+const messageDialogVisible = ref(false); // 消息对话框是否可见
+const currentMessage = ref<API.UserMessageVO | null>(null); // 当前选中的消息
+const loading = ref(false); // 加载状态
+const getMessages = async () => {
+  loading.value = true;
+  try {
+    const res = await selectMessageList({
+      userId: loginUserStore.loginUser.id,
+    });
+    if (res.data.code === 200) {
+      messageData.value = res.data.data || [];
+      // 计算未读消息数量 0 未读 1 已读
+      unreadCount.value = messageData.value.filter(
+        (msg) => msg.readStatus === 0
+      ).length;
+    }
+  } catch (error) {
+    console.error("获取消息失败:", error);
+  }
+};
 
 // 组件挂载时获取最新用户信息
 onMounted(async () => {
   await loginUserStore.fetchLoginUser();
   await getUserInfo();
+  await getMessages();
+});
+
+// 监听消息侧边栏关闭事件
+watch(() => messageSidebarOpen.value, (newVal) => {
+  if (!newVal && messageData.value.length > 0) {
+    // 侧边栏关闭时，重新获取消息数量
+    const count = messageData.value.filter(msg => msg.readStatus === 0).length;
+    updateUnreadCount(count);
+  }
 });
 </script>
 
@@ -268,14 +359,80 @@ onMounted(async () => {
   gap: 16px;
 }
 
+.notification-container {
+  position: relative;
+  display: inline-block;
+}
+
 .notification-icon {
   font-size: 22px;
   color: #7a7f9a;
   cursor: pointer;
   transition: all 0.3s ease;
-  position: relative;
   padding: 8px;
   border-radius: 50%;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: #f56c6c;
+  color: white;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 10px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
+}
+
+.notification-badge.high-count {
+  background-color: #ff4d4f;
+  animation: pulseFast 1s infinite;
+  min-width: 18px;
+  height: 18px;
+  font-weight: bold;
+}
+
+.notification-container:hover .notification-badge {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 108, 108, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(245, 108, 108, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 108, 108, 0);
+  }
+}
+
+@keyframes pulseFast {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.6);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 8px rgba(255, 77, 79, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+  }
 }
 
 .user-avatar {

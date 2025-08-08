@@ -3,6 +3,7 @@ package com.hk.service.article.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -18,10 +19,14 @@ import com.hk.enums.ArticlePublishStatus;
 import com.hk.exception.BusinessException;
 import com.hk.mapper.article.ArticleMapper;
 import com.hk.param.ArticleSearchParam;
+import com.hk.scoket.BaseMessage;
 import com.hk.service.article.ArticleService;
 import com.hk.service.article.ArticleTagService;
+import com.hk.service.message.UserMessageService;
 import com.hk.service.user.UserService;
+import com.hk.utils.WebSocketMessageUtil;
 import com.hk.vo.article.*;
+import com.hk.vo.message.UserMessageVO;
 import com.hk.vo.user.UserCacheVo;
 import com.hk.vo.user.UserVO;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +54,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     private UserService userService;
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private WebSocketMessageUtil webSocketMessageUtil;
+    @Autowired
+    private UserMessageService userMessageService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -203,6 +212,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean auditArticle(ArticleAuditVO auditVO) {
         ArticleEntity article = this.getById(auditVO.getArticleId());
         if (article == null) {
@@ -217,7 +227,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             auditVO.setAuditReason("");
         }
         article.setAuditReason(auditVO.getAuditReason());
-        return this.updateById(article);
+
+
+        boolean update = this.updateById(article);
+        if (update) {
+            String message = status== ArticleAuditStatus.PASS.getCode() ? "您的文章《" + article.getTitle() + "》已通过审核" : "您的文章《" + article.getTitle() + "》未通过审核，原因：" + auditVO.getAuditReason();
+            UserMessageVO messageVO = new UserMessageVO();
+            messageVO.setUserId(article.getUserId());
+            messageVO.setMessage(message);
+            userMessageService.saveMessage(messageVO);
+        }
+        return update;
     }
 
     private String getLikeKey(Long articleId) {

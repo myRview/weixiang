@@ -4,7 +4,7 @@ import com.hk.config.RabbitMQConfig;
 import com.hk.enums.OrderStatusEnum;
 import com.hk.service.order.OrderInfoService;
 import com.hk.service.plan.UserPlanService;
-import com.hk.vo.message.MessageVO;
+import com.hk.mq.MessageVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;

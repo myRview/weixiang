@@ -9,6 +9,7 @@ import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import VChart from "vue-echarts";
 
 const app = createApp(App);
+
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 app.component("v-chart", VChart);

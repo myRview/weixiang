@@ -21,7 +21,7 @@ import com.hk.service.plan.MemberPlanService;
 import com.hk.service.order.OrderInfoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.service.user.UserService;
-import com.hk.vo.message.MessageVO;
+import com.hk.mq.MessageVO;
 import com.hk.vo.order.AliPayVO;
 import com.hk.vo.order.OrderStatisticsVO;
 import com.hk.vo.order.OrderVO;

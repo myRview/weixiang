@@ -20,7 +20,7 @@ import com.hk.config.RabbitMQConfig;
 import com.hk.enums.MessageTypeEnum;
 import com.hk.exception.BusinessException;
 import com.hk.mq.MessageProducer;
-import com.hk.vo.message.MessageVO;
+import com.hk.mq.MessageVO;
 import com.hk.vo.order.AliPayVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -1,4 +1,4 @@
-package com.hk.vo.message;
+package com.hk.mq;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

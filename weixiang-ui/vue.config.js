@@ -9,5 +9,13 @@ module.exports = defineConfig({
         warnings: false
       }
     }
+  },
+  configureWebpack: {
+    resolve: {
+      fallback: {
+        // 解决stompjs依赖的net模块在浏览器环境中不存在的问题
+        net: false
+      }
+    }
   }
 });

@@ -4,6 +4,7 @@
 // API 唯一标识：
 import * as yonghuguanli from "./yonghuguanli";
 import * as yonghutaocanbiaoguanli from "./yonghutaocanbiaoguanli";
+import * as yonghuxiaoxiguanli from "./yonghuxiaoxiguanli";
 import * as wenzhangbiaoqianguanli from "./wenzhangbiaoqianguanli";
 import * as jiaosequanxianguanli from "./jiaosequanxianguanli";
 import * as userRegisterController from "./userRegisterController";
@@ -22,6 +23,7 @@ import * as aliPayController from "./aliPayController";
 export default {
   yonghuguanli,
   yonghutaocanbiaoguanli,
+  yonghuxiaoxiguanli,
   wenzhangbiaoqianguanli,
   jiaosequanxianguanli,
   userRegisterController,
