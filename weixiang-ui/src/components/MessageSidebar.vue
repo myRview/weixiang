@@ -43,11 +43,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, onMounted, watch, computed } from "vue";
+import { ref, defineProps, defineEmits, onMounted, watch, computed, onUnmounted } from "vue";
 import { Close, Message } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { selectMessageList, readMessage, deleteMessage } from "@/api/yonghuxiaoxiguanli";
 import { useLoginUserStore } from "@/store/loginUser";
+import { PushTypeEnum } from "@/enums/message.enum";
+import { webSocketService } from "@/router/index";
 
 // 定义props
 const props = defineProps<{
@@ -66,6 +68,33 @@ const messageData = ref<API.UserMessageVO[]>([]);
 const loading = ref(false);
 const loginUserStore = useLoginUserStore();
 const selectedMessageIds = ref<string[]>([]);
+
+/**
+ * 初始化WebSocket消息监听
+ * 负责监听ARTICLE类型的WebSocket消息，并处理消息接收逻辑
+ */
+const initWebSocketListeners = () => {
+  // 监听文章消息
+  webSocketService.on(PushTypeEnum.ARTICLE, (data) => {
+    // 添加新消息到列表开头
+    const newMessage: API.UserMessageVO = {
+      id: data.id,
+      message: data.message,
+      userId: data.userId,
+      createTime: new Date().toISOString(),
+      readStatus: 0, // 未读
+    };
+    messageData.value.unshift(newMessage);
+
+    // 发出消息数据更新事件，由父组件负责计算未读数量
+    emit('update:messages', messageData.value);
+  });
+};
+
+// 清理WebSocket监听
+const cleanupWebSocketListeners = () => {
+  webSocketService.off(PushTypeEnum.ARTICLE);
+};
 
 // 计算属性，检查是否有选中的消息
 const hasSelected = computed(() => selectedMessageIds.value.length > 0);
@@ -105,9 +134,7 @@ const getMessages = async () => {
     });
     if (res.data.code === 200) {
       messageData.value = res.data.data || [];
-      // 计算未读消息数量
-      const unreadCount = messageData.value.filter(msg => msg.readStatus === 0).length;
-      emit('update:unreadCount', unreadCount);
+      // 发出消息数据更新事件，由父组件负责计算未读数量
       emit('update:messages', messageData.value);  // 同步消息数据到父组件
     }
   } catch (error) {
@@ -128,9 +155,7 @@ const handleMessageClick = async (message: API.UserMessageVO) => {
       if (res.data.code === 200) {
         // 更新本地消息状态
         message.readStatus = 1;
-        // 更新未读数量
-        const unreadCount = messageData.value.filter(msg => msg.readStatus === 0).length;
-        emit('update:unreadCount', unreadCount);
+        // 发出消息数据更新事件，由父组件负责计算未读数量
         emit('update:messages', messageData.value);  // 同步消息数据
         ElMessage.success('消息已标记为已读');
       } else {
@@ -161,9 +186,7 @@ const markAllAsRead = async () => {
           msg.readStatus = 1;
         }
       });
-      // 更新未读数量
-      const unreadCount = messageData.value.filter(msg => msg.readStatus === 0).length;
-      emit('update:unreadCount', unreadCount);
+      // 发出消息数据更新事件，由父组件负责计算未读数量
       emit('update:messages', messageData.value);  // 同步消息数据
       ElMessage.success('已将所有消息标记为已读');
     }
@@ -210,11 +233,32 @@ onMounted(() => {
   if (props.isOpen) {
     getMessages();
   }
+  // 初始化WebSocket监听
+  initWebSocketListeners();
 });
+
+// 组件卸载时清理
+onUnmounted(() => {
+  cleanupWebSocketListeners();
+});
+
+// 监听用户登录状态变化
+watch(
+  () => loginUserStore.loginUser,
+  (newUser) => {
+    if (newUser) {
+      // 登录成功，初始化WebSocket监听
+      initWebSocketListeners();
+    } else {
+      // 登出，清理WebSocket监听
+      cleanupWebSocketListeners();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
-/* 样式保持不变 */
 .message-sidebar {
   position: fixed;
   top: 0;

@@ -47,8 +47,9 @@ import { ref } from "vue";
 import { ElMessage } from "element-plus";
 import { login } from "@/api/loginController";
 import { useLoginUserStore } from "../store/loginUser";
-import { webSocketService } from "@/utils/websocket";
 import { useRouter } from "vue-router";
+
+const router = useRouter();
 const form = ref<API.UserLoginVO>({ account: "", password: "" });
 const rules = {
   account: [{ required: true, message: "请输入账号", trigger: "blur" }],
@@ -67,16 +68,11 @@ const handleLogin = async () => {
     localStorage.setItem("token", token);
     const loginUserStore = useLoginUserStore();
     
-    // 先获取用户信息再连接WebSocket
+    // 获取用户信息
     await loginUserStore.fetchLoginUser();
     
-    window.location.href = "/";
-    // webSocketService.connect();
-    // 延迟连接确保页面渲染完成
-    // setTimeout(() => {
-    //   console.log("WebSocket连接尝试中...");
-    //   webSocketService.connect();
-    // }, 500);
+    // 使用路由跳转代替window.location.href，确保WebSocket能正确初始化
+    router.push("/");
   } catch (error) {
     ElMessage.error("获取用户信息失败");
   }
@@ -84,7 +80,7 @@ const handleLogin = async () => {
 
 const handleRegister = () => {
   // 跳转注册页
-  window.location.href = "/register";
+  router.push("/register");
 };
 </script>
 

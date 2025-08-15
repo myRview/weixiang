@@ -138,24 +138,22 @@ const roleLabel = computed(() => {
 // 退出登录
 const handlerLogout = async () => {
   try {
-    ElMessageBox.confirm("确定要退出登录吗？", "提示", {
+    await ElMessageBox.confirm("确定要退出登录吗？", "提示", {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
-    })
-      .then(async () => {
-        const res = await logout();
-        // 清空本地存储
-        localStorage.removeItem("token");
-        loginUserStore.clearLoginUser();
-        // 跳转到登录页
-        window.location.href = "/login";
-      })
-      .catch(() => {
-        // 用户取消操作
-      });
+    });
+    
+    // 调用后端退出接口
+    const res = await logout();
+      // 清空本地存储
+      localStorage.removeItem("token");
+      loginUserStore.clearLoginUser();
+      // 跳转到登录页
+      router.push("/login");
   } catch (error) {
-    console.error("退出登录失败:", error);
+    // 用户取消操作
+    console.log("用户取消退出");
   }
 };
 
@@ -307,6 +305,16 @@ const getMessages = async () => {
     console.error("获取消息失败:", error);
   }
 };
+
+// 监听消息数据变化，实时更新未读数量
+watch(
+  messageData,
+  () => {
+    const count = messageData.value.filter(msg => msg.readStatus === 0).length;
+    updateUnreadCount(count);
+  },
+  { deep: true }
+);
 
 // 组件挂载时获取最新用户信息
 onMounted(async () => {

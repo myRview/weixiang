@@ -1,237 +1,167 @@
-import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
-import { ElNotification, ElMessage } from 'element-plus';
+export default class WebSocketService {
+  private socket: WebSocket | null;
+  private token: string | null;
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
+  private eventListeners: Record<string, Array<(data: any) => void>>;
+  private baseUrl: string;
+  private path: string;
 
-class WebSocketService {
-    private stompClient: any = null;
-    private baseUrl = "http://localhost:8015"; // 后端地址（生产环境应使用环境变量）
-    private isConnected = false;
-    private isConnecting = false; // 新增连接中状态
-    private reconnectTimer: NodeJS.Timeout | null = null;
-    private reconnectDelay = 5000; // 重连延迟时间(ms)
-    private maxReconnectAttempts = 10; // 最大重连次数
-    private reconnectAttempts = 0; // 当前重连次数
-    private eventListeners: Record<string, Function[]> = {};
+  constructor(baseUrl?: string, path = '/ws/article/notify') {
+    this.socket = null;
+    this.token = null;
+    this.reconnectTimer = null;
+    this.eventListeners = {};
+    this.baseUrl = baseUrl || (process.env.VUE_APP_API_BASE_URL || 'http://localhost:8015/api');
+    this.path = path;
+  }
 
-    /**
-     * 建立WebSocket连接
-     */
-    connect() {
-        // 防止重复连接
-        if (this.isConnected || this.isConnecting) {
-            console.log('[WebSocket] 连接已存在或正在建立，跳过重复连接');
-            return;
-        }
+  // 初始化WebSocket连接
+  connect(token: string) {
+    // 清除可能存在的重连计时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
 
-        // 清除之前的重连定时器
-        if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-        }
+    this.token = token;
+    
+    // 关闭已有连接
+    if (this.socket) {
+      this.socket.close(1000, '主动重连');
+    }
 
-        // 获取token（登录后存储的）
-        const token = localStorage.getItem('token');
-        if (!token) {
-            console.error('[WebSocket] 未获取到token，无法建立连接');
-            return;
-        }
-
-        this.isConnecting = true;
-        console.log('[WebSocket] 开始建立连接...');
-
+    // 添加页面卸载事件监听，确保关闭浏览器时断开连接
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+    
+    // 构建连接URL
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const baseHost = this.baseUrl.replace(/^https?:\/\//, '');
+    const url = `${wsProtocol}//${baseHost}${this.path}?token=${encodeURIComponent(token)}`;
+    
+    try {
+      // 创建WebSocket实例，通过协议头传递token（隐藏传递）
+      const protocols = [`token=${token}`];
+      this.socket = new WebSocket(url);
+      
+      // 注册事件监听
+      this.socket.onopen = (event) => {
+        console.log('WebSocket连接已建立');
+        this.trigger('open', event);
+      };
+      
+      this.socket.onmessage = (event) => {
+        console.log('收到WebSocket消息:', event.data);
         try {
-            // 构建完整连接地址（包含后端上下文路径/api）
-            const wsUrl = `${this.baseUrl}/api/ws?token=${token}`;
-            console.log('[WebSocket] 连接地址:', wsUrl);
-
-            // 创建SockJS连接
-            const socket = new SockJS(wsUrl);
-            
-            // 创建STOMP客户端
-            this.stompClient = Stomp.over(socket);
-            
-            // 生产环境禁用调试日志
-            if (process.env.NODE_ENV === 'production') {
-                this.stompClient.debug = () => {};
-            }
-
-            // 连接服务器
-            this.stompClient.connect(
-                {},
-                (frame: any) => {
-                    this.isConnected = true;
-                    this.isConnecting = false;
-                    this.reconnectAttempts = 0;
-                    console.log('[WebSocket] 连接成功:', frame);
-                    ElMessage.success('实时通知服务已连接');
-
-                    // 订阅用户专属消息通道
-                    this.subscribeToUserNotifications();
-                    
-                    // 订阅系统公告通道
-                    this.subscribeToAnnouncements();
-                },
-                (error: any) => {
-                    this.handleConnectionError(error);
-                }
-            );
-        } catch (error) {
-            this.handleConnectionError(error);
+          const message = JSON.parse(event.data);
+          // 触发通用message事件
+          this.trigger('message', message);
+          // 触发特定类型事件
+          if (message.type) {
+            this.trigger(message.type, message.data);
+          }
+        } catch (e) {
+          console.error('解析WebSocket消息失败', e, '原始消息:', event.data);
+          this.trigger('message', event.data);
         }
-    }
-
-    /**
-     * 订阅用户通知通道
-     */
-    private subscribeToUserNotifications() {
-        this.stompClient.subscribe('/user/notification', (message: any) => {
-            const data = JSON.parse(message.body);
-            console.log('[WebSocket] 收到用户消息:', data);
-            this.handleMessage(data);
-        });
-    }
-
-    /**
-     * 订阅系统公告通道
-     */
-    private subscribeToAnnouncements() {
-        this.stompClient.subscribe('/topic/announcement', (message: any) => {
-            const data = JSON.parse(message.body);
-            console.log('[WebSocket] 收到系统公告:', data);
-            this.handleAnnouncement(data);
-        });
-    }
-
-    /**
-     * 处理连接错误
-     */
-    private handleConnectionError(error: any) {
-        this.isConnected = false;
-        this.isConnecting = false;
-        this.reconnectAttempts++;
+      };
+      
+      this.socket.onclose = (event) => {
+        console.log(`WebSocket连接关闭，代码: ${event.code}, 原因: ${event.reason}`);
+        this.trigger('close', event);
         
-        console.error(`[WebSocket] 连接失败（第${this.reconnectAttempts}次）:`, error);
-        
-        // 超过最大重连次数
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            ElMessage.error('通知服务连接失败，请刷新页面重试');
-            return;
+        // 非主动关闭则尝试重连（1000是正常关闭码）
+        if (event.code !== 1000 && this.token) {
+          this.reconnectTimer = setTimeout(() => this.connect(this.token!), 5000);
+          console.log('5秒后尝试重连...');
         }
-        
-        // 延迟重连
-        ElMessage.warning(`通知服务连接失败，${this.reconnectDelay/1000}秒后重试`);
-        this.reconnectTimer = setTimeout(() => this.connect(), this.reconnectDelay);
+      };
+      
+      this.socket.onerror = (event) => {
+        console.error('WebSocket错误发生:', event);
+        this.trigger('error', event);
+      };
+    } catch (error) {
+      console.error('创建WebSocket连接失败:', error);
+      this.trigger('error', error);
+      if (this.token) {
+        this.reconnectTimer = setTimeout(() => this.connect(this.token!), 5000);
+      }
     }
+  }
 
-    /**
-     * 断开连接
-     */
-    disconnect() {
-        if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-        }
-        
-        if (this.stompClient && this.isConnected) {
-            this.stompClient.disconnect(() => {
-                this.isConnected = false;
-                console.log('[WebSocket] 连接已断开');
-                ElMessage.info('实时通知服务已断开');
-            });
-        }
+  // 关闭连接（带正常关闭码）
+  disconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-
-    /**
-     * 处理用户消息
-     */
-    private handleMessage(message: any) {
-        // 文章审核结果特殊处理
-        if (message.messageType === 'ARTICLE_AUDIT') {
-            ElNotification({
-                title: '文章审核通知',
-                message: message.content,
-                type: message.status === 'PASS' ? 'success' : 'error',
-                duration: 6000
-            });
-            return;
-        }
-
-        // 其他消息类型处理
-        ElNotification({
-            title: message.title || '新消息',
-            message: message.content,
-            type: message.type?.toLowerCase() || 'info',
-            duration: 5000
-        });
-
-        this.emit('message', message);
+    if (this.socket) {
+      this.socket.close(1000, '主动断开连接');
+      this.socket = null;
     }
+    // 移除页面卸载监听器
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+  }
 
-    /**
-     * 处理系统公告
-     */
-    private handleAnnouncement(data: any) {
-        ElNotification({
-            title: '系统公告',
-            message: data.content,
-            type: 'warning',
-            duration: 10000,
-            customClass: 'system-announcement'
-        });
-        this.emit('announcement', data);
-    }
+  // 处理页面卸载事件的回调
+  private handleBeforeUnload = () => {
+    this.disconnect();
+  }
 
-    /**
-     * 发送消息到服务器
-     */
-    sendMessage(destination: string, data: any) {
-        if (!this.isConnected) {
-            console.error('[WebSocket] 未连接，无法发送消息');
-            ElMessage.warning('通知服务未连接');
-            return false;
-        }
-
-        try {
-            this.stompClient.send(destination, {}, JSON.stringify(data));
-            return true;
-        } catch (error) {
-            console.error('[WebSocket] 发送消息失败:', error);
-            ElMessage.error('消息发送失败');
-            return false;
-        }
-    }
-
-    /* 事件监听机制 */
-    on(eventName: string, callback: Function) {
-        if (!this.eventListeners[eventName]) {
-            this.eventListeners[eventName] = [];
-        }
-        this.eventListeners[eventName].push(callback);
+  // 发送消息到服务器
+  sendMessage(message: string | object): boolean {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error('WebSocket连接未建立，无法发送消息');
+      return false;
     }
     
-    private emit(eventName: string, data: any) {
-        this.eventListeners[eventName]?.forEach(cb => cb(data));
+    try {
+      const sendData = typeof message === 'object' ? JSON.stringify(message) : message;
+      this.socket.send(sendData);
+      return true;
+    } catch (error) {
+      console.error('发送WebSocket消息失败:', error);
+      return false;
     }
-    
-    off(eventName: string, callback?: Function) {
-        if (!callback) {
-            delete this.eventListeners[eventName];
-        } else {
-            this.eventListeners[eventName] = this.eventListeners[eventName]?.filter(cb => cb !== callback);
-        }
-    }
+  }
 
-    /**
-     * 获取当前连接状态
-     */
-    getConnectionStatus() {
-        return {
-            isConnected: this.isConnected,
-            isConnecting: this.isConnecting,
-            reconnectAttempts: this.reconnectAttempts
-        };
+  // 注册事件监听器
+  on(eventName: string, callback: (data: any) => void) {
+    if (!this.eventListeners[eventName]) {
+      this.eventListeners[eventName] = [];
     }
+    this.eventListeners[eventName].push(callback);
+  }
+
+  // 移除事件监听器
+  off(eventName: string, callback?: (data: any) => void) {
+    if (!this.eventListeners[eventName]) return;
+    
+    if (callback) {
+      this.eventListeners[eventName] = this.eventListeners[eventName].filter(
+        cb => cb !== callback
+      );
+    } else {
+      // 如果没有指定回调，则移除所有该事件的监听器
+      delete this.eventListeners[eventName];
+    }
+  }
+
+  // 触发事件
+  private trigger(eventName: string, data: any) {
+    if (this.eventListeners[eventName]) {
+      this.eventListeners[eventName].forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`触发事件${eventName}的回调函数出错:`, error);
+        }
+      });
+    }
+  }
+
+  // 检查连接状态
+  isConnected(): boolean {
+    return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+  }
 }
-
-// 导出单例实例
-export const webSocketService = new WebSocketService();

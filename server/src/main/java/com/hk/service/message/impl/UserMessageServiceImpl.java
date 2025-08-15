@@ -34,6 +34,7 @@ public class UserMessageServiceImpl extends ServiceImpl<UserMessageMapper, UserM
         entity.setUserId(messageVO.getUserId());
         entity.setMessage(messageVO.getMessage());
         this.save(entity);
+        messageVO.setId(entity.getId());
     }
 
     @Override

@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 //基于token，所以不需要session
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .logout(logout->logout.disable())
                 //身份异常处理
                 .exceptionHandling(eh -> eh.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
@@ -60,8 +61,8 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/doc.html",
                                 "/favicon.ico",
-                                "/api/ws/**",
-                                "/api/ws"
+                                "/ws/**",
+                                "/ws"
                         )
                         .permitAll()
                         .anyRequest().authenticated()

@@ -22,8 +22,7 @@ public class UserContext {
      * 获取当前请求对象
      */
     public static HttpServletRequest getCurrentRequest() {
-        ServletRequestAttributes attributes =
-                (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
         return attributes.getRequest();
     }
 

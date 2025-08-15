@@ -3,7 +3,7 @@ package com.hk.service.article.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.util.IdUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -16,15 +16,16 @@ import com.hk.entity.article.ArticleEntity;
 import com.hk.entity.article.ArticleTagEntity;
 import com.hk.enums.ArticleAuditStatus;
 import com.hk.enums.ArticlePublishStatus;
+import com.hk.enums.PushTypeEnum;
 import com.hk.exception.BusinessException;
 import com.hk.mapper.article.ArticleMapper;
 import com.hk.param.ArticleSearchParam;
-import com.hk.scoket.BaseMessage;
+import com.hk.scoket.ArticleApprovalHandler;
+import com.hk.scoket.PushMessageBaseVO;
 import com.hk.service.article.ArticleService;
 import com.hk.service.article.ArticleTagService;
 import com.hk.service.message.UserMessageService;
 import com.hk.service.user.UserService;
-import com.hk.utils.WebSocketMessageUtil;
 import com.hk.vo.article.*;
 import com.hk.vo.message.UserMessageVO;
 import com.hk.vo.user.UserCacheVo;
@@ -55,9 +56,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Autowired
     private RedisService redisService;
     @Autowired
-    private WebSocketMessageUtil webSocketMessageUtil;
-    @Autowired
     private UserMessageService userMessageService;
+    @Autowired
+    private ArticleApprovalHandler articleApprovalHandler;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -231,11 +232,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         boolean update = this.updateById(article);
         if (update) {
-            String message = status== ArticleAuditStatus.PASS.getCode() ? "您的文章《" + article.getTitle() + "》已通过审核" : "您的文章《" + article.getTitle() + "》未通过审核，原因：" + auditVO.getAuditReason();
+            String message = status == ArticleAuditStatus.PASS.getCode() ? "您的文章《" + article.getTitle() + "》已通过审核" : "您的文章《" + article.getTitle() + "》未通过审核，原因：" + auditVO.getAuditReason();
             UserMessageVO messageVO = new UserMessageVO();
             messageVO.setUserId(article.getUserId());
             messageVO.setMessage(message);
             userMessageService.saveMessage(messageVO);
+            PushMessageBaseVO<UserMessageVO> messageBaseVO= new PushMessageBaseVO(PushTypeEnum.ARTICLE.getCode(),messageVO);
+            articleApprovalHandler.sendMessageToUser(article.getUserId().toString(), messageBaseVO);
         }
         return update;
     }
