@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -34,7 +35,7 @@ public class UserPlanController {
     @PostMapping("/pay/plan")
     @Operation(summary = "用户购买套餐")
     @PreAuthorize("@ss.hasPermission('/user/plan/pay/plan')")
-    public ResponseResult<OrderVO> payPlan(@RequestBody PayPlanVo payPlanVo) {
+    public ResponseResult<OrderVO> payPlan(@RequestBody @Validated PayPlanVo payPlanVo) {
         return ResponseResult.success(orderInfoService.payPlan(payPlanVo));
     }
 

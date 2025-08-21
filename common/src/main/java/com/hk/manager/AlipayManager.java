@@ -48,6 +48,10 @@ public class AlipayManager {
     private MessageProducer messageProducer;
 
 
+    /**
+     * 生成支付二维码(测试)
+     * @param response
+     */
     public void generateQrCodeImage(HttpServletResponse response) {
         try {
             // 1. 初始化支付宝客户端
@@ -80,6 +84,11 @@ public class AlipayManager {
         }
     }
 
+    /**
+     * 支付回调
+     * @param request
+     * @return
+     */
     public String completePay(HttpServletRequest request) {
         Map<String, String[]> requestParams = request.getParameterMap();
         Map<String, String> params = new HashMap<>();
@@ -89,11 +98,9 @@ public class AlipayManager {
         try {
             // 1. 验证签名
             boolean signVerified = AlipaySignature.rsaCheckV1(params, alipayConfig.getAlipayPublicKey(), alipayConfig.getCharset(), alipayConfig.getSignType());
-
             if (!signVerified) {
                 return "failure";
             }
-
             // 2. 验证交易状态
             String tradeStatus = params.get("trade_status");
             if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
@@ -110,6 +117,11 @@ public class AlipayManager {
         return "failure";
     }
 
+    /**
+     * 生成支付二维码
+     * @param payVO
+     * @return
+     */
     public String generateQrCodeImage(AliPayVO payVO) {
         try {
             String orderNo = payVO.getOrderNo();

@@ -1,14 +1,11 @@
 package com.hk.controller.user;
 
-import cn.hutool.core.bean.BeanUtil;
-import com.hk.aop.log.annotation.LoginLog;
+import com.hk.cache.RedisService;
 import com.hk.common.ResponseResult;
-import com.hk.entity.user.UserEntity;
-import com.hk.enums.UserRoleEnum;
-import com.hk.service.user.RoleService;
+import com.hk.factory.message.base.MessageFactory;
+import com.hk.factory.message.MessageFactoryProducer;
+import com.hk.factory.message.enums.MessageFactoryType;
 import com.hk.service.user.UserService;
-import com.hk.vo.user.RoleVO;
-import com.hk.vo.user.UserAddVO;
 import com.hk.vo.user.UserRegisterVO;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author huangkun
@@ -27,33 +26,41 @@ public class UserRegisterController {
     @Autowired
     private UserService userService;
     @Autowired
-    private RoleService roleService;
+    private MessageFactoryProducer messageFactoryProducer;
+    @Autowired
+    private RedisService<String> redisService;
 
     @PostMapping("/register")
     @Operation(summary = "注册")
-    @LoginLog(value = "register")
     public ResponseResult register(@RequestBody UserRegisterVO registerVO) {
-        String account = registerVO.getAccount();
-        String email = registerVO.getEmail();
-        String phone = registerVO.getPhone();
-        String password = registerVO.getPassword();
-        String confirmPassword = registerVO.getConfirmPassword();
-        if(StringUtils.isBlank(password)|| StringUtils.isBlank(confirmPassword)){
-            return ResponseResult.fail("密码不能为空");
-        }
-        UserEntity user = userService.selectOneByAccount(account);
-        if (user != null) {
-            return ResponseResult.fail("账号已存在");
-        }
-        if (!password.equals(confirmPassword)) {
-            return ResponseResult.fail("两次密码不一致");
-        }
-        RoleVO roleVO = roleService.selectByCode(UserRoleEnum.USER.getValue());
-        UserAddVO userAddVO = new UserAddVO();
-        BeanUtil.copyProperties(registerVO, userAddVO);
-        userAddVO.setRoleId(roleVO.getId());
-        boolean save = userService.saveUser(userAddVO);
+        boolean save = userService.register(registerVO);
         return save ? ResponseResult.success("注册成功") : ResponseResult.fail("注册失败");
 
+    }
+
+
+    @PostMapping("/send/code")
+    @Operation(summary = "获取验证码")
+    public ResponseResult<?> sendCode(@RequestBody UserRegisterVO registerVO) {
+
+        String email = registerVO.getEmail();
+        String phone = registerVO.getPhone();
+        MessageFactory factory = null;
+        String target = null;
+        if (StringUtils.isNotBlank(email)) {
+            factory = messageFactoryProducer.getFactory(MessageFactoryType.EMAIL.name());
+            target = email;
+        }
+        if (StringUtils.isNotBlank(phone)) {
+            factory = messageFactoryProducer.getFactory(MessageFactoryType.SMS.name());
+            target = phone;
+        }
+        if (factory == null) {
+            return ResponseResult.fail("邮箱或手机号不能为空");
+        }
+        String code = factory.sendMessage(target);
+        System.out.println("验证码：" + code);
+        redisService.setWithExpire(target, code, 60, TimeUnit.SECONDS);
+        return ResponseResult.success(code);
     }
 }

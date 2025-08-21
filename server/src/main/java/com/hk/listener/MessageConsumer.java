@@ -37,6 +37,7 @@ public class MessageConsumer {
 //    }
 
 
+    //监听延迟队列
     @RabbitListener(queues = RabbitMQConfig.DELAYED_QUEUE)
     public void receiveDelayedMessage(MessageVO message) {
         String receiveTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -44,6 +45,7 @@ public class MessageConsumer {
         executeBusiness(message);
     }
 
+    //监听订单队列
     @RabbitListener(queues = RabbitMQConfig.ORDER_QUEUE)
     public void receiveOrderMessage(MessageVO message) {
         String receiveTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -63,7 +65,6 @@ public class MessageConsumer {
                 break;
             case "ORDER_COMPLETE":
                 // 处理订单完成消息
-//                orderInfoService.updateStatus(dataId, OrderStatusEnum.FINISHED.getCode());
                 userPlanService.saveUserPlan(dataId);
                 break;
             default:

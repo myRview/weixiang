@@ -32,12 +32,15 @@ import com.hk.vo.user.UserVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -79,8 +82,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     @Override
     public Page<OrderVO> selectOrderPage(OrderSearchParam searchParam) {
         LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(StringUtils.isNotBlank(searchParam.getUserName()), OrderInfoEntity::getUserName, searchParam.getUserName());
-        queryWrapper.eq(StringUtils.isNotBlank(searchParam.getPlanName()), OrderInfoEntity::getPlanName, searchParam.getPlanName());
+        queryWrapper.like(StringUtils.isNotBlank(searchParam.getUserName()), OrderInfoEntity::getUserName, searchParam.getUserName());
+        queryWrapper.like(StringUtils.isNotBlank(searchParam.getPlanName()), OrderInfoEntity::getPlanName, searchParam.getPlanName());
         if (searchParam.getStartDate() != null && searchParam.getEndDate() != null) {
             queryWrapper.between(OrderInfoEntity::getOrderDate, searchParam.getStartDate(), searchParam.getEndDate());
         }
@@ -95,6 +98,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return pageResult;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public OrderVO payPlan(PayPlanVo payPlanVo) {
 
@@ -108,38 +112,62 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         if (planVO == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "套餐不存在");
         }
-        OrderVO vo = (OrderVO) redisService.getHash(getHashKey(), String.valueOf(userId));
-        if (vo != null) {
-            return vo;
-        }
-        OrderInfoEntity orderInfoEntity = new OrderInfoEntity();
-        String orderNumber = UUID.randomUUID().toString();
-        orderInfoEntity.setOrderNumber(orderNumber);
-        orderInfoEntity.setOrderDate(new Date());
-        orderInfoEntity.setStatus(OrderStatusEnum.WAIT_PAY.getCode());
-        orderInfoEntity.setUserId(userId);
-        orderInfoEntity.setPlanId(planId);
-        orderInfoEntity.setUserName(userVO.getUserName());
-        orderInfoEntity.setPlanName(planVO.getName());
-        orderInfoEntity.setAmount(planVO.getPrice());
-        boolean save = this.save(orderInfoEntity);
-        if (save) {
-            OrderVO orderVO = OrderVO.converter(orderInfoEntity);
+        String lockKey = "order:create:lock:" + userId;
+        String requestId = UUID.randomUUID().toString();
+        boolean locked = false;
+        try {
+            // 尝试获取锁，设置30秒超时
+            locked = redisService.tryLock(lockKey, requestId, 30, TimeUnit.SECONDS);
+            if (!locked) {
+                throw new BusinessException(ErrorCode.SERVICE_UNAVAILABLE, "系统繁忙，请稍后再试");
+            }
+            // 检查用户是否有未支付订单（双重检查）
+            OrderVO existingOrder = (OrderVO) redisService.getHash(getHashKey(), String.valueOf(userId));
+            if (existingOrder != null) {
+                return existingOrder;
+            }
+            String orderNumber = generateOrderNumber(userId);
+            // 创建订单实体
+            OrderInfoEntity orderInfoEntity = new OrderInfoEntity();
+            orderInfoEntity.setOrderNumber(orderNumber);
+            orderInfoEntity.setOrderDate(new Date());
+            orderInfoEntity.setStatus(OrderStatusEnum.WAIT_PAY.getCode());
+            orderInfoEntity.setUserId(userId);
+            orderInfoEntity.setPlanId(planId);
+            orderInfoEntity.setUserName(userVO.getUserName());
+            orderInfoEntity.setPlanName(planVO.getName());
+            orderInfoEntity.setAmount(planVO.getPrice());
+            boolean saveSuccess = this.save(orderInfoEntity);
+            if (!saveSuccess) {
+                throw new BusinessException(ErrorCode.ERROR_SYSTEM, "订单创建失败");
+            }
+
+            //  TODO: 可以先生成二维码，避免创建无效订单
             AliPayVO payVO = new AliPayVO();
+            payVO.setOrderId(orderInfoEntity.getId());
             payVO.setOrderNo(orderNumber);
-            payVO.setOrderId(orderVO.getId());
-            payVO.setAmount(orderVO.getAmount());
-            String subject = "购买" + planVO.getName();
-            payVO.setSubject(subject);
+            payVO.setAmount(planVO.getPrice());
+            payVO.setSubject("购买" + planVO.getName());
             String qrCodeUrl = alipayManager.generateQrCodeImage(payVO);
+
+
+            OrderVO orderVO = OrderVO.converter(orderInfoEntity);
             orderVO.setQrCodeUrl(qrCodeUrl);
+            payVO.setOrderId(orderVO.getId());
+            // 缓存订单信息
             redisService.putHash(getHashKey(), String.valueOf(userId), orderVO);
             redisService.expire(getHashKey(), 15 * 60);
+
+            // 发送延迟消息（15分钟后检查订单状态）
             MessageVO messageVO = new MessageVO(MessageTypeEnum.ORDER_CREATE.getCode(), orderInfoEntity.getId());
             messageProducer.sendDelayedMessage(messageVO, 15 * 60 * 1000);
             return orderVO;
+        } finally {
+            // 释放锁
+            if (locked) {
+                redisService.unlock(lockKey, requestId);
+            }
         }
-        return null;
     }
 
 
@@ -147,11 +175,17 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     public boolean updateStatus(Long orderId, Integer status) {
         OrderVO order = getOrderById(orderId);
         if (order == null || order.getStatus().equals(OrderStatusEnum.FINISHED.getCode())) return false;
-        redisService.deleteHash(getHashKey(), String.valueOf(order.getUserId()));
+
+        //乐观锁更新（防止并发覆盖，确保仅当状态为当前状态时才更新）
         LambdaUpdateWrapper<OrderInfoEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(OrderInfoEntity::getId, orderId);
+        updateWrapper.eq(OrderInfoEntity::getStatus, order.getStatus());
         updateWrapper.set(OrderInfoEntity::getStatus, status);
-        return this.update(updateWrapper);
+        boolean update = this.update(updateWrapper);
+        if (update) {
+            redisService.deleteHash(getHashKey(), String.valueOf(order.getUserId()));
+        }
+        return update;
     }
 
     @Override
@@ -202,12 +236,14 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotBlank(date)) queryWrapper.eq(OrderInfoEntity::getOrderDate, date);
         queryWrapper.eq(OrderInfoEntity::getStatus, OrderStatusEnum.FINISHED.getCode());
-        queryWrapper.select(OrderInfoEntity::getPlanName, OrderInfoEntity::getId);
+        queryWrapper.select(OrderInfoEntity::getPlanName, OrderInfoEntity::getId, OrderInfoEntity::getPlanId);
         List<OrderInfoEntity> orderList = this.list(queryWrapper);
         if (CollectionUtil.isNotEmpty(orderList)) {
-            Map<String, List<OrderInfoEntity>> map = orderList.parallelStream().collect(Collectors.groupingBy(OrderInfoEntity::getPlanName));
-            for (Map.Entry<String, List<OrderInfoEntity>> entry : map.entrySet()) {
-                PlanStatisticsVO planStatisticsVO = new PlanStatisticsVO(entry.getKey(), entry.getValue().size());
+            Map<Long, List<OrderInfoEntity>> map = orderList.parallelStream().collect(Collectors.groupingBy(OrderInfoEntity::getPlanId));
+            Map<Long, String> collect = orderList.parallelStream().collect(Collectors.toMap(OrderInfoEntity::getPlanId, OrderInfoEntity::getPlanName, (k1, k2) -> k1));
+            for (Map.Entry<Long, List<OrderInfoEntity>> entry : map.entrySet()) {
+                String planName = collect.get(entry.getKey());
+                PlanStatisticsVO planStatisticsVO = new PlanStatisticsVO(planName, entry.getValue().size());
                 planStatisticsVOS.add(planStatisticsVO);
             }
         }
@@ -216,5 +252,16 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     private String getHashKey() {
         return String.format("%s:order", BaseConstant.CACHE_PREFIX);
+    }
+
+
+    /**
+     * 生成订单号：时间戳+用户ID+随机数
+     */
+    private String generateOrderNumber(Long userId) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        String timeStr = sdf.format(new Date());
+        String uuid = UUID.randomUUID().toString().substring(0, 8);
+        return String.format("%s%s%s", timeStr, userId, uuid);
     }
 }

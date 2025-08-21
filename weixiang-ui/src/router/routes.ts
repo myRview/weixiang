@@ -18,6 +18,8 @@ import ArticleDetail from "@/views/user/ArticleDetail.vue";
 import EditArticle from "@/views/user/EditArticle.vue";
 import HomePage from "@/views/user/HomePage.vue";
 import MemberCenter from "@/views/user/MemberCenter.vue";
+import UserHome from "@/views/user/UserHome.vue";
+import CategoryTagManagement from "@/views/system/CategoryTagManagement.vue";
 import {
   House,
   Edit,
@@ -31,8 +33,9 @@ import {
   List,
   Reading,
   Goods,
+  Operation,
 } from "@element-plus/icons-vue";
-import UserHome from "@/views/user/UserHome.vue";
+
 
 
 
@@ -224,6 +227,16 @@ export const routes: Array<RouteRecordRaw> = [
             component: PermissionManagement,
             meta: {
               title: "权限管理",
+              icon: Operation,
+              requiresAdmin: true
+            },
+          },
+          {
+            path: "category-tag-management",
+            name: "CategoryTagManagement",
+            component: CategoryTagManagement,
+            meta: {
+              title: "分类标签管理",
               icon: Menu,
               requiresAdmin: true
             },

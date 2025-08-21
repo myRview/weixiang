@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 /**
  * 用户注册
+ *
  * @author huangkun
  * @date 2025/6/26 10:46
  */
@@ -27,5 +28,8 @@ public class UserRegisterVO implements Serializable {
 
     @Schema(description = "确认密码")
     private String confirmPassword;
+
+    @Schema(description = "验证码")
+    private String code;
 
 }

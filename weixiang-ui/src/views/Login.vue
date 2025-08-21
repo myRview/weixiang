@@ -7,19 +7,81 @@
         <p class="sub-title">欢迎回来，请登录您的账号</p>
       </div>
 
+      <!-- 登录方式切换按钮 -->
+      <div class="login-tabs">
+        <el-button
+          :class="{ 'active-tab': loginType === 'account' }"
+          @click="switchLoginType('account')"
+        >
+          账号密码登录
+        </el-button>
+        <el-button
+          :class="{ 'active-tab': loginType === 'phone' }"
+          @click="switchLoginType('phone')"
+        >
+          短信验证码登录
+        </el-button>
+        <el-button
+          :class="{ 'active-tab': loginType === 'email' }"
+          @click="switchLoginType('email')"
+        >
+          邮箱密码登录
+        </el-button>
+      </div>
+
       <el-form
         ref="loginForm"
         :model="form"
         :rules="rules"
         label-position="top"
       >
-        <el-form-item label="请输入用户名" prop="account">
+        <!-- 账号密码登录 -->
+        <el-form-item v-if="loginType === 'account'" label="请输入您的账号" prop="account">
           <el-input
             v-model="form.account"
-            placeholder="请输入用户名"
+            placeholder="请输入您的账号"
           ></el-input>
         </el-form-item>
-        <el-form-item label="请输入密码" prop="password">
+
+        <!-- 短信验证码登录 -->
+        <el-form-item v-if="loginType === 'phone'" label="请输入手机号" prop="phone">
+          <el-input
+            v-model="form.phone"
+            placeholder="请输入手机号"
+            type="number"
+          ></el-input>
+        </el-form-item>
+        <el-form-item v-if="loginType === 'phone'" label="请输入验证码" prop="code">
+          <el-row :gutter="10">
+            <el-col :span="16">
+              <el-input
+                v-model="form.code"
+                placeholder="请输入验证码"
+              ></el-input>
+            </el-col>
+            <el-col :span="8">
+              <el-button
+                type="default"
+                :disabled="countDown > 0"
+                @click="sendCode"
+                class="code-btn"
+              >
+                {{ countDown > 0 ? `${countDown}秒后重新发送` : '获取验证码' }}
+              </el-button>
+            </el-col>
+          </el-row>
+        </el-form-item>
+
+        <!-- 邮箱密码登录 -->
+        <el-form-item v-if="loginType === 'email'" label="请输入邮箱" prop="email">
+          <el-input
+            v-model="form.email"
+            placeholder="请输入邮箱"
+          ></el-input>
+        </el-form-item>
+
+        <!-- 密码字段（账号密码登录和邮箱密码登录需要） -->
+        <el-form-item v-if="loginType === 'account' || loginType === 'email'" label="请输入密码" prop="password">
           <el-input
             type="password"
             v-model="form.password"
@@ -27,6 +89,7 @@
             show-password
           ></el-input>
         </el-form-item>
+
         <el-form-item>
           <el-button type="primary" @click="handleLogin" class="login-btn"
             >登录</el-button
@@ -43,22 +106,139 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, onUnmounted } from "vue";
 import { ElMessage } from "element-plus";
 import { login } from "@/api/loginController";
 import { useLoginUserStore } from "../store/loginUser";
 import { useRouter } from "vue-router";
+// 假设存在发送验证码的API
+// import { sendVerificationCode } from "@/api/verification";
 
 const router = useRouter();
-const form = ref<API.UserLoginVO>({ account: "", password: "" });
-const rules = {
-  account: [{ required: true, message: "请输入账号", trigger: "blur" }],
-  password: [{ required: true, message: "请输入密码", trigger: "blur" }],
+// 登录类型：account(账号密码)、phone(短信验证码)、email(邮箱密码)
+const loginType = ref<'account' | 'phone' | 'email'>('account');
+// 表单数据
+const form = ref<API.UserLoginVO & { phone?: string; email?: string; code?: string }>({
+  account: "",
+  password: "",
+  phone: "",
+  email: "",
+  code: ""
+});
+// 验证码倒计时
+const countDown = ref(0);
+const timer = ref<number | null>(null);
+
+// 切换登录类型
+const switchLoginType = (type: 'account' | 'phone' | 'email') => {
+  loginType.value = type;
+  // 重置表单
+  const loginForm = ref<HTMLFormElement | null>(null);
+  if (loginForm.value) {
+    loginForm.value.reset();
+  }
+  // 重置倒计时
+  countDown.value = 0;
+  if (timer.value) {
+    clearInterval(timer.value);
+    timer.value = null;
+  }
 };
+
+// 发送验证码
+const sendCode = async () => {
+  if (!form.value.phone) {
+    ElMessage.warning("请先输入手机号");
+    return;
+  }
+
+  // 验证手机号格式
+  const phonePattern = /^1[3-9]\d{9}$/;
+  if (!phonePattern.test(form.value.phone)) {
+    ElMessage.warning("请输入正确的手机号格式");
+    return;
+  }
+
+  try {
+    // 调用发送验证码API
+    // await sendVerificationCode({ phone: form.value.phone });
+    ElMessage.success("验证码发送成功");
+
+    // 开始倒计时
+    countDown.value = 60;
+    timer.value = window.setInterval(() => {
+      if (countDown.value > 0) {
+        countDown.value--;
+      } else {
+        if (timer.value) {
+          clearInterval(timer.value);
+          timer.value = null;
+        }
+      }
+    }, 1000);
+  } catch (error) {
+    ElMessage.error("验证码发送失败，请重试");
+  }
+};
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (timer.value) {
+    clearInterval(timer.value);
+    timer.value = null;
+  }
+});
+
+// 动态验证规则
+const rules = computed(() => {
+  const rules: any = {};
+
+  if (loginType.value === 'account') {
+    rules.account = [
+      { required: true, message: "请输入账号", trigger: "blur" }
+    ];
+    rules.password = [
+      { required: true, message: "请输入密码", trigger: "blur" }
+    ];
+  } else if (loginType.value === 'phone') {
+    rules.phone = [
+      { required: true, message: "请输入手机号", trigger: "blur" },
+      { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号格式", trigger: "blur" }
+    ];
+    rules.code = [
+      { required: true, message: "请输入验证码", trigger: "blur" },
+      { min: 4, max: 6, message: "验证码长度为4-6个字符", trigger: "blur" }
+    ];
+  } else if (loginType.value === 'email') {
+    rules.email = [
+      { required: true, message: "请输入邮箱", trigger: "blur" },
+      { pattern: /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/, message: "请输入正确的邮箱格式", trigger: "blur" }
+    ];
+    rules.password = [
+      { required: true, message: "请输入密码", trigger: "blur" }
+    ];
+  }
+
+  return rules;
+});
 
 const handleLogin = async () => {
   try {
-    const res = await login(form.value);
+    // 准备登录参数
+    const loginParams: any = {};
+
+    if (loginType.value === 'account') {
+      loginParams.account = form.value.account;
+      loginParams.password = form.value.password;
+    } else if (loginType.value === 'phone') {
+      loginParams.phone = form.value.phone;
+      loginParams.code = form.value.code;
+    } else if (loginType.value === 'email') {
+      loginParams.email = form.value.email;
+      loginParams.password = form.value.password;
+    }
+
+    const res = await login(loginParams);
     if (res.data.code !== 200) {
       ElMessage.error(res.data.message);
       return;
@@ -74,7 +254,7 @@ const handleLogin = async () => {
     // 使用路由跳转代替window.location.href，确保WebSocket能正确初始化
     router.push("/");
   } catch (error) {
-    ElMessage.error("获取用户信息失败");
+    ElMessage.error("登录失败，请重试");
   }
 };
 
@@ -146,6 +326,28 @@ const handleRegister = () => {
 
 .el-input {
   height: 48px;
+}
+
+.login-tabs {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.login-tabs .el-button {
+  flex: 1;
+  margin: 0 5px;
+}
+
+.login-tabs .active-tab {
+  background-color: #409eff;
+  color: white;
+}
+
+.code-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 14px;
 }
 
 .login-btn {

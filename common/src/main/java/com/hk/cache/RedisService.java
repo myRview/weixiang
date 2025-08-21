@@ -4,8 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -158,9 +160,7 @@ public class RedisService<T> {
      * @return 1的数量
      */
     public Long bitCount(String key) {
-        return redisTemplate.execute((RedisCallback<Long>) connection ->
-                connection.bitCount(key.getBytes())
-        );
+        return redisTemplate.execute((RedisCallback<Long>) connection -> connection.bitCount(key.getBytes()));
     }
 
     /**
@@ -177,9 +177,7 @@ public class RedisService<T> {
         long endByte = endBit / 8;
 
         // 使用Redis原生bitCount方法（按字节范围）
-        Long count = redisTemplate.execute((RedisCallback<Long>) connection ->
-                connection.bitCount(key.getBytes(), startByte, endByte)
-        );
+        Long count = redisTemplate.execute((RedisCallback<Long>) connection -> connection.bitCount(key.getBytes(), startByte, endByte));
 
         // 如果起始位不在字节边界，需要减去多余的部分
         if (startBit % 8 != 0) {
@@ -218,8 +216,35 @@ public class RedisService<T> {
         for (int i = 0; i < srcKeys.length; i++) {
             srcBytes[i] = srcKeys[i].getBytes();
         }
-        return redisTemplate.execute((RedisCallback<Long>) connection ->
-                connection.bitOp(op, destKey.getBytes(), srcBytes)
-        );
+        return redisTemplate.execute((RedisCallback<Long>) connection -> connection.bitOp(op, destKey.getBytes(), srcBytes));
+    }
+
+    /**
+     * 尝试获取分布式锁
+     *
+     * @param lockKey   锁的键名
+     * @param requestId 唯一标识（用于释放锁时验证身份，建议使用UUID）
+     * @param time      锁的过期时间（防止死锁）
+     * @param timeUnit  时间单位
+     * @return 是否获取到锁
+     */
+    public boolean tryLock(String lockKey, T requestId, long time, TimeUnit timeUnit) {
+        return redisTemplate.opsForValue().setIfAbsent(lockKey, requestId, time, timeUnit);
+    }
+
+    /**
+     * 释放分布式锁
+     *
+     * @param lockKey   锁的键名
+     * @param requestId 加锁时的唯一标识（需与加锁时一致）
+     * @return 是否成功释放锁
+     */
+    public boolean unlock(String lockKey, String requestId) {
+        // Lua脚本：保证"检查锁标识"和"删除锁"的原子性
+        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then " + "return redis.call('del', KEYS[1]) " + "else " + "return 0 " + "end";
+        // 执行脚本
+        Long result = redisTemplate.execute(new DefaultRedisScript<>(script, Long.class), Collections.singletonList(lockKey),requestId);
+        // 结果为1表示释放成功，0表示锁不存在或不是当前请求持有的锁
+        return result != null && result > 0;
     }
 }

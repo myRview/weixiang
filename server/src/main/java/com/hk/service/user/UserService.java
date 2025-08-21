@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
-* <p>
-    * 用户表 服务类
-    * </p>
-*
-* @author hk
-* @since 2025-06-22
-*/
+ * <p>
+ * 用户表 服务类
+ * </p>
+ *
+ * @author hk
+ * @since 2025-06-22
+ */
 public interface UserService extends IService<UserEntity> {
 
     Page<UserVO> getUserList(UserSearchParam userSearchParam);
@@ -51,4 +51,10 @@ public interface UserService extends IService<UserEntity> {
     String login(UserLoginVO loginVO);
 
     List<UserVO> selectByIds(Collection<Long> userIds);
+
+    UserEntity selectOneByEmail(String email);
+
+    UserEntity selectOneByPhone(String phone);
+
+    boolean register(UserRegisterVO registerVO);
 }
