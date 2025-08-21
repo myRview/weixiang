@@ -30,6 +30,10 @@
 4. **错误处理机制**：统一的错误码和异常处理
 5. **文件存储**：支持阿里云OSS和腾讯云COS等对象存储服务
 6. **API文档**：自动生成的接口文档，便于前后端协作
+## 界面效果
+<img width="639" height="392" alt="login" src="https://github.com/user-attachments/assets/7b833537-daa9-431a-abfb-bba4054734ce" />
+
+
 
 ## 快速开始
 
