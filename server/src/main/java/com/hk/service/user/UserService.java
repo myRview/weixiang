@@ -57,4 +57,6 @@ public interface UserService extends IService<UserEntity> {
     UserEntity selectOneByPhone(String phone);
 
     boolean register(UserRegisterVO registerVO);
+
+    UserVO selectById(Long userId);
 }

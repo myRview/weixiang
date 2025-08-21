@@ -6,6 +6,7 @@ import com.hk.entity.article.ArticleTagEntity;
 import com.hk.vo.article.ArticleTagVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -22,4 +23,6 @@ public interface ArticleTagService extends IService<ArticleTagEntity> {
     List<ArticleTagVO> selectList(List<Long> tagIds);
 
     List<ArticleTagVO> selectListByArticleId(Long articleId);
+
+    Map<Long, List<Long>> selectMapByArticleId(List<Long> articleIds);
 }

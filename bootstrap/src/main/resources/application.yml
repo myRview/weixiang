@@ -26,6 +26,10 @@ spring:
     listener:
       simple:
         acknowledge-mode: auto    #手动确认  manual
+  elasticsearch:
+    uris: http://192.168.159.128:9200
+#    username: elastic
+#    password: 123456
 weixiang:
   # token过期时间，单位分钟
   token:
@@ -84,3 +88,14 @@ logging:
   level:
     root: error
     com.hk: debug
+    # 1. Spring Data Elasticsearch 核心（构建查询）
+#    org.springframework.data.elasticsearch.core: DEBUG
+#    org.springframework.data.elasticsearch.repository: DEBUG
+#    org.springframework.data.elasticsearch.mapping: DEBUG
+#    # 2. Elasticsearch RestClient（HTTP 通信核心）
+#    org.elasticsearch.client.RestClient: DEBUG
+#    # 3. Apache HttpClient（底层连接，可选但建议开启）
+#    org.apache.http: DEBUG
+  # 可选：优化日志格式，方便定位请求
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"

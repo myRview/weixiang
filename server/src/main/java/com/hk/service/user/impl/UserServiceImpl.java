@@ -464,6 +464,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         return converterVO(userEntityList);
     }
 
+    @Override
+    public UserVO selectById(Long userId) {
+        LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserEntity::getId, userId);
+        queryWrapper.select(UserEntity::getId, UserEntity::getUserName, UserEntity::getAvatar);
+        UserEntity userEntity = this.getOne(queryWrapper);
+        return converterVO(userEntity);
+    }
+
     private void buildRecord(LocalDate startDate, LocalDate endDate, String signInKey, Map<LocalDate, Boolean> signRecord) {
         int start = startDate.getDayOfYear() - 1;
         int end = endDate.getDayOfYear() - 1;

@@ -87,14 +87,22 @@
                 <artifactId>spring-boot-starter-data-redis</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
+            <!--            security-->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-security</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
+            <!--websocket-->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-websocket</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <!--         elasticsearch   -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
@@ -156,7 +164,7 @@
                 <artifactId>UserAgentUtils</artifactId>
                 <version>${UserAgentUtils-version}</version>
             </dependency>
-<!--            支付宝平台接入-->
+            <!--            支付宝平台接入-->
             <dependency>
                 <groupId>com.alipay.sdk</groupId>
                 <artifactId>alipay-sdk-java</artifactId>
@@ -173,18 +181,19 @@
                 <artifactId>javase</artifactId>
                 <version>${zxing-version}</version>
             </dependency>
+            <!--            MQ-->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-amqp</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
-<!--            腾讯云对象存储-->
+            <!--            腾讯云对象存储-->
             <dependency>
                 <groupId>com.qcloud</groupId>
                 <artifactId>cos_api</artifactId>
                 <version>${tencent-version}</version>
             </dependency>
-<!--            阿里云对象存储-->
+            <!--            阿里云对象存储-->
             <dependency>
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>

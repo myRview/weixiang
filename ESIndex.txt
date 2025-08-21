@@ -1,0 +1,72 @@
+PUT /article_v1
+{
+  "aliases": {
+    "article": {}
+  },
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 1,
+    "analysis": {
+      "analyzer": {
+        "ik_smart_custom": {
+          "type": "custom",
+          "tokenizer": "ik_smart"
+        },
+        "ik_max_word_custom": {
+          "type": "custom",
+          "tokenizer": "ik_max_word"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "ik_max_word_custom",
+        "search_analyzer": "ik_smart_custom",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "ik_max_word_custom",
+        "search_analyzer": "ik_smart_custom"
+      },
+      "user_id": {
+        "type": "keyword"
+      },
+      "publish_status": {
+        "type": "integer"
+      },
+      "audit_status": {
+        "type": "integer"
+      },
+      "audit_reason": {
+        "type": "keyword"
+      },
+      "view_count": {
+        "type": "integer"
+      },
+      "like_count": {
+        "type": "integer"
+      },
+      "category_id": {
+        "type": "keyword"
+      },
+      "tag_ids": {
+        "type": "keyword"
+      },
+      "create_time": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss"
+      }
+    }
+  }
+}

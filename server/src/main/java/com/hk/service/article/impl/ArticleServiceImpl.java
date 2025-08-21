@@ -3,7 +3,6 @@ package com.hk.service.article.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,6 +11,7 @@ import com.hk.cache.RedisService;
 import com.hk.common.ErrorCode;
 import com.hk.constants.BaseConstant;
 import com.hk.context.UserContext;
+import com.hk.elasticsearch.vo.ArticleEsVO;
 import com.hk.entity.article.ArticleEntity;
 import com.hk.entity.article.ArticleTagEntity;
 import com.hk.enums.ArticleAuditStatus;
@@ -26,12 +26,22 @@ import com.hk.service.article.ArticleService;
 import com.hk.service.article.ArticleTagService;
 import com.hk.service.message.UserMessageService;
 import com.hk.service.user.UserService;
-import com.hk.vo.article.*;
+import com.hk.vo.article.ArticleAuditVO;
+import com.hk.vo.article.ArticleEditVO;
+import com.hk.vo.article.ArticleTagVO;
+import com.hk.vo.article.ArticleVO;
 import com.hk.vo.message.UserMessageVO;
 import com.hk.vo.user.UserCacheVo;
 import com.hk.vo.user.UserVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +69,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     private UserMessageService userMessageService;
     @Autowired
     private ArticleApprovalHandler articleApprovalHandler;
+    @Autowired
+    private ElasticsearchOperations elasticsearchOperations;
+    ;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -93,6 +106,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                 return tagEntity;
             }).collect(Collectors.toList());
             articleTagService.saveBatch(tagEntityList);
+
+            ArticleEsVO articleEsVO = new ArticleEsVO();
+            BeanUtil.copyProperties(newArticle, articleEsVO);
+            if (CollectionUtil.isNotEmpty(tagIds)) {
+                List<String> list = tagIds.stream().map(String::valueOf).toList();
+                articleEsVO.setTagIds(list);
+            }
+            elasticsearchOperations.save(articleEsVO);
         }
         return save;
     }
@@ -102,6 +123,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     public Boolean deleteArticle(Long id) {
         checkPermission(id);
         articleTagService.deleteByArticleId(id);
+        boolean exists = elasticsearchOperations.exists(String.valueOf(id), ArticleEsVO.class);
+        if (exists) {
+            elasticsearchOperations.delete(String.valueOf(id), ArticleEsVO.class);
+        }
         return this.removeById(id);
     }
 
@@ -119,8 +144,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         Map<Long, List<ArticleTagVO>> articleTagMap = new HashMap<>();
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
         queryWrapper.eq(ArticleEntity::getUserId, param.getUserId());
-        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus, ArticleEntity::getAuditReason,
-                ArticleEntity::getPublishStatus, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
+        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus, ArticleEntity::getAuditReason, ArticleEntity::getPublishStatus, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);
         return buildPage(page, articleTagMap);
     }
@@ -131,15 +155,24 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         param.setAuditStatus(ArticleAuditStatus.PASS.getCode());
         param.setPublishStatus(ArticlePublishStatus.PUBLISHED.getCode());
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
-        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getContent,
-                ArticleEntity::getViewCount, ArticleEntity::getLikeCount, ArticleEntity::getUserId,
-                ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
+        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getContent, ArticleEntity::getViewCount, ArticleEntity::getLikeCount, ArticleEntity::getUserId, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);
         return buildPage(page, articleTagMap);
     }
 
     @Override
     public ArticleVO selectArticleDetail(Long id) {
+        if (id == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "文章id不能为空");
+        ArticleEsVO articleEsVO = elasticsearchOperations.get(String.valueOf(id), ArticleEsVO.class);
+        if (articleEsVO != null) {
+            ArticleVO articleVO = ArticleEsVO.convertToVO(articleEsVO);
+            UserVO userVO = userService.selectById(Long.valueOf(articleEsVO.getUserId()));
+            if (userVO != null) {
+                articleVO.setUserName(userVO.getUserName());
+                articleVO.setUserAvatar(userVO.getAvatar());
+            }
+            return articleVO;
+        }
         ArticleEntity article = this.getById(id);
         if (article == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "文章不存在");
         ArticleVO articleVO = ArticleVO.convert(article);
@@ -147,7 +180,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         if (CollectionUtil.isNotEmpty(tagVOList)) {
             articleVO.setTagIds(tagVOList.stream().map(ArticleTagVO::getTagId).collect(Collectors.toList()));
         }
-        UserVO userVO = userService.getInfo(articleVO.getUserId());
+        UserVO userVO = userService.selectById(article.getUserId());
         if (userVO != null) {
             articleVO.setUserName(userVO.getUserName());
             articleVO.setUserAvatar(userVO.getAvatar());
@@ -206,10 +239,73 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
 
-        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus,
-                ArticleEntity::getUserId, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
+        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus, ArticleEntity::getUserId, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);
         return buildPage(page, articleTagMap);
+    }
+
+    /**
+     * 从ES中获取数据
+     *
+     * @param param
+     * @return
+     */
+    @Override
+    public IPage<ArticleVO> selectArticlePageFromEs(ArticleSearchParam param) {
+        String searchText = param.getSearchText();
+        Integer publishStatus = param.getPublishStatus();
+        Integer auditStatus = param.getAuditStatus();
+        Long categoryId = param.getCategoryId();
+        List<Long> tagIds = param.getTagIds();
+        Long userId = param.getUserId();
+        Integer pageNum = param.getPageNum();
+        Integer pageSize = param.getPageSize();
+        Criteria criteria = new Criteria();
+        if (StringUtils.isNotBlank(searchText)) {
+            criteria.and(new Criteria("title").or("content").contains(searchText));
+        }
+        // 精确匹配条件
+        if (publishStatus != null) {
+            criteria.and(new Criteria("publishStatus").is(publishStatus));
+        }
+        if (auditStatus != null) {
+            criteria.and(new Criteria("auditStatus").is(auditStatus));
+        }
+        if (userId != null) {
+            criteria.and(new Criteria("userId").is(userId));
+        }
+        if (categoryId != null) {
+            criteria.and(new Criteria("categoryId").is(categoryId));
+        }
+        // 多值匹配（相当于旧版的 termsQuery）
+        if (CollectionUtil.isNotEmpty(tagIds)) {
+            criteria.and(new Criteria("tagIds").in(tagIds));
+        }
+        Pageable pageable = PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+        CriteriaQuery query = new CriteriaQuery(criteria, pageable);
+        SearchHits<ArticleEsVO> searchHits = elasticsearchOperations.search(query, ArticleEsVO.class);
+        IPage<ArticleVO> page = new Page<>(pageNum, pageSize);
+        List<ArticleVO> articleVOS = new ArrayList<>();
+        Set<Long> userIds = new HashSet<>();
+        if (searchHits.hasSearchHits()) {
+            searchHits.getSearchHits().forEach(searchHit -> {
+                ArticleEsVO articleEsVO = searchHit.getContent();
+                userIds.add(Long.valueOf(articleEsVO.getUserId()));
+                articleVOS.add(ArticleEsVO.convertToVO(articleEsVO));
+            });
+        }
+        List<UserVO> userVOList = userService.selectByIds(userIds);
+        Map<Long, UserVO> userVOMap = userVOList.stream().collect(Collectors.toMap(UserVO::getId, user -> user));
+        articleVOS.forEach(articleVO -> {
+            UserVO userVO = userVOMap.get(articleVO.getUserId());
+            if (userVO != null) {
+                articleVO.setUserName(userVO.getUserName());
+                articleVO.setUserAvatar(userVO.getAvatar());
+            }
+        });
+        page.setRecords(articleVOS);
+        page.setTotal(searchHits.getTotalHits());
+        return page;
     }
 
     @Override
@@ -237,10 +333,33 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             messageVO.setUserId(article.getUserId());
             messageVO.setMessage(message);
             userMessageService.saveMessage(messageVO);
-            PushMessageBaseVO<UserMessageVO> messageBaseVO= new PushMessageBaseVO(PushTypeEnum.ARTICLE.getCode(),messageVO);
+            PushMessageBaseVO<UserMessageVO> messageBaseVO = new PushMessageBaseVO(PushTypeEnum.ARTICLE.getCode(), messageVO);
             articleApprovalHandler.sendMessageToUser(article.getUserId().toString(), messageBaseVO);
+
+            //更新ES数据
+            ArticleEsVO articleEsVO = new ArticleEsVO();
+            BeanUtil.copyProperties(article, articleEsVO);
+            elasticsearchOperations.save(articleEsVO);
         }
         return update;
+    }
+
+    @Override
+    public List<ArticleVO> selectAll() {
+        List<ArticleEntity> articleEntities = this.list();
+        if (CollectionUtil.isEmpty(articleEntities)) return null;
+        List<Long> articleIds = articleEntities.stream().map(ArticleEntity::getId).collect(Collectors.toList());
+        Map<Long, List<Long>> articleTagMap = articleTagService.selectMapByArticleId(articleIds);
+        return articleEntities.stream().map(articleEntity -> {
+                    ArticleVO articleVO = new ArticleVO();
+                    BeanUtil.copyProperties(articleEntity, articleVO);
+                    List<Long> tagIds = articleTagMap.get(articleEntity.getId());
+                    if (CollectionUtil.isNotEmpty(tagIds)) {
+                        articleVO.setTagIds(tagIds);
+                    }
+                    return articleVO;
+                }
+        ).collect(Collectors.toList());
     }
 
     private String getLikeKey(Long articleId) {

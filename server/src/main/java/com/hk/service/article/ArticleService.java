@@ -8,6 +8,8 @@ import com.hk.vo.article.ArticleAuditVO;
 import com.hk.vo.article.ArticleEditVO;
 import com.hk.vo.article.ArticleVO;
 
+import java.util.List;
+
 /**
  * <p>
  * 文章表 服务类
@@ -44,4 +46,7 @@ public interface ArticleService extends IService<ArticleEntity> {
 
     IPage<ArticleVO> selectArticlePage(ArticleSearchParam param);
 
+    List<ArticleVO> selectAll();
+
+    IPage<ArticleVO> selectArticlePageFromEs(ArticleSearchParam param);
 }

@@ -59,6 +59,8 @@ declare namespace API {
   type ArticleSearchParam = {
     pageNum?: number;
     pageSize?: number;
+    /** 搜索关键字 */
+    searchText?: string;
     /** 标题 */
     title?: string;
     /** 状态，0-草稿，1-已发布 */
@@ -260,51 +262,51 @@ declare namespace API {
   };
 
   type IPageArticleVO = {
+    pages?: number;
+    current?: number;
     size?: number;
     records?: ArticleVO[];
     total?: number;
-    current?: number;
-    pages?: number;
   };
 
   type IPageCategoryVO = {
+    pages?: number;
+    current?: number;
     size?: number;
     records?: CategoryVO[];
     total?: number;
-    current?: number;
-    pages?: number;
   };
 
   type IPageLoginLogVO = {
+    pages?: number;
+    current?: number;
     size?: number;
     records?: LoginLogVO[];
     total?: number;
-    current?: number;
-    pages?: number;
   };
 
   type IPageOperationLogVO = {
+    pages?: number;
+    current?: number;
     size?: number;
     records?: OperationLogVO[];
     total?: number;
-    current?: number;
-    pages?: number;
   };
 
   type IPagePermissionVO = {
+    pages?: number;
+    current?: number;
     size?: number;
     records?: PermissionVO[];
     total?: number;
-    current?: number;
-    pages?: number;
   };
 
   type IPageTagVO = {
+    pages?: number;
+    current?: number;
     size?: number;
     records?: TagVO[];
     total?: number;
-    current?: number;
-    pages?: number;
   };
 
   type likeArticleParams = {
@@ -486,9 +488,9 @@ declare namespace API {
 
   type PayPlanVo = {
     /** 用户id */
-    userId?: number;
+    userId: number;
     /** 套餐id */
-    planId?: number;
+    planId: number;
   };
 
   type PermissionSearchParam = {

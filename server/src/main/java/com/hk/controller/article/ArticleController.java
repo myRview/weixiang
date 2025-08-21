@@ -3,6 +3,8 @@ package com.hk.controller.article;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.common.ResponseResult;
+import com.hk.enums.ArticleAuditStatus;
+import com.hk.enums.ArticlePublishStatus;
 import com.hk.param.ArticleSearchParam;
 import com.hk.service.article.ArticleService;
 import com.hk.vo.article.ArticleAuditVO;
@@ -72,7 +74,8 @@ public class ArticleController {
     @Operation(summary = "获取当前作者的文章分页列表(作者)")
 //    @PreAuthorize("@ss.hasPermission('/article/author/page')")
     public ResponseResult<IPage<ArticleVO>> selectArticlePageByAuthor(@RequestBody @Validated ArticleSearchParam param) {
-        return ResponseResult.success(articleService.selectArticlePageByAuthor(param));
+//        return ResponseResult.success(articleService.selectArticlePageByAuthor(param));
+        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
     }
 
 
@@ -83,7 +86,10 @@ public class ArticleController {
     @Operation(summary = "获取审批通过的文章分页列表")
 //    @PreAuthorize("@ss.hasPermission('/article/pass/page')")
     public ResponseResult<IPage<ArticleVO>> selectPassArticlePage(@RequestBody ArticleSearchParam param) {
-        return ResponseResult.success(articleService.selectPassArticlePage(param));
+//        return ResponseResult.success(articleService.selectPassArticlePage(param));
+        param.setAuditStatus(ArticleAuditStatus.PASS.getCode());
+        param.setPublishStatus(ArticlePublishStatus.PUBLISHED.getCode());
+        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
     }
 
     /**
@@ -157,7 +163,9 @@ public class ArticleController {
     @Operation(summary = "获取已发布文章分页列表(管理员)")
 //    @PreAuthorize("@ss.hasPermission('/article/page')")
     public ResponseResult<IPage<ArticleVO>> selectArticlePage(@RequestBody ArticleSearchParam param) {
-        return ResponseResult.success(articleService.selectArticlePage(param));
+//        return ResponseResult.success(articleService.selectArticlePage(param));
+        param.setPublishStatus(ArticlePublishStatus.PUBLISHED.getCode());
+        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
     }
 
     /**

@@ -175,11 +175,13 @@ const formatDate = (date: string | number | Date) => {
 const getArticleList = async () => {
   loading.value = true;
   try {
+
     const res = await selectPassArticlePage({
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       tagIds: selectedTagId.value === -1 ? [] : [selectedTagId.value],
-      title: searchKeyword.value,
+      searchText: searchKeyword.value,
+      userId: undefined,
     });
     if (res.data.code === 200) {
       // 模拟数据添加统计信息

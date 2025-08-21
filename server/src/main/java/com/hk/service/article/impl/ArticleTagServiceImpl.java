@@ -10,7 +10,9 @@ import com.hk.service.article.ArticleTagService;
 import com.hk.vo.article.ArticleTagVO;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -48,5 +50,16 @@ public class ArticleTagServiceImpl extends ServiceImpl<ArticleTagMapper, Article
         queryWrapper.select(ArticleTagEntity::getTagId, ArticleTagEntity::getArticleId);
         List<ArticleTagEntity> list = this.list(queryWrapper);
         return list.stream().map(ArticleTagVO::convert).collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<Long, List<Long>> selectMapByArticleId(List<Long> articleIds) {
+        if (CollectionUtil.isEmpty(articleIds)) return new HashMap<>();
+        LambdaQueryWrapper<ArticleTagEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(ArticleTagEntity::getArticleId, articleIds);
+        queryWrapper.select(ArticleTagEntity::getTagId, ArticleTagEntity::getArticleId);
+        List<ArticleTagEntity> list = this.list(queryWrapper);
+        if (CollectionUtil.isEmpty(list)) return new HashMap<>();
+        return list.stream().collect(Collectors.groupingBy(ArticleTagEntity::getArticleId, Collectors.mapping(ArticleTagEntity::getTagId, Collectors.toList())));
     }
 }
