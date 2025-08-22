@@ -149,9 +149,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     public UserEntity selectOneByAccount(String account) {
         LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(UserEntity::getAccount, account);
-        queryWrapper.eq(UserEntity::getStatus, StatusEnum.NORMAL.getCode());
         queryWrapper.last("for update");
         return this.getOne(queryWrapper);
+    }
+
+
+    @Override
+    public UserEntity selectOneByEmail(String email) {
+        return this.getOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getEmail, email)
+                .last(" for update"));
+    }
+
+    @Override
+    public UserEntity selectOneByPhone(String phone) {
+        return this.getOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getPhone, phone)
+                .last(" for update"));
     }
 
     @Override
@@ -359,24 +373,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     }
 
     @Override
-    public UserEntity selectOneByEmail(String email) {
-        if (StringUtils.isBlank(email)) return null;
-        return this.getOne(new LambdaQueryWrapper<UserEntity>()
-                .eq(UserEntity::getEmail, email)
-                .eq(UserEntity::getStatus, StatusEnum.NORMAL.getCode())
-                .last(" for update"));
-    }
-
-    @Override
-    public UserEntity selectOneByPhone(String phone) {
-        if (StringUtils.isBlank(phone)) return null;
-        return this.getOne(new LambdaQueryWrapper<UserEntity>()
-                .eq(UserEntity::getPhone, phone)
-                .eq(UserEntity::getStatus, StatusEnum.NORMAL.getCode())
-                .last(" for update"));
-    }
-
-    @Override
     public String login(UserLoginVO loginVO) {
         UserEntity user = checkLoginParam(loginVO);
         UserVO userVO = new UserVO();
@@ -403,49 +399,65 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         String email = registerVO.getEmail();
         String phone = registerVO.getPhone();
         UserEntity user = null;
-        if (StringUtils.isNotBlank(account)) {
-            String password = registerVO.getPassword();
-            String confirmPassword = registerVO.getConfirmPassword();
-            if (StringUtils.isBlank(password) || StringUtils.isBlank(confirmPassword)) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST, "密码不能为空");
-            }
-            if (!password.equals(confirmPassword)) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST, "两次密码不一致");
-            }
-            user = this.selectOneByAccount(account);
-        } else if (StringUtils.isNotBlank(email)) {
-            if (!CheckUtil.checkEmail(email)) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST, "邮箱格式不正确");
-            }
-            String code = registerVO.getCode();
-            String cacheCode = (String) redisService.get(email);
-            if (StringUtils.isBlank(code) || StringUtils.isBlank(cacheCode) || !cacheCode.equals(code)) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误");
-            }
-            user = this.selectOneByEmail(email);
-            account = SecureUtil.md5(email);
-        } else if (StringUtils.isNotBlank(phone)) {
-            if (!CheckUtil.checkPhone(phone)) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST, "手机号格式不正确");
-            }
-            String code = registerVO.getCode();
-            String cacheCode = (String) redisService.get(phone);
-            if (StringUtils.isBlank(code) || StringUtils.isBlank(cacheCode) || !cacheCode.equals(code)) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误");
-            }
-            user = this.selectOneByPhone(phone);
-//            根据手机号生成账号，进行加密，长度控制在50个字符内
-            account = SecureUtil.md5(phone);
-        } else {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "注册方法错误");
-        }
-        if (user != null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "账号已存在");
+        Integer registerType = registerVO.getRegisterType();
+        switch (registerType) {
+            case 0:
+                String password = registerVO.getPassword();
+                String confirmPassword = registerVO.getConfirmPassword();
+                if (StringUtils.isBlank(password) || StringUtils.isBlank(confirmPassword)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "密码不能为空");
+                }
+                if (!password.equals(confirmPassword)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "两次密码不一致");
+                }
+                user = this.selectOneByAccount(account);
+                if (user != null) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "账号已存在");
+                }
+                break;
+            case 1:
+                if (!CheckUtil.checkEmail(email)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "邮箱格式不正确");
+                }
+                String code = registerVO.getCode();
+                String cacheCode = (String) redisService.get(email);
+                if (StringUtils.isBlank(code) || StringUtils.isBlank(cacheCode) || !cacheCode.equals(code)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误");
+                }
+                user = this.selectOneByEmail(email);
+                if (user != null) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "账号已存在");
+                }
+                user = this.selectOneByAccount(account);
+                if (user != null) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "账号已存在");
+                }
+                break;
+            case 2:
+                if (!CheckUtil.checkPhone(phone)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "手机号格式不正确");
+                }
+                code = registerVO.getCode();
+                cacheCode = (String) redisService.get(phone);
+                if (StringUtils.isBlank(code) || StringUtils.isBlank(cacheCode) || !cacheCode.equals(code)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误");
+                }
+                user = this.selectOneByPhone(phone);
+                if (user != null) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "账号已存在");
+                }
+                user = this.selectOneByAccount(account);
+                if (user != null) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "账号已存在");
+                }
+                break;
+            default:
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "注册类型错误");
         }
         RoleVO roleVO = roleService.selectByCode(UserRoleEnum.USER.getValue());
         user = new UserEntity();
         BeanUtil.copyProperties(registerVO, user);
-        if (StringUtils.isNotBlank(registerVO.getPassword())) {
+        if (StringUtils.isBlank(registerVO.getPassword())) {
             registerVO.setPassword(BaseConstant.DEFAULT_PASSWORD);
         }
         user.setAccount(account);
@@ -535,18 +547,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
             }
         } else if (StringUtils.isNotBlank(email)) {
             user = this.selectOneByEmail(email);
-            if (user != null) {
-                String salt = user.getSalt();
-                String md5 = Md5Utils.md5(salt, password);
-                if (!md5.equals(user.getPassword())) {
-                    throw new BusinessException(ErrorCode.BAD_REQUEST, "密码错误");
+            Object o = redisService.get(email);
+            if (user != null && o != null) {
+                String cacheCode = (String) o;
+                if (StringUtils.isBlank(cacheCode) || StringUtils.isBlank(code) || !cacheCode.equals(code)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误");
                 }
             }
 
         } else if (StringUtils.isNotBlank(phone)) {
             user = this.selectOneByPhone(phone);
-            if (user != null) {
-                String cacheCode = (String) redisService.get(phone);
+            Object o = redisService.get(phone);
+            if (user != null && o != null) {
+                String cacheCode = (String) o;
                 if (StringUtils.isBlank(cacheCode) || StringUtils.isBlank(code) || !cacheCode.equals(code)) {
                     throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误");
                 }
@@ -566,6 +579,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         }
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
+        //对手机号与邮箱中间部分进行脱敏
+        if (StringUtils.isNotBlank(userVO.getEmail())) {
+            userVO.setEmail(userVO.getEmail().replaceAll("(\\w{3})(\\w+)(\\w{3})", "$1****$3"));
+        }
+        if (StringUtils.isNotBlank(userVO.getPhone())) {
+            userVO.setPhone(userVO.getPhone().replaceAll("(\\w{3})(\\w+)(\\w{3})", "$1****$3"));
+        }
+
         return userVO;
     }
 

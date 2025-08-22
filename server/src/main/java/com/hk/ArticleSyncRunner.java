@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
+ * 文章同步(只需要第一次启动时会执行一次)
  * @author huangkun
  * @date 2025/8/21 15:41
  */
@@ -28,7 +29,7 @@ public class ArticleSyncRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         //获取所有文章  TODO:数据量大的话可以进行优化
-        List<ArticleVO> articleVOS = articleService.selectAll();
+        List<ArticleVO> articleVOS = articleService.selectAll(null);
         if (CollectionUtil.isEmpty(articleVOS)) {
             log.error("没有需要同步的文章数据");
             return;

@@ -55,6 +55,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/register",
                                 "/send/code",
+                                "/aliPay/callback",
                                 "/swagger-ui/**",
                                 "/swagger-resources/**",
                                 "/v2/api-docs",

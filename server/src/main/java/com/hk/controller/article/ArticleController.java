@@ -87,6 +87,9 @@ public class ArticleController {
 //    @PreAuthorize("@ss.hasPermission('/article/pass/page')")
     public ResponseResult<IPage<ArticleVO>> selectPassArticlePage(@RequestBody ArticleSearchParam param) {
 //        return ResponseResult.success(articleService.selectPassArticlePage(param));
+        if (param.getPageSize() > 100) {
+            param.setPageSize(100);
+        }
         param.setAuditStatus(ArticleAuditStatus.PASS.getCode());
         param.setPublishStatus(ArticlePublishStatus.PUBLISHED.getCode());
         return ResponseResult.success(articleService.selectArticlePageFromEs(param));
@@ -134,6 +137,7 @@ public class ArticleController {
 
     /**
      * 获取阅读数量
+     *
      * @param articleId
      * @return
      */
@@ -146,6 +150,7 @@ public class ArticleController {
 
     /**
      * 添加阅读数量
+     *
      * @param articleId
      * @return
      */

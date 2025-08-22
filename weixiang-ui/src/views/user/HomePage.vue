@@ -5,28 +5,31 @@
       <input
         type="text"
         v-model="searchKeyword"
-        placeholder="搜索文章标题"
+        placeholder="搜索文章标题或内容"
         @keyup.enter="handleSearch"
         class="search-input"
       />
       <el-button type="primary" @click="handleSearch" class="search-btn"
         >搜索</el-button
       >
+      <el-button type="default" @click="handleReset" class="search-btn"
+        >重置</el-button
+      >
     </div>
     <!-- 标签导航 -->
     <div class="tag-nav">
-      <a 
-        href="#" 
-        class="tag-item" 
+      <a
+        href="#"
+        class="tag-item"
         :class="{ active: selectedTagId === -1 }"
         @click.prevent="handleTagClick(-1)"
       >
         全部
       </a>
-      <a 
-        href="#" 
-        v-for="tag in tagData" 
-        :key="tag.id" 
+      <a
+        href="#"
+        v-for="tag in tagData"
+        :key="tag.id"
         class="tag-item"
         :class="{ active: selectedTagId === tag.id }"
         @click.prevent="handleTagClick(tag.id)"
@@ -39,7 +42,7 @@
       <!-- 左侧文章列表区 -->
       <div class="article-content">
         <!-- 文章列表 -->
-        <div class="article-list-container">
+        <div class="article-list-container" ref="articleListContainer">
           <div v-if="loading" class="loading-container">
             <el-spinner size="large" />
           </div>
@@ -76,12 +79,6 @@
                 <div class="article-title">{{ article.title }}</div>
               </div>
               <div class="article-summary">
-                <div v-if="article.id % 3 === 0" class="article-img">
-                  <img
-                    src="https://picsum.photos/120/90?random=1"
-                    alt="文章封面"
-                  />
-                </div>
                 <div class="summary-content">{{ article.content }}</div>
               </div>
 
@@ -118,15 +115,15 @@
               </div>
             </div>
           </div>
-
-          <!-- 分页 -->
-          <div class="pagination-container" v-if="articleList.length > 0">
+          <!-- 分页组件 -->
+          <div class="pagination-container" v-if="totalCount > 0">
             <el-pagination
-              @current-change="handlePageChange"
               :current-page="currentPage"
               :page-size="pageSize"
-              layout="prev, pager, next"
               :total="totalCount"
+              @current-change="handlePageChange"
+              background
+              layout="total, prev, pager, next, jumper"
             />
           </div>
         </div>
@@ -175,7 +172,6 @@ const formatDate = (date: string | number | Date) => {
 const getArticleList = async () => {
   loading.value = true;
   try {
-
     const res = await selectPassArticlePage({
       pageNum: currentPage.value,
       pageSize: pageSize.value,
@@ -183,14 +179,18 @@ const getArticleList = async () => {
       searchText: searchKeyword.value,
       userId: undefined,
     });
+
+    // 调试日志，检查返回数据结构
+    console.log("分页数据返回:", res.data);
+
     if (res.data.code === 200) {
-      // 模拟数据添加统计信息
-      articleList.value = res.data.data?.records || [];
-      totalCount.value = res.data.data?.total || 0;
+      articleList.value = res.data.data?.records||[];
+      totalCount.value = Number(res.data.data?.total) || 0;
     } else {
       ElMessage.error(res.data.message || "获取文章列表失败");
     }
   } catch (err) {
+    console.error("获取文章列表错误:", err);
     ElMessage.error("获取文章列表失败");
   } finally {
     loading.value = false;
@@ -199,6 +199,14 @@ const getArticleList = async () => {
 
 // 处理搜索
 const handleSearch = () => {
+  currentPage.value = 1;
+  getArticleList();
+};
+
+// 处理重置
+const handleReset = () => {
+  searchKeyword.value = "";
+  selectedTagId.value = -1;
   currentPage.value = 1;
   getArticleList();
 };
@@ -249,14 +257,13 @@ const navigateToDetail = (id: number) => {
 
 // 页面加载时获取数据
 onMounted(async () => {
+  await getCategoryData();
+  await getTagData();
   getArticleList();
-  getCategoryData();
-  getTagData();
 });
 </script>
 
 <style scoped>
-/* 全局样式优化 */
 .home-page {
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   color: #333;
@@ -264,7 +271,6 @@ onMounted(async () => {
 
 .nav-container {
   max-width: 1200px;
-  /* margin: 0 auto; */
   padding: 0 20px;
   display: flex;
   gap: 20px;
@@ -291,7 +297,6 @@ onMounted(async () => {
 /* 搜索框样式 */
 .search-box {
   max-width: 800px;
-  /* margin: 20px auto; */
   display: flex;
   gap: 10px;
   padding: 0 20px;
@@ -330,7 +335,6 @@ onMounted(async () => {
 /* 主体内容区优化 */
 .main-container {
   max-width: 1200px;
-  /* margin: 0 auto; */
   padding: 0 20px;
 }
 
@@ -341,8 +345,22 @@ onMounted(async () => {
 /* 文章列表容器优化 */
 .article-list-container {
   border-radius: 16px;
-  /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); */
   padding: 10px;
+}
+
+/* 滚动加载提示优化 */
+.no-more-tip {
+  text-align: center;
+  padding: 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.loading-tip {
+  text-align: center;
+  padding: 15px;
+  color: #888;
+  font-size: 14px;
 }
 
 /* 加载状态优化 */
@@ -577,11 +595,10 @@ onMounted(async () => {
   font-size: 12px !important;
 }
 
-/* 分页优化 */
+/* 分页容器样式 */
 .pagination-container {
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
+  margin-top: 16px;
+  text-align: right;
 }
 
 /* 响应式适配优化 */
@@ -612,7 +629,8 @@ onMounted(async () => {
     flex-direction: column;
   }
 
-  .search-input, .search-btn {
+  .search-input,
+  .search-btn {
     width: 100%;
   }
 

@@ -3,6 +3,7 @@ package com.hk.service.article.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -345,8 +346,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     }
 
     @Override
-    public List<ArticleVO> selectAll() {
-        List<ArticleEntity> articleEntities = this.list();
+    public List<ArticleVO> selectAll(Integer offsetMinute) {
+        LambdaQueryWrapper<ArticleEntity> queryWrapper = new LambdaQueryWrapper<>(ArticleEntity.class);
+        if (offsetMinute != null) {
+            //文章的修改在当前时间减去offsetMinute的时间
+            Date recentDate = DateUtil.offsetMinute(DateUtil.date(), -offsetMinute);
+            queryWrapper.ge(ArticleEntity::getUpdateTime, recentDate);
+        }
+        List<ArticleEntity> articleEntities = this.list(queryWrapper);
         if (CollectionUtil.isEmpty(articleEntities)) return null;
         List<Long> articleIds = articleEntities.stream().map(ArticleEntity::getId).collect(Collectors.toList());
         Map<Long, List<Long>> articleTagMap = articleTagService.selectMapByArticleId(articleIds);

@@ -1,13 +1,14 @@
 package com.hk.service.plan.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.common.ErrorCode;
 import com.hk.entity.plan.UserPlanEntity;
 import com.hk.enums.OrderStatusEnum;
 import com.hk.enums.StatusEnum;
 import com.hk.exception.BusinessException;
 import com.hk.mapper.plan.UserPlanMapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hk.scoket.ArticleApprovalHandler;
 import com.hk.service.order.OrderInfoService;
 import com.hk.service.plan.MemberPlanService;
 import com.hk.service.plan.UserPlanService;
@@ -37,6 +38,8 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
     private OrderInfoService orderInfoService;
     @Autowired
     private MemberPlanService memberPlanService;
+    @Autowired
+    private ArticleApprovalHandler articleApprovalHandler;
 
     @Override
     public UserPlan getPayPlan(Long userId) {
@@ -72,7 +75,18 @@ public class UserPlanServiceImpl extends ServiceImpl<UserPlanMapper, UserPlanEnt
         userPlanEntity.setStartDate(startDate);
         userPlanEntity.setEndDate(endDate);
         userPlanEntity.setStatus(StatusEnum.NORMAL.getCode());
-        return this.save(userPlanEntity);
+        boolean save = this.save(userPlanEntity);
+
+        //TODO: 发送消息
+
+//        UserMessageVO messageVO = new UserMessageVO();
+//        messageVO.setUserId(article.getUserId());
+//        messageVO.setMessage(message);
+//        userMessageService.saveMessage(messageVO);
+//        PushMessageBaseVO<UserMessageVO> messageBaseVO = new PushMessageBaseVO(PushTypeEnum.ARTICLE.getCode(), messageVO);
+//        articleApprovalHandler.sendMessageToUser(article.getUserId().toString(), messageBaseVO);
+
+        return save;
     }
 
     @Override

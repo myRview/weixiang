@@ -150,9 +150,9 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             payVO.setSubject("购买" + planVO.getName());
             String qrCodeUrl = alipayManager.generateQrCodeImage(payVO);
 
-
             OrderVO orderVO = OrderVO.converter(orderInfoEntity);
             orderVO.setQrCodeUrl(qrCodeUrl);
+            orderVO.setValidTime(15 * 60 * 1000L);
             payVO.setOrderId(orderVO.getId());
             // 缓存订单信息
             redisService.putHash(getHashKey(), String.valueOf(userId), orderVO);

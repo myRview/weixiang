@@ -35,12 +35,8 @@
         :rules="rules"
         label-position="top"
       >
-        <!-- 账号注册字段 -->
-        <el-form-item
-          v-if="registerType === 'account'"
-          label="账号"
-          prop="account"
-        >
+        <!-- 所有注册类型都需要账号输入框 -->
+        <el-form-item label="账号" prop="account">
           <el-input
             v-model="form.account"
             placeholder="请输入账号"
@@ -88,7 +84,7 @@
         </el-form-item>
 
         <!-- 手机号注册的密码是可选的 -->
-        <el-form-item
+        <!-- <el-form-item
           v-if="registerType === 'phone'"
           label="密码 (可选)"
           prop="password"
@@ -100,7 +96,7 @@
             autocomplete="off"
             show-password
           ></el-input>
-        </el-form-item>
+        </el-form-item> -->
 
         <!-- 邮箱注册字段 -->
         <el-form-item v-if="registerType === 'email'" label="邮箱" prop="email">
@@ -138,7 +134,7 @@
         </el-form-item>
 
         <el-form-item
-          v-if="registerType === 'email' || registerType === 'account'"
+          v-if="registerType === 'account'"
           label="密码"
           prop="password"
         >
@@ -152,7 +148,7 @@
         </el-form-item>
 
         <el-form-item
-          v-if="registerType === 'email' || registerType === 'account'"
+          v-if="registerType === 'account'"
           label="确认密码"
           prop="confirmPassword"
         >
@@ -277,8 +273,8 @@ const sendEmailCode = async () => {
   }
 
   try {
-    // 调用发送验证码API
-    const res = await sendCode({ phone: form.value.phone });
+    // 调用发送验证码API - 修复此处的参数错误，应该发送email而不是phone
+    const res = await sendCode({ email: form.value.email });
     if (res.data.code !== 200) {
       ElMessage.error(res.data.message);
       return;
@@ -312,15 +308,16 @@ onUnmounted(() => {
 
 // 动态验证规则
 const rules = computed(() => {
-  // 基础规则
-  const baseRules: any = {};
+  // 所有注册类型都需要账号验证
+  const baseRules: any = {
+    account: [
+      { required: true, message: "请输入账号", trigger: "blur" },
+      { min: 2, max: 16, message: "长度在 2 到 16 个字符", trigger: "blur" },
+    ],
+  };
 
   // 账号注册规则
   if (registerType.value === "account") {
-    baseRules.account = [
-      { required: true, message: "请输入账号", trigger: "blur" },
-      { min: 2, max: 16, message: "长度在 2 到 16 个字符", trigger: "blur" },
-    ];
     baseRules.password = [
       { required: true, message: "请输入密码", trigger: "blur" },
       { min: 6, max: 20, message: "长度在 6 到 20 个字符", trigger: "blur" },
@@ -420,26 +417,28 @@ const handleRegister = async () => {
   }
 
   // 3. 准备注册参数
-  const registerParams: any = {};
+  const registerParams: any = {
+    // 所有注册类型都需要账号
+    account: form.value.account,
+  };
 
   // 根据注册类型添加对应的参数
   if (registerType.value === "account") {
-    registerParams.account = form.value.account;
+    registerParams.registerType = 0;
     registerParams.password = form.value.password;
     registerParams.confirmPassword = form.value.confirmPassword;
   } else if (registerType.value === "phone") {
+    registerParams.registerType = 2;
     registerParams.phone = form.value.phone;
     registerParams.code = form.value.code;
     // 密码是可选的
-    if (form.value.password) {
-      registerParams.password = form.value.password;
-      registerParams.confirmPassword = form.value.confirmPassword;
-    }
+    // if (form.value.password) {
+    //   registerParams.password = form.value.password;
+    // }
   } else if (registerType.value === "email") {
+    registerParams.registerType = 1;
     registerParams.email = form.value.email;
     registerParams.code = form.value.code;
-    registerParams.password = form.value.password;
-    registerParams.confirmPassword = form.value.confirmPassword;
   }
 
   // 4. 注册逻辑
@@ -471,6 +470,7 @@ const handleLogin = () => {
 };
 </script>
 <style scoped>
+/* 样式部分保持不变 */
 .logo {
   height: 60px;
   margin-bottom: 8px;

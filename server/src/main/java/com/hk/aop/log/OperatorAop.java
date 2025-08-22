@@ -55,7 +55,6 @@ public class OperatorAop {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
                 .currentRequestAttributes()).getRequest();
         Map<String, Object> requestParams = RequestUtils.getRequestParams(request, joinPoint);
-        log.error("请求参数:{}", requestParams);
         String ip = IPUtil.getClientIp(request);
         operationLog.setIpAddress(ip);
         operationLog.setUserId(UserContext.getCurrentUserId());
@@ -71,7 +70,11 @@ public class OperatorAop {
             throw e;
         } finally {
             // 保存日志
-            operationLogService.addLog(operationLog);
+            try {
+                operationLogService.addLog(operationLog);
+            } catch (Exception e) {
+                log.error("保存操作日志异常:{}", e);
+            }
         }
         return result;
     }

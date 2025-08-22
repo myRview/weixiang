@@ -48,6 +48,10 @@ public class RedisService<T> {
     public void putHash(String key, String hashKey, T value) {
         redisTemplate.opsForHash().put(key, hashKey, value);
     }
+    //设置哈希表中的键值对（Map）
+    public void putAllHash(String key, Map<String, T> map) {
+        redisTemplate.opsForHash().putAll(key, map);
+    }
 
     // 获取哈希表中的键对应的值
     @SuppressWarnings("unchecked")

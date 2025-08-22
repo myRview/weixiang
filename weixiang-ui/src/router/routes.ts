@@ -126,7 +126,7 @@ export const routes: Array<RouteRecordRaw> = [
         },
       },
       {
-        path: "member-center",
+        path: "member-center/:id?",
         name: "MemberCenter",
         component: MemberCenter,
         meta: {

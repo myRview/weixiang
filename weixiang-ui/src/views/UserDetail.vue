@@ -74,7 +74,7 @@
           type="primary"
           class="action-btn"
           v-show="!isVip"
-          @click="getPlanList"
+          @click="toMemberCenter"
         >
           <el-icon>
             <Star />
@@ -107,107 +107,6 @@
         </div>
       </div>
     </div>
-    <!-- 会员套餐列表弹框 -->
-    <el-dialog
-      v-model="planDialogVisible"
-      title="会员套餐"
-      :close-on-click-modal="false"
-      width="800px"
-    >
-      <div class="plan-table-container">
-        <el-table :data="planData" style="width: 100%">
-          <el-table-column prop="name" label="套餐名称" width="220">
-            <template #default="scope">
-              <div class="plan-name-container">
-                <span class="plan-name">{{ scope.row.name }}</span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="price" label="价格" width="140">
-            <template #default="scope">
-              <div class="price-container">
-                <span class="price-symbol">¥</span>
-                <span class="price-value">{{ scope.row.price }}</span>
-                <span class="price-unit">/{{ scope.row.validityDays }}天</span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="validityDays" label="有效期" width="160">
-            <template #default="scope">
-              <div class="validity-container">
-                <el-icon class="calendar-icon">
-                  <Calendar />
-                </el-icon>
-                <span>{{ scope.row.validityDays }}天</span>
-                <span class="validity-tip"
-                  >({{ Math.round(scope.row.validityDays / 30) }}个月)</span
-                >
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right">
-            <template #default="scope">
-              <el-button
-                type="primary"
-                size="small"
-                class="select-plan-btn"
-                :class="{ 'recommended-btn': scope.row.recommended }"
-                @click="handleSelectPlan(scope.row.id)"
-              >
-                <span>选择此套餐</span>
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </el-dialog>
-
-    <!-- 支付二维码弹框 -->
-    <el-dialog
-      v-model="payDialogVisible"
-      title="扫码支付"
-      width="400px"
-      :close-on-click-modal="false"
-      :before-close="handlePayClose"
-    >
-      <div class="pay-dialog-content">
-        <div v-if="orderStatusText === '支付成功'" class="payment-success">
-          <el-icon color="#67C23A" :size="60"><CircleCheckFilled /></el-icon>
-          <div class="success-text">支付成功！</div>
-          <div class="success-tip">会员已开通，即将自动关闭...</div>
-        </div>
-        <div v-else>
-          <div class="qr-code-container">
-            <img :src="qrCodeImage" alt="支付二维码" class="qr-code-img" />
-            <div class="order-info">
-              <div class="order-item">
-                <span class="order-label">套餐名称：</span>
-                <span class="order-value">{{ currentPlanName }}</span>
-              </div>
-              <div class="order-item">
-                <span class="order-label">订单金额：</span>
-                <span class="order-value price">¥{{ currentPlanPrice }}</span>
-              </div>
-              <div class="order-item">
-                <span class="order-label">订单号：</span>
-                <span class="order-value order-id">{{ currentOrderId }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="payment-status">
-            <div class="status-text">{{ orderStatusText }}</div>
-            <el-progress
-              :percentage="paymentProgress"
-              :color="progressColor"
-              :show-text="false"
-            />
-            <div class="status-tip">
-              请使用微信或支付宝扫描上方二维码完成支付
-            </div>
-          </div>
-        </div>
-      </div>
-    </el-dialog>
 
     <!-- 用户信息弹框组件 -->
     <el-dialog
@@ -296,26 +195,23 @@ import {
   getUserById,
   sign,
 } from "@/api/yonghuguanli";
-import { onMounted, ref, computed, nextTick } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import dayjs from "dayjs";
 import * as echarts from "echarts";
 import { ElMessage } from "element-plus";
 import {
-  Plus,
-  Star,
   Edit,
   Check,
   Calendar,
   CircleCheckFilled,
+  Star,
 } from "@element-plus/icons-vue";
-import { selectPlanList } from "@/api/huiyuantaocanguanli";
-import { getPayPlan, payPlan } from "@/api/yonghutaocanbiaoguanli";
-import QRCode from "qrcode";
-import { getOrderById, getOrderStatusById } from "@/api/dingdanguanli";
+import { getPayPlan } from "@/api/yonghutaocanbiaoguanli";
 import FileUpload from "@/components/FileUpload.vue"; // 导入自定义文件上传组件
 import { fansList, list } from "@/api/guanzhuguanli";
-
+import { useRouter } from "vue-router";
+const router = useRouter();
 // 默认头像
 const defaultAvatar =
   "http://gips2.baidu.com/it/u=195724436,3554684702&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=960";
@@ -335,30 +231,7 @@ const totalSignCount = ref(0);
 // 签到记录
 const signInRecords = ref<Record<string, boolean>>({});
 const isVip = ref(false);
-const planData = ref<API.MemberPlanVO[]>([]);
-const planDialogVisible = ref(false);
-
-// 支付弹窗控制
-const payDialogVisible = ref(false);
-// 二维码图片数据
-const qrCodeImage = ref("");
-// 订单状态查询定时器
-const orderTimer = ref<NodeJS.Timeout | null>(null);
-// 当前订单ID
-const currentOrderId = ref(Number);
-// 订单状态信息
-const orderStatusText = ref("等待支付...");
-// 支付进度
-const paymentProgress = ref(0);
-// 进度条颜色
-const progressColor = ref("#409eff");
-// 当前套餐名称
-const currentPlanName = ref("");
-// 当前套餐价格
-const currentPlanPrice = ref(0);
-
 const loginUserStore = useLoginUserStore();
-
 // 编辑资料处理
 const editDialogVisible = ref(false);
 const userInfo = ref({
@@ -397,7 +270,6 @@ const handleAvatarSuccess = (data: any) => {
 
 const submitEdit = async () => {
   try {
-    console.log(userInfo.value);
     const res = await editUser({
       userId: loginUserStore.loginUser.id,
       userName: userInfo.value.userName,
@@ -445,174 +317,12 @@ const checkTodaySign = () => {
   isTodaySigned.value = !!signInRecords.value[today];
 };
 
-const getPlanList = async () => {
-  try {
-    const res = await selectPlanList();
-    if (res.data.code === 200) {
-      planData.value = res.data.data;
-      planDialogVisible.value = true;
-    } else {
-      ElMessage.error(res.data.message);
-    }
-  } catch (error) {
-    console.error("获取会员列表失败", error);
-    ElMessage.error("获取会员列表失败");
-  }
+const toMemberCenter = () => {
+  router.push({
+    path: "/member-center",
+  });
 };
 
-const handleSelectPlan = async (planId: number) => {
-  try {
-    // 找到选中的套餐
-    const plan = planData.value.find((p) => p.id === planId);
-    if (!plan) {
-      ElMessage.error("未找到套餐信息");
-      return;
-    }
-
-    // 保存套餐信息
-    currentPlanName.value = plan.name;
-    currentPlanPrice.value = plan.price;
-
-    // 调用支付接口
-    const res = await payPlan({ planId, userId: loginUserStore.loginUser.id });
-    if (res.data.code === 200) {
-      const qrCodeUrl = res.data.data?.qrCodeUrl;
-      currentOrderId.value = res.data.data?.id || 0;
-
-      // 生成二维码
-      QRCode.toDataURL(
-        qrCodeUrl,
-        {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: "#000000",
-            light: "#ffffff",
-          },
-        },
-        (err, url) => {
-          if (err) {
-            ElMessage.error("二维码生成失败");
-            return;
-          }
-          qrCodeImage.value = url;
-          payDialogVisible.value = true;
-          planDialogVisible.value = false;
-
-          // 重置支付状态
-          paymentProgress.value = 0;
-          orderStatusText.value = "等待支付...";
-          progressColor.value = "#409eff";
-
-          // 启动订单状态查询定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-          }
-          orderTimer.value = setInterval(checkOrderStatus, 1500);
-        }
-      );
-    } else {
-      ElMessage.error(res.data.message);
-    }
-  } catch (error) {
-    console.error("开通会员失败", error);
-    ElMessage.error("开通会员失败");
-  }
-};
-
-// 检查订单状态
-const checkOrderStatus = async () => {
-  try {
-    // 调用后端API查询订单状态
-    const res = await getOrderStatusById({ id: currentOrderId.value });
-
-    if (res.data.code === 200) {
-      const status = res.data.data;
-      switch (status) {
-        case 1: // 支付成功
-          paymentProgress.value = 100;
-          orderStatusText.value = "支付成功";
-          progressColor.value = "#67c23a";
-          // 3秒后自动关闭弹窗
-          setTimeout(() => {
-            payDialogVisible.value = false;
-            isVip.value = true;
-            ElMessage.success("会员开通成功！");
-          }, 3000);
-
-          // 清除定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-            orderTimer.value = null;
-          }
-          return;
-
-        case 2: // 支付失败
-          paymentProgress.value = 0;
-          orderStatusText.value = "支付失败";
-          progressColor.value = "#f56c6c";
-          ElMessage.error("支付失败，请重新尝试或联系客服");
-
-          // 清除定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-            orderTimer.value = null;
-          }
-          return;
-
-        case 3: // 订单已关闭
-          paymentProgress.value = 0;
-          orderStatusText.value = "订单已关闭";
-          progressColor.value = "#909399";
-          ElMessage.warning("支付超时，订单已关闭");
-
-          // 清除定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-            orderTimer.value = null;
-          }
-          return;
-
-        default: // 未支付
-          // 更新等待动画
-          paymentProgress.value += 10;
-          if (paymentProgress.value >= 70) {
-            paymentProgress.value = 30;
-          }
-
-          // 根据等待时间更新状态文本
-          const elapsedSeconds = Math.floor(
-            (Date.now() - startTime.value) / 1000
-          );
-          if (elapsedSeconds > 120) {
-            orderStatusText.value = "支付处理中...";
-            progressColor.value = "#e6a23c";
-          } else {
-            orderStatusText.value = "等待支付...";
-            progressColor.value = "#409eff";
-          }
-      }
-    } else {
-      ElMessage.error(res.data.message || "查询订单状态失败");
-    }
-  } catch (error) {
-    console.error("查询订单状态失败", error);
-    // 更新等待动画
-    paymentProgress.value += 10;
-    if (paymentProgress.value >= 70) {
-      paymentProgress.value = 30;
-    }
-  }
-};
-
-// 关闭支付弹窗的处理
-const handlePayClose = (done: () => void) => {
-  if (orderTimer.value) {
-    clearInterval(orderTimer.value);
-    orderTimer.value = null;
-  }
-  done();
-};
 //获取用户购买的套餐
 const getVipInfo = async () => {
   try {
@@ -850,92 +560,6 @@ onMounted(async () => {
 </style>
 
 <style scoped>
-.plan-table-container {
-  margin: 10px;
-}
-
-.plan-name-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.hot-tag {
-  background-color: #ff4d4f;
-  color: white;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(255, 77, 79, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
-  }
-}
-
-.price-container {
-  display: flex;
-  align-items: baseline;
-}
-
-.price-symbol {
-  font-size: 14px;
-  color: #77ff4d;
-}
-
-.price-value {
-  font-size: 20px;
-  font-weight: bold;
-  color: #ff4d4f;
-}
-
-.price-unit {
-  font-size: 12px;
-  color: #8c8c8c;
-  margin-left: 4px;
-}
-
-.validity-container {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.calendar-icon {
-  color: #1890ff;
-}
-
-.validity-tip {
-  font-size: 12px;
-  color: #8c8c8c;
-}
-
-.description-content {
-  color: #595959;
-  line-height: 1.5;
-}
-
-.select-plan-btn {
-  width: 120px;
-}
-
-.recommended-btn {
-  background: linear-gradient(135deg, #ff4d4f 0%, #ff7a45 100%);
-  border: none;
-}
-
-.hot-plan-row {
-  background-color: rgba(255, 248, 248, 0.6);
-}
-
 .profile-container {
   margin: 0 auto;
   padding: 20px;
@@ -1437,96 +1061,5 @@ onMounted(async () => {
   position: absolute;
   left: 0;
   top: 2px;
-}
-
-/* 新增支付弹窗样式 */
-.pay-dialog-content {
-  text-align: center;
-  padding: 10px;
-}
-
-.qr-code-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.qr-code-img {
-  width: 220px;
-  height: 220px;
-  border: 1px solid #eee;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 15px;
-}
-
-.order-info {
-  width: 100%;
-  text-align: left;
-  padding: 0 10px;
-}
-
-.order-item {
-  display: flex;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.order-label {
-  color: #606266;
-  width: 80px;
-  text-align: right;
-}
-
-.order-value {
-  flex: 1;
-  color: #303133;
-  font-weight: 500;
-}
-
-.price {
-  color: #f56c6c;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.order-id {
-  font-family: monospace;
-  letter-spacing: 1px;
-}
-
-.payment-status {
-  margin-top: 15px;
-}
-
-.status-text {
-  font-size: 16px;
-  color: #606266;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-
-.status-tip {
-  margin-top: 15px;
-  color: #909399;
-  font-size: 13px;
-}
-
-.payment-success {
-  padding: 30px 0;
-}
-
-.success-text {
-  font-size: 22px;
-  color: #67c23a;
-  font-weight: bold;
-  margin: 15px 0;
-}
-
-.success-tip {
-  color: #909399;
-  font-size: 14px;
 }
 </style>

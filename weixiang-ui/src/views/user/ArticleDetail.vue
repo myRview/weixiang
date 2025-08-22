@@ -487,7 +487,7 @@ const getFlowStatus = async () => {
   try {
     const res = await status({ userId: userId });
     if (res.data.code === 200) {
-      isFollowing.value = res.data.data;
+      isFollowing.value = res.data.data?? false;
     }
   } catch (err) {
     console.log(err);
@@ -621,7 +621,6 @@ onMounted(async () => {
               const res = await addArticleViewCount({
                 articleId: articleDetail.value.id,
               });
-              console.log(res.data);
               if (res.data.code === 200 && res.data.data) {
                 // 更新本地阅读量显示
                 viewCount.value += 1;

@@ -55,7 +55,15 @@ public class LoginAop {
         switch (value) {
             case "login":
                 UserLoginVO loginVO = (UserLoginVO) body;
-                userName = loginVO.getAccount();
+                if (loginVO.getAccount() != null) {
+                    userName = loginVO.getAccount();
+                } else if (loginVO.getEmail() != null) {
+                    //对邮箱中间进行脱敏操作
+                    userName = loginVO.getEmail().replaceAll("(\\w+)\\w+(\\w+)", "$1****$2");
+                } else {
+                    //对手机号中间4位进行脱敏操作
+                    userName = loginVO.getPhone().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
+                }
                 break;
             case "register":
                 UserRegisterVO registerVO = (UserRegisterVO) body;
@@ -66,7 +74,7 @@ public class LoginAop {
                 userId = UserContext.getCurrentUserId();
         }
         LoginLogVO loginLogVO = new LoginLogVO();
-        loginLogVO.setUsername(userName);
+        loginLogVO.setUsername(userName == null ? "" : userName);
         loginLogVO.setUserId(userId);
         String ip = IPUtil.getClientIp(request);
         loginLogVO.setIpAddress(ip);
@@ -89,7 +97,11 @@ public class LoginAop {
             log.error("目标方法执行异常:{}", e);
         } finally {
             // 保存日志
-            loginLogService.addLog(loginLogVO);
+            try {
+                loginLogService.addLog(loginLogVO);
+            } catch (Exception e) {
+                log.error("保存日志异常:{}", e);
+            }
         }
         return result;
     }

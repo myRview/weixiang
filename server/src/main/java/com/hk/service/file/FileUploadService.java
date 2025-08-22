@@ -49,12 +49,20 @@ public class FileUploadService {
             File tempFile = File.createTempFile(filePath, null);
             file.transferTo(tempFile);
             FileStorageService storageService = fileStorageServiceMap.get(uploadType);
+//            switch (categoryEnum) {
+//                case IMAGE:
+//                    return storageService.uploadImage(filePath, tempFile);
+//                default:
+//                    return storageService.upload(filePath, tempFile);
+//            }
+            //TODO: 后续选择返回相对地址,使用nginx代理实际地址
             switch (categoryEnum) {
                 case IMAGE:
-                    return storageService.uploadImage(filePath, tempFile);
+                    storageService.uploadImage(filePath, tempFile);
                 default:
-                    return storageService.upload(filePath, tempFile);
+                    storageService.upload(filePath, tempFile);
             }
+            return String.format("/%s/%s", uploadType, filePath);
         } catch (IOException e) {
             e.printStackTrace();
             throw new BusinessException(ErrorCode.ERROR_SYSTEM, "文件上传失败");

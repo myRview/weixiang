@@ -16,7 +16,8 @@ public class EmailMessageFactory implements MessageFactory {
             return null;
         }
         //TODO: 调用邮件服务
-        return null;
+        String code = String.valueOf((int) ((Math.random() * 9 + 1) * 1000));
+        return code;
 
     }
 }

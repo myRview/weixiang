@@ -262,51 +262,51 @@ declare namespace API {
   };
 
   type IPageArticleVO = {
-    pages?: number;
-    current?: number;
     size?: number;
-    records?: ArticleVO[];
     total?: number;
+    records?: ArticleVO[];
+    current?: number;
+    pages?: number;
   };
 
   type IPageCategoryVO = {
-    pages?: number;
-    current?: number;
     size?: number;
-    records?: CategoryVO[];
     total?: number;
+    records?: CategoryVO[];
+    current?: number;
+    pages?: number;
   };
 
   type IPageLoginLogVO = {
-    pages?: number;
-    current?: number;
     size?: number;
-    records?: LoginLogVO[];
     total?: number;
+    records?: LoginLogVO[];
+    current?: number;
+    pages?: number;
   };
 
   type IPageOperationLogVO = {
-    pages?: number;
-    current?: number;
     size?: number;
-    records?: OperationLogVO[];
     total?: number;
+    records?: OperationLogVO[];
+    current?: number;
+    pages?: number;
   };
 
   type IPagePermissionVO = {
-    pages?: number;
-    current?: number;
     size?: number;
-    records?: PermissionVO[];
     total?: number;
+    records?: PermissionVO[];
+    current?: number;
+    pages?: number;
   };
 
   type IPageTagVO = {
-    pages?: number;
-    current?: number;
     size?: number;
-    records?: TagVO[];
     total?: number;
+    records?: TagVO[];
+    current?: number;
+    pages?: number;
   };
 
   type likeArticleParams = {
@@ -442,6 +442,8 @@ declare namespace API {
     planName?: string;
     /** 支付二维码 */
     qrCodeUrl?: string;
+    /** 有效时长 */
+    validTime?: number;
   };
 
   type PageMemberPlanVO = {
@@ -891,6 +893,8 @@ declare namespace API {
     confirmPassword?: string;
     /** 验证码 */
     code?: string;
+    /** 注册类型，0-账号密码，1-邮箱，2-手机号 */
+    registerType?: number;
   };
 
   type UserSearchParam = {

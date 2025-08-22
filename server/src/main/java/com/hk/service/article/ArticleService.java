@@ -46,7 +46,12 @@ public interface ArticleService extends IService<ArticleEntity> {
 
     IPage<ArticleVO> selectArticlePage(ArticleSearchParam param);
 
-    List<ArticleVO> selectAll();
+    /**
+     * 查询所有文章（最近多少分钟内的）
+     * @param offsetMinute 偏移分钟
+     * @return
+     */
+    List<ArticleVO> selectAll(Integer offsetMinute);
 
     IPage<ArticleVO> selectArticlePageFromEs(ArticleSearchParam param);
 }

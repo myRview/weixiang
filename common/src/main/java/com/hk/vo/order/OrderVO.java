@@ -56,6 +56,9 @@ public class OrderVO {
     @Schema(description = "支付二维码")
     private String qrCodeUrl;
 
+    @Schema(description = "有效时长")
+    private Long validTime;
+
     public static OrderVO converter(OrderInfoEntity orderInfo) {
         OrderVO orderVO = new OrderVO();
         orderVO.setId(orderInfo.getId());

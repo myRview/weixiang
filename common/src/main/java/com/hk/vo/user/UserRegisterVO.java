@@ -32,4 +32,7 @@ public class UserRegisterVO implements Serializable {
     @Schema(description = "验证码")
     private String code;
 
+    @Schema(description = "注册类型，0-账号密码，1-邮箱，2-手机号")
+    private Integer registerType = 0;
+
 }
