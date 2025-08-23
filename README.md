@@ -32,6 +32,7 @@
 6. **API文档**：自动生成的接口文档，便于前后端协作
 ## 界面效果
 <img width="639" height="392" alt="login" src="https://github.com/user-attachments/assets/7b833537-daa9-431a-abfb-bba4054734ce" />
+<img width="633" height="375" alt="register" src="https://github.com/user-attachments/assets/b263d54d-c7a9-45ca-a49e-134cabb710f0" />
 
 
 
