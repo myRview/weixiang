@@ -15,4 +15,6 @@ import com.hk.vo.user.UserExpandVo;
 public interface UserInfoService extends IService<UserInfoEntity> {
 
     UserExpandVo getByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }

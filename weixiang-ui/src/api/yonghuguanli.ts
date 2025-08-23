@@ -17,6 +17,21 @@ export async function addUser(
   });
 }
 
+/** 绑定手机号/邮箱 POST /user/bind */
+export async function bindPhoneAndEmail(
+  body: API.UserBindVO,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResult>("/user/bind", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 获取连续签到天数 POST /user/continuous/count */
 export async function getContinuousSignCount(options?: { [key: string]: any }) {
   return request<API.ResponseResult>("/user/continuous/count", {

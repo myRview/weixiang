@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -76,6 +77,16 @@ public class UserController {
     @OperatorLog(value = "用户管理", desc = "编辑用户资料")
     public ResponseResult editUser(@RequestBody EditUserExpandVO expandVO) {
         return userService.editUser(expandVO) ? ResponseResult.success("修改成功") : ResponseResult.fail("修改失败");
+    }
+    /**
+     * 绑定手机号/邮箱
+     */
+    @PostMapping("/bind")
+    @Operation(summary = "绑定手机号/邮箱")
+//    @PreAuthorize("@ss.hasPermission('/user/bind')")
+    @OperatorLog(value = "用户管理", desc = "绑定手机号/邮箱")
+    public ResponseResult bindPhoneAndEmail(@RequestBody @Validated UserBindVO bindVO) {
+        return userService.bindPhoneAndEmail(bindVO) ? ResponseResult.success("绑定成功") : ResponseResult.fail("绑定失败");
     }
 
     /**

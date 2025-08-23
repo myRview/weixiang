@@ -3,7 +3,6 @@ package com.hk.service.user.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
-import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -131,9 +130,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     @Override
     public UserVO getInfo(Long id) {
+        UserVO userVO = tokenManager.getUserInfo(id);
+        if (userVO != null) return userVO;
         UserEntity user = this.getById(id);
         if (user == null) return null;
-        UserVO userVO = this.converterVO(user);
+        userVO = this.converterVO(user);
         UserRoleEntity userRole = userRoleService.selectByUserId(user.getId());
         if (userRole != null) {
             RoleVO roleVO = roleService.selectById(userRole.getRoleId());
@@ -156,16 +157,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
 
     @Override
     public UserEntity selectOneByEmail(String email) {
-        return this.getOne(new LambdaQueryWrapper<UserEntity>()
-                .eq(UserEntity::getEmail, email)
-                .last(" for update"));
+        return this.getOne(new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getEmail, email).last(" for update"));
     }
 
     @Override
     public UserEntity selectOneByPhone(String phone) {
-        return this.getOne(new LambdaQueryWrapper<UserEntity>()
-                .eq(UserEntity::getPhone, phone)
-                .last(" for update"));
+        return this.getOne(new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getPhone, phone).last(" for update"));
     }
 
     @Override
@@ -185,7 +182,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         LambdaUpdateWrapper<UserEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(UserEntity::getId, userId);
         updateWrapper.set(UserEntity::getPassword, md5);
-        return this.update(updateWrapper);
+        boolean update = this.update(updateWrapper);
+        if (update) {
+            tokenManager.delLoginUser(userId);
+        }
+        return update;
     }
 
     @Override
@@ -309,7 +310,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         LambdaUpdateWrapper<UserEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(UserEntity::getId, userId);
         updateWrapper.set(UserEntity::getPassword, md5);
-        return this.update(updateWrapper);
+        boolean update = this.update(updateWrapper);
+        if (update) {
+            tokenManager.delLoginUser(userId);
+        }
+        return update;
     }
 
     @Override
@@ -317,8 +322,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
     public boolean editUser(EditUserExpandVO expandVO) {
         Long userId = expandVO.getUserId();
         String userName = expandVO.getUserName();
-        String phone = expandVO.getPhone();
-        String email = expandVO.getEmail();
         Integer gender = expandVO.getGender();
         String avatar = expandVO.getAvatar();
         UserEntity userEntity = new UserEntity();
@@ -326,20 +329,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         if (StringUtils.isNotBlank(userName)) {
             userEntity.setUserName(userName);
         }
-        if (StringUtils.isNotBlank(phone)) {
-            checkIphoneAndEmail(null, phone);
-            userEntity.setPhone(phone);
-        }
-        if (StringUtils.isNotBlank(email)) {
-            checkIphoneAndEmail(email, null);
-            userEntity.setEmail(email);
-        }
         userEntity.setGender(gender);
         if (StringUtils.isNotBlank(avatar)) {
             userEntity.setAvatar(avatar);
         }
-        this.updateById(userEntity);
-        UserExpandVo expandVo = userInfoService.getByUserId(userId);
+        boolean update = this.updateById(userEntity);
+        userInfoService.deleteByUserId(userId);
         Date birthday = expandVO.getBirthday();
         String province = expandVO.getProvince();
         String city = expandVO.getCity();
@@ -347,9 +342,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
         String address = expandVO.getAddress();
         String bio = expandVO.getBio();
         UserInfoEntity userExpandEntity = new UserInfoEntity();
-        if (expandVo != null) {
-            userExpandEntity.setId(expandVo.getId());
-        }
         if (birthday != null) {
             userExpandEntity.setBirthday(birthday);
         }
@@ -369,20 +361,74 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserEntity> impleme
             userExpandEntity.setBio(bio);
         }
         userExpandEntity.setUserId(userId);
-        return userInfoService.saveOrUpdate(userExpandEntity);
+        userInfoService.saveOrUpdate(userExpandEntity);
+        UserVO userVO = tokenManager.getUserInfo(userId);
+        if (userVO != null) {
+            userVO.setUserName(userName);
+            userVO.setGender(gender);
+            userVO.setAvatar(avatar);
+            UserExpandVo userExpandVo = userVO.getExpandVo();
+            if (userExpandVo == null) {
+                userExpandVo = new UserExpandVo();
+            }
+            userExpandVo.setBirthday(birthday);
+            userExpandVo.setProvince(province);
+            userExpandVo.setCity(city);
+            userExpandVo.setDistrict(district);
+            userExpandVo.setAddress(address);
+            userExpandVo.setBio(bio);
+            userVO.setExpandVo(userExpandVo);
+            tokenManager.updateCache(userVO);
+        }
+        return update;
+    }
+
+    @Override
+    public boolean bindPhoneAndEmail(UserBindVO bindVO) {
+        String target = "";
+        Long userId = bindVO.getUserId();
+        boolean present = this.getOptById(userId).isPresent();
+        if (!present) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "用户不存在");
+        }
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(userId);
+        if (StringUtils.isNotBlank(bindVO.getPhone())) {
+            boolean result = CheckUtil.checkPhone(bindVO.getPhone());
+            if (!result) throw new BusinessException(ErrorCode.BAD_REQUEST, "手机号格式不正确");
+            target = bindVO.getPhone();
+            userEntity.setPhone(bindVO.getPhone());
+        }
+        if (StringUtils.isNotBlank(bindVO.getEmail())) {
+            boolean result = CheckUtil.checkEmail(bindVO.getEmail());
+            if (!result) throw new BusinessException(ErrorCode.BAD_REQUEST, "邮箱格式不正确");
+            target = bindVO.getEmail();
+            userEntity.setEmail(bindVO.getEmail());
+        }
+        Object o = redisService.get(target);
+        if (o == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码已过期");
+
+        String code = (String) o;
+        if (!code.equals(bindVO.getCode())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码不正确");
+        }
+        boolean update = this.updateById(userEntity);
+        UserVO userVO = tokenManager.getUserInfo(userId);
+        if (update && userVO != null) {
+            userVO.setPhone(bindVO.getPhone());
+            userVO.setEmail(bindVO.getEmail());
+            tokenManager.updateCache(userVO);
+        }
+        return update;
     }
 
     @Override
     public String login(UserLoginVO loginVO) {
         UserEntity user = checkLoginParam(loginVO);
-        UserVO userVO = new UserVO();
-        userVO.setId(user.getId());
-        userVO.setAccount(user.getAccount());
-        userVO.setUserName(user.getUserName());
-        UserRoleEntity userRole = userRoleService.selectByUserId(user.getId());
-        RoleVO roleVO = roleService.selectById(userRole.getRoleId());
+        UserVO userVO = getInfo(user.getId());
         Set<String> permissionSet = new HashSet<>();
-        if (roleVO != null) {
+        if (userVO != null && userVO.getRoleVO() != null) {
+            RoleVO roleVO = userVO.getRoleVO();
             List<PermissionVO> permissionVOS = roleVO.getPermissionVOList();
             permissionSet = permissionVOS.stream().map(PermissionVO::getPermissionCode).collect(Collectors.toSet());
             userVO.setRoleCode(roleVO.getRoleCode());

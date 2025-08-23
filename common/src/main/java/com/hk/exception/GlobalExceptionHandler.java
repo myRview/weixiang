@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.sql.SQLException;
+
 /**
  * @author huangkun
  * @date 2025/6/29 10:00
@@ -28,6 +30,12 @@ public class GlobalExceptionHandler {
     public ResponseResult handleException(AccessDeniedException e) {
         log.error("AccessDeniedException={}", e.getMessage());
         return ResponseResult.fail(ErrorCode.NO_PERMISSION);
+    }
+
+    @ExceptionHandler(SQLException.class)
+    public ResponseResult handleException(SQLException e) {
+        log.error("SQLException={}", e.getMessage());
+        return ResponseResult.fail(ErrorCode.ERROR_SYSTEM);
     }
     // 处理静态资源不存在异常
     @ExceptionHandler(NoResourceFoundException.class)

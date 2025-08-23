@@ -27,8 +27,6 @@ public class UserRegisterController {
     private UserService userService;
     @Autowired
     private MessageFactoryProducer messageFactoryProducer;
-    @Autowired
-    private RedisService<String> redisService;
 
     @PostMapping("/register")
     @Operation(summary = "注册")
@@ -59,8 +57,6 @@ public class UserRegisterController {
             return ResponseResult.fail("邮箱或手机号不能为空");
         }
         String code = factory.sendMessage(target);
-        System.out.println("验证码：" + code);
-        redisService.setWithExpire(target, code, 60, TimeUnit.SECONDS);
         return ResponseResult.success(code);
     }
 }

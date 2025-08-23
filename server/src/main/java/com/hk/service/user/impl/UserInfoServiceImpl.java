@@ -30,4 +30,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfoEnt
         UserInfoEntity userInfo = this.getOne(queryWrapper);
         return UserExpandVo.convert(userInfo);
     }
+
+    @Override
+    public void deleteByUserId(Long userId) {
+        this.remove(new LambdaQueryWrapper<UserInfoEntity>().eq(UserInfoEntity::getUserId, userId));
+    }
 }

@@ -1,4 +1,4 @@
-package com.hk;
+package com.hk.runner;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.hk.elasticsearch.dao.ArticleESearchDao;

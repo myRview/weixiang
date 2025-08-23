@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -121,6 +120,22 @@ public class TokenManager {
         if (userId != null) {
             redisService.delete(getKey(userId));
             redisService.deleteHash(getHashKey(), userId.toString());
+        }
+    }
+
+    public UserVO getUserInfo(Long userId) {
+        Object userObj = redisService.getHash(getHashKey(), userId.toString());
+        if (userObj != null) {
+            return ((UserCacheVo) userObj).getUser();
+        }
+        return null;
+    }
+
+    public void updateCache(UserVO userVO) {
+        UserCacheVo userCacheVo = (UserCacheVo) redisService.getHash(getHashKey(), userVO.getId().toString());
+        if (userCacheVo != null) {
+            userCacheVo.setUser(userVO);
+            redisService.putHash(getHashKey(), userVO.getId().toString(), userCacheVo);
         }
     }
 }

@@ -26,4 +26,6 @@ public interface TagService extends IService<TagEntity> {
     List<TagVO> getTagList(String tagName);
 
     IPage<TagVO> selectTagPage(TagSearchParam param);
+
+    List<TagVO> buildCache(List<TagEntity> tagList);
 }

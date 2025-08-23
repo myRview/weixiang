@@ -10,7 +10,7 @@ import PlanManagement from "@/views/system/PlanManagement.vue";
 import RoleManagement from "@/views/system/RoleManagement.vue";
 import PermissionManagement from "@/views/system/PermissionManagement.vue";
 import ArticleApproval from "@/views/system/ArticleApproval.vue";
-import UserDetail from "../views/UserDetail.vue";
+import UserDetail from "../views/user/UserDetail.vue";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import MyArticles from "@/views/user/MyArticles.vue";
@@ -20,6 +20,7 @@ import HomePage from "@/views/user/HomePage.vue";
 import MemberCenter from "@/views/user/MemberCenter.vue";
 import UserHome from "@/views/user/UserHome.vue";
 import CategoryTagManagement from "@/views/system/CategoryTagManagement.vue";
+import UserEdit from "@/views/user/UserEdit.vue";
 import {
   House,
   Edit,
@@ -35,9 +36,6 @@ import {
   Goods,
   Operation,
 } from "@element-plus/icons-vue";
-
-
-
 
 export const routes: Array<RouteRecordRaw> = [
   // 登录注册（独立页面）
@@ -124,6 +122,16 @@ export const routes: Array<RouteRecordRaw> = [
           requiresAuth: true,
           hidden: true
         },
+      },
+      {
+        path: "edit-profile",
+        name: "EditProfile",
+        component: UserEdit,
+        meta: {
+          title: "编辑资料",
+          requiresAuth: true,
+          hidden: true
+        }
       },
       {
         path: "member-center/:id?",

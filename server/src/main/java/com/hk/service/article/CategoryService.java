@@ -26,4 +26,6 @@ public interface CategoryService extends IService<CategoryEntity> {
     List<CategoryVO> getCategoryList(String categoryName);
 
     IPage<CategoryVO> selectCategoryPage(CategorySearchParam param);
+
+    List<CategoryVO> buildCache(List<CategoryEntity> categoryList);
 }

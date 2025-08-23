@@ -262,51 +262,51 @@ declare namespace API {
   };
 
   type IPageArticleVO = {
-    size?: number;
-    total?: number;
-    records?: ArticleVO[];
     current?: number;
     pages?: number;
+    size?: number;
+    records?: ArticleVO[];
+    total?: number;
   };
 
   type IPageCategoryVO = {
-    size?: number;
-    total?: number;
-    records?: CategoryVO[];
     current?: number;
     pages?: number;
+    size?: number;
+    records?: CategoryVO[];
+    total?: number;
   };
 
   type IPageLoginLogVO = {
-    size?: number;
-    total?: number;
-    records?: LoginLogVO[];
     current?: number;
     pages?: number;
+    size?: number;
+    records?: LoginLogVO[];
+    total?: number;
   };
 
   type IPageOperationLogVO = {
-    size?: number;
-    total?: number;
-    records?: OperationLogVO[];
     current?: number;
     pages?: number;
+    size?: number;
+    records?: OperationLogVO[];
+    total?: number;
   };
 
   type IPagePermissionVO = {
-    size?: number;
-    total?: number;
-    records?: PermissionVO[];
     current?: number;
     pages?: number;
+    size?: number;
+    records?: PermissionVO[];
+    total?: number;
   };
 
   type IPageTagVO = {
-    size?: number;
-    total?: number;
-    records?: TagVO[];
     current?: number;
     pages?: number;
+    size?: number;
+    records?: TagVO[];
+    total?: number;
   };
 
   type likeArticleParams = {
@@ -802,6 +802,17 @@ declare namespace API {
     confirmPassword?: string;
     /** 角色id */
     roleId?: number;
+  };
+
+  type UserBindVO = {
+    /** 手机号 */
+    phone?: string;
+    /** 邮箱 */
+    email?: string;
+    /** 验证码 */
+    code: string;
+    /** 用户id */
+    userId: number;
   };
 
   type UserEditVO = {

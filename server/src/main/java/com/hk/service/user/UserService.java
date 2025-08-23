@@ -48,6 +48,8 @@ public interface UserService extends IService<UserEntity> {
 
     boolean editUser(EditUserExpandVO expandVO);
 
+    boolean bindPhoneAndEmail(UserBindVO bindVO);
+
     String login(UserLoginVO loginVO);
 
     List<UserVO> selectByIds(Collection<Long> userIds);
@@ -59,4 +61,5 @@ public interface UserService extends IService<UserEntity> {
     boolean register(UserRegisterVO registerVO);
 
     UserVO selectById(Long userId);
+
 }
