@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.hk.vo.article.ArticleVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -107,13 +108,17 @@ public class ArticleEsVO implements Serializable {
         articleVO.setId(Long.valueOf(articleEsVO.getId()));
         articleVO.setTitle(articleEsVO.getTitle());
         articleVO.setContent(articleEsVO.getContent());
-        articleVO.setUserId(Long.valueOf(articleEsVO.getUserId()));
+        if (StringUtils.isNotBlank(articleEsVO.getUserId())) {
+            articleVO.setUserId(Long.valueOf(articleEsVO.getUserId()));
+        }
         articleVO.setPublishStatus(articleEsVO.getPublishStatus());
         articleVO.setAuditStatus(articleEsVO.getAuditStatus());
         articleVO.setAuditReason(articleEsVO.getAuditReason());
         articleVO.setViewCount(articleEsVO.getViewCount());
         articleVO.setLikeCount(articleEsVO.getLikeCount());
-        articleVO.setCategoryId(Long.valueOf(articleEsVO.getCategoryId()));
+        if (StringUtils.isNotBlank(articleEsVO.getCategoryId())) {
+            articleVO.setCategoryId(Long.valueOf(articleEsVO.getCategoryId()));
+        }
         articleVO.setCreateTime(articleEsVO.getCreateTime());
         if (CollectionUtil.isNotEmpty(articleEsVO.getTagIds())) {
             List<Long> tagIds = articleEsVO.getTagIds().stream().map(Long::valueOf).toList();

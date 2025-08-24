@@ -21,7 +21,7 @@
               <el-option v-for="category in categoryData" :key="category.id" :label="category.name" :value="category.id"></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="审核状态">
+          <!-- <el-form-item label="审核状态">
             <el-select
               v-model="searchParam.auditStatus"
               style="width: 180px"
@@ -32,7 +32,7 @@
               <el-option value="1" label="通过"></el-option>
               <el-option value="2" label="驳回"></el-option>
             </el-select>
-          </el-form-item>
+          </el-form-item> -->
           <el-form-item>
             <el-button type="primary" @click="selectPage">搜索</el-button>
             <el-button @click="handleReset">重置</el-button>

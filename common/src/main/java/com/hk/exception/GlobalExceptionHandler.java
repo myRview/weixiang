@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLException.class)
     public ResponseResult handleException(SQLException e) {
         log.error("SQLException={}", e.getMessage());
-        return ResponseResult.fail(ErrorCode.ERROR_SYSTEM);
+        return ResponseResult.fail(ErrorCode.ERROR_SYSTEM,"操作数据库异常");
     }
     // 处理静态资源不存在异常
     @ExceptionHandler(NoResourceFoundException.class)

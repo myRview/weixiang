@@ -1,0 +1,53 @@
+PUT /operation_log
+{
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 1,
+    "analysis": {
+      "analyzer": {
+        "ik_max_word_analyzer": {
+          "type": "custom",
+          "tokenizer": "ik_max_word"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+              "type": "keyword"
+            },
+      "userId": {
+         "type": "keyword"
+      },
+      "username": {
+        "type": "keyword"
+      },
+      "operationContent": {
+        "type": "text",
+        "analyzer": "ik_max_word_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "operationModule": {
+        "type": "keyword"
+      },
+      "ipAddress": {
+        "type": "keyword"
+      },
+      "operationAddress": {
+        "type": "keyword"
+      },
+      "create_time": {
+              "type": "date",
+              "format": "yyyy-MM-dd HH:mm:ss"
+            },
+      "status": {
+        "type": "integer"
+      }
+    }
+  }
+}

@@ -6,6 +6,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.hk.param.LogSearchParam;
 import com.hk.vo.log.OperationLogVO;
 
+import java.util.Date;
+import java.util.List;
+
 /**
 * <p>
     * 操作日志表 服务类
@@ -21,4 +24,6 @@ public interface OperationLogService extends IService<OperationLogEntity> {
     IPage<OperationLogVO> selectOperaLogPage(LogSearchParam searchParam);
 
     boolean addLog(OperationLogVO operationLog);
+
+    List<OperationLogVO> selectAll(Date recentDate);
 }

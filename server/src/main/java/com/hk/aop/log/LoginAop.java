@@ -65,10 +65,10 @@ public class LoginAop {
                     userName = loginVO.getPhone().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
                 }
                 break;
-            case "register":
-                UserRegisterVO registerVO = (UserRegisterVO) body;
-                userName = registerVO.getAccount();
-                break;
+//            case "register":
+//                UserRegisterVO registerVO = (UserRegisterVO) body;
+//                userName = registerVO.getAccount();
+//                break;
             case "logout":
                 userName = UserContext.getCurrentUsername();
                 userId = UserContext.getCurrentUserId();

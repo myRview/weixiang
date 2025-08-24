@@ -107,14 +107,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                 return tagEntity;
             }).collect(Collectors.toList());
             articleTagService.saveBatch(tagEntityList);
-
-            ArticleEsVO articleEsVO = new ArticleEsVO();
-            BeanUtil.copyProperties(newArticle, articleEsVO);
-            if (CollectionUtil.isNotEmpty(tagIds)) {
-                List<String> list = tagIds.stream().map(String::valueOf).toList();
-                articleEsVO.setTagIds(list);
-            }
-            elasticsearchOperations.save(articleEsVO);
         }
         return save;
     }
@@ -291,7 +283,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         if (searchHits.hasSearchHits()) {
             searchHits.getSearchHits().forEach(searchHit -> {
                 ArticleEsVO articleEsVO = searchHit.getContent();
-                userIds.add(Long.valueOf(articleEsVO.getUserId()));
+                if (articleEsVO.getUserId() != null) {
+                    userIds.add(Long.valueOf(articleEsVO.getUserId()));
+                }
                 articleVOS.add(ArticleEsVO.convertToVO(articleEsVO));
             });
         }
@@ -336,11 +330,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
             userMessageService.saveMessage(messageVO);
             PushMessageBaseVO<UserMessageVO> messageBaseVO = new PushMessageBaseVO(PushTypeEnum.ARTICLE.getCode(), messageVO);
             articleApprovalHandler.sendMessageToUser(article.getUserId().toString(), messageBaseVO);
-
-            //更新ES数据
-            ArticleEsVO articleEsVO = new ArticleEsVO();
-            BeanUtil.copyProperties(article, articleEsVO);
-            elasticsearchOperations.save(articleEsVO);
         }
         return update;
     }

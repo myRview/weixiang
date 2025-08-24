@@ -34,8 +34,8 @@ public class OperationLogVO {
     @Schema(description = "操作地址")
     private String operationAddress;
 
-    @Schema(description = "操作时间")
-    private Date operationTime;
+    @Schema(description = "创建时间")
+    private Date createTime;
 
     @Schema(description = "1-成功，0-失败")
     private Integer status;
@@ -50,7 +50,7 @@ public class OperationLogVO {
         operationLogVO.setOperationModule(operationLog.getOperationModule());
         operationLogVO.setIpAddress(operationLog.getIpAddress());
         operationLogVO.setOperationAddress(operationLog.getOperationAddress());
-        operationLogVO.setOperationTime(operationLog.getOperationTime());
+        operationLogVO.setCreateTime(operationLog.getCreateTime());
         operationLogVO.setStatus(operationLog.getStatus());
         return operationLogVO;
     }

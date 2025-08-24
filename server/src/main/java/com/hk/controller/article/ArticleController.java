@@ -74,8 +74,8 @@ public class ArticleController {
     @Operation(summary = "获取当前作者的文章分页列表(作者)")
 //    @PreAuthorize("@ss.hasPermission('/article/author/page')")
     public ResponseResult<IPage<ArticleVO>> selectArticlePageByAuthor(@RequestBody @Validated ArticleSearchParam param) {
-//        return ResponseResult.success(articleService.selectArticlePageByAuthor(param));
-        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
+        return ResponseResult.success(articleService.selectArticlePageByAuthor(param));
+//        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
     }
 
 
@@ -168,9 +168,10 @@ public class ArticleController {
     @Operation(summary = "获取已发布文章分页列表(管理员)")
 //    @PreAuthorize("@ss.hasPermission('/article/page')")
     public ResponseResult<IPage<ArticleVO>> selectArticlePage(@RequestBody ArticleSearchParam param) {
-//        return ResponseResult.success(articleService.selectArticlePage(param));
         param.setPublishStatus(ArticlePublishStatus.PUBLISHED.getCode());
-        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
+        param.setAuditStatus(ArticleAuditStatus.PENDING.getCode());
+        return ResponseResult.success(articleService.selectArticlePage(param));
+//        return ResponseResult.success(articleService.selectArticlePageFromEs(param));
     }
 
     /**

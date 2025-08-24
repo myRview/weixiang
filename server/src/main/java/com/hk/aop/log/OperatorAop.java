@@ -49,7 +49,6 @@ public class OperatorAop {
         OperationLogVO operationLog = new OperationLogVO();
         operationLog.setOperationContent(operatorLog.desc());
         operationLog.setOperationModule(operatorLog.value());
-        operationLog.setOperationTime(new Date());
         operationLog.setStatus(StatusEnum.NORMAL.getCode());
         // 获取请求信息
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder

@@ -43,11 +43,14 @@
       <div class="article-content">
         <!-- 文章列表 -->
         <div class="article-list-container" ref="articleListContainer">
-          <div v-if="loading" class="loading-container">
+          <div
+            v-if="loading && articleList.length === 0"
+            class="loading-container"
+          >
             <el-spinner size="large" />
           </div>
           <div
-            v-else-if="articleList.length === 0"
+            v-else-if="articleList.length === 0 && !loading"
             class="no-article-container"
           >
             <div class="no-article-icon">
@@ -115,16 +118,11 @@
               </div>
             </div>
           </div>
-          <!-- 分页组件 -->
-          <div class="pagination-container" v-if="totalCount > 0">
-            <el-pagination
-              :current-page="currentPage"
-              :page-size="pageSize"
-              :total="totalCount"
-              @current-change="handlePageChange"
-              background
-              layout="total, prev, pager, next, jumper"
-            />
+          <!-- 加载更多提示 -->
+          <div v-if="articleList.length > 0" class="loading-more">
+            <el-spinner v-if="loading" size="medium" />
+            <p v-else-if="hasMore">滚动加载更多</p>
+            <p v-else>没有更多数据了</p>
           </div>
         </div>
       </div>
@@ -133,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import dayjs from "dayjs";
@@ -162,14 +160,40 @@ const defaultAvatar =
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalCount = ref(0);
+const hasMore = ref(true); // 是否还有更多数据
+const articleListContainer = ref<HTMLDivElement>(null); // 列表容器
 
 // 格式化日期
 const formatDate = (date: string | number | Date) => {
   return dayjs(date).format("YYYY-MM-DD");
 };
 
+// 处理滚动加载
+const handleScroll = () => {
+  if (loading.value || !hasMore.value) return;
+
+  const container = articleListContainer.value;
+  if (!container) return;
+
+  const { scrollTop, clientHeight, scrollHeight } = container;
+  // 当滚动到距离底部200px以内时加载更多
+  if (scrollHeight - scrollTop - clientHeight <= 200) {
+    loadMoreData();
+  }
+};
+
+// 加载更多数据
+const loadMoreData = () => {
+  if (currentPage.value * pageSize.value >= totalCount.value) {
+    hasMore.value = false;
+    return;
+  }
+  currentPage.value++;
+  getArticleList(true);
+};
+
 // 获取文章列表
-const getArticleList = async () => {
+const getArticleList = async (isLoadMore = false) => {
   loading.value = true;
   try {
     const res = await selectPassArticlePage({
@@ -180,12 +204,20 @@ const getArticleList = async () => {
       userId: undefined,
     });
 
-    // 调试日志，检查返回数据结构
-    console.log("分页数据返回:", res.data);
-
     if (res.data.code === 200) {
-      articleList.value = res.data.data?.records||[];
-      totalCount.value = Number(res.data.data?.total) || 0;
+      const newData = res.data.data?.records || [];
+      const total = Number(res.data.data?.total) || 0;
+
+      // 如果是加载更多则追加数据，否则替换数据
+      if (isLoadMore) {
+        articleList.value = [...articleList.value, ...newData];
+      } else {
+        articleList.value = newData;
+      }
+
+      totalCount.value = total;
+      // 判断是否还有更多数据
+      hasMore.value = articleList.value.length < totalCount.value;
     } else {
       ElMessage.error(res.data.message || "获取文章列表失败");
     }
@@ -199,7 +231,9 @@ const getArticleList = async () => {
 
 // 处理搜索
 const handleSearch = () => {
+  // 重置分页状态
   currentPage.value = 1;
+  hasMore.value = true;
   getArticleList();
 };
 
@@ -207,20 +241,18 @@ const handleSearch = () => {
 const handleReset = () => {
   searchKeyword.value = "";
   selectedTagId.value = -1;
+  // 重置分页状态
   currentPage.value = 1;
-  getArticleList();
-};
-
-// 处理分页变化
-const handlePageChange = (page: number) => {
-  currentPage.value = page;
+  hasMore.value = true;
   getArticleList();
 };
 
 // 处理标签点击
 const handleTagClick = (tagId: number) => {
   selectedTagId.value = tagId;
-  currentPage.value = 1; // 重置到第一页
+  // 重置分页状态
+  currentPage.value = 1;
+  hasMore.value = true;
   getArticleList();
 };
 
@@ -235,18 +267,21 @@ const getCategoryName = (categoryId: number) => {
   const category = categoryData.value.find((c) => c.id === categoryId);
   return category ? category.name : "未知分类";
 };
+
 const getCategoryData = async () => {
   const res = await getCategoryList({ categoryName: "" });
   if (res.data.code === 200) {
     categoryData.value = res.data.data || [];
   }
 };
+
 const getTagData = async () => {
   const res = await getTagList({ tagName: "" });
   if (res.data.code === 200) {
     tagData.value = res.data.data || [];
   }
 };
+
 // 导航到文章详情页
 const navigateToDetail = (id: number) => {
   router.push({
@@ -260,6 +295,22 @@ onMounted(async () => {
   await getCategoryData();
   await getTagData();
   getArticleList();
+
+  // 等待DOM渲染完成后添加滚动监听
+  nextTick(() => {
+    const container = articleListContainer.value;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+  });
+});
+
+// 页面卸载时移除滚动监听
+onUnmounted(() => {
+  const container = articleListContainer.value;
+  if (container) {
+    container.removeEventListener("scroll", handleScroll);
+  }
 });
 </script>
 
@@ -346,20 +397,24 @@ onMounted(async () => {
 .article-list-container {
   border-radius: 16px;
   padding: 10px;
+  max-height: calc(100vh - 200px); /* 固定容器高度，使其可滚动 */
+  overflow-y: auto;
+
+  /* 隐藏滚动条 - 兼容各浏览器 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 和 Edge */
+}
+
+/* Chrome、Safari 和 Opera 隐藏滚动条 */
+.article-list-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* 滚动加载提示优化 */
-.no-more-tip {
+.loading-more {
   text-align: center;
-  padding: 15px;
+  padding: 20px;
   color: #666;
-  font-size: 14px;
-}
-
-.loading-tip {
-  text-align: center;
-  padding: 15px;
-  color: #888;
   font-size: 14px;
 }
 
@@ -595,12 +650,6 @@ onMounted(async () => {
   font-size: 12px !important;
 }
 
-/* 分页容器样式 */
-.pagination-container {
-  margin-top: 16px;
-  text-align: right;
-}
-
 /* 响应式适配优化 */
 @media (max-width: 992px) {
   .category-nav {
@@ -642,6 +691,10 @@ onMounted(async () => {
 
   .nav-container::-webkit-scrollbar {
     display: none;
+  }
+
+  .article-list-container {
+    max-height: calc(100vh - 250px);
   }
 }
 </style>

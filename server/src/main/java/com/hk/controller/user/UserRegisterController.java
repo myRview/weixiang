@@ -1,9 +1,8 @@
 package com.hk.controller.user;
 
-import com.hk.cache.RedisService;
 import com.hk.common.ResponseResult;
-import com.hk.factory.message.base.MessageFactory;
 import com.hk.factory.message.MessageFactoryProducer;
+import com.hk.factory.message.base.MessageFactory;
 import com.hk.factory.message.enums.MessageFactoryType;
 import com.hk.service.user.UserService;
 import com.hk.vo.user.UserRegisterVO;
@@ -13,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author huangkun
