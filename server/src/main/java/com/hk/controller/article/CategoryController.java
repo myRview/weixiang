@@ -49,7 +49,7 @@ public class CategoryController {
 //    @OperatorLog(value = "文章分类管理", desc = "删除分类")
     @PreAuthorize("@ss.hasPermission('/category/delete')")
     public ResponseResult deleteCategory(@RequestParam Long id) {
-        return categoryService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
+        return categoryService.deleteCategoryById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
     /**

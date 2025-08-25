@@ -1,7 +1,9 @@
 import axios from "axios";
 
+export const baseURL = process.env.VUE_APP_API_BASE_URL || "http://localhost:8016/api";
+
 const myAxios = axios.create({
-  baseURL: "http://localhost:8015/api",
+  baseURL: baseURL,
   timeout: 60000,
   withCredentials: true,
 });

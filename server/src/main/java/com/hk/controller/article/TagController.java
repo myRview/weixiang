@@ -51,7 +51,7 @@ public class TagController {
 //    @OperatorLog(value = "文章标签管理", desc = "删除标签")
     @PreAuthorize("@ss.hasPermission('/tag/delete')")
     public ResponseResult deleteTag(@RequestParam Long id) {
-        return tagService.removeById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
+        return tagService.deleteTagById(id) ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
     }
 
     /**

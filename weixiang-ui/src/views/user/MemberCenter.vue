@@ -15,7 +15,12 @@
         </div>
       </template>
       <div class="member-info">
-        <el-avatar :src="user.avatar" size="large"></el-avatar>
+        <el-avatar
+          :src="
+            user.avatar ? `${baseURL}${user.avatar}` : defaultAvatar
+          "
+          size="large"
+        ></el-avatar>
         <div class="user-basic-info">
           <h3>{{ user.userName || user.account }}</h3>
           <p class="member-expiry" v-if="isMember">
@@ -160,7 +165,9 @@ import QRCode from "qrcode";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-
+import { baseURL } from "@/request";
+const defaultAvatar =
+  "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
 const user = ref<API.UserVO>(loginUserStore.loginUser);

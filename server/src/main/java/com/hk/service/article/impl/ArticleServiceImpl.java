@@ -279,25 +279,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         SearchHits<ArticleEsVO> searchHits = elasticsearchOperations.search(query, ArticleEsVO.class);
         IPage<ArticleVO> page = new Page<>(pageNum, pageSize);
         List<ArticleVO> articleVOS = new ArrayList<>();
-        Set<Long> userIds = new HashSet<>();
         if (searchHits.hasSearchHits()) {
             searchHits.getSearchHits().forEach(searchHit -> {
                 ArticleEsVO articleEsVO = searchHit.getContent();
-                if (articleEsVO.getUserId() != null) {
-                    userIds.add(Long.valueOf(articleEsVO.getUserId()));
-                }
                 articleVOS.add(ArticleEsVO.convertToVO(articleEsVO));
             });
         }
-        List<UserVO> userVOList = userService.selectByIds(userIds);
-        Map<Long, UserVO> userVOMap = userVOList.stream().collect(Collectors.toMap(UserVO::getId, user -> user));
-        articleVOS.forEach(articleVO -> {
-            UserVO userVO = userVOMap.get(articleVO.getUserId());
-            if (userVO != null) {
-                articleVO.setUserName(userVO.getUserName());
-                articleVO.setUserAvatar(userVO.getAvatar());
-            }
-        });
         page.setRecords(articleVOS);
         page.setTotal(searchHits.getTotalHits());
         return page;
@@ -344,6 +331,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         }
         List<ArticleEntity> articleEntities = this.list(queryWrapper);
         if (CollectionUtil.isEmpty(articleEntities)) return null;
+
+        Map<Long, UserVO> userVOMap = selectUser(articleEntities);
+
         List<Long> articleIds = articleEntities.stream().map(ArticleEntity::getId).collect(Collectors.toList());
         Map<Long, List<Long>> articleTagMap = articleTagService.selectMapByArticleId(articleIds);
         return articleEntities.stream().map(articleEntity -> {
@@ -352,6 +342,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                     List<Long> tagIds = articleTagMap.get(articleEntity.getId());
                     if (CollectionUtil.isNotEmpty(tagIds)) {
                         articleVO.setTagIds(tagIds);
+                    }
+                    UserVO userVO = userVOMap.get(articleEntity.getUserId());
+                    if (userVO != null) {
+                        articleVO.setUserName(userVO.getUserName());
+                        articleVO.setUserAvatar(userVO.getAvatar());
                     }
                     return articleVO;
                 }

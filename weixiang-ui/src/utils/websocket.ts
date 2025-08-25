@@ -11,7 +11,7 @@ export default class WebSocketService {
     this.token = null;
     this.reconnectTimer = null;
     this.eventListeners = {};
-    this.baseUrl = baseUrl || (process.env.VUE_APP_API_BASE_URL || 'http://localhost:8015/api');
+    this.baseUrl = baseUrl || (process.env.VUE_APP_WS_BASE_URL || process.env.VUE_APP_API_BASE_URL || 'http://localhost:8015/api');
     this.path = path;
   }
 

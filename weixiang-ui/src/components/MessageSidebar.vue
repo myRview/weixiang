@@ -1,41 +1,152 @@
 <template>
   <div :class="['message-sidebar', { 'sidebar-open': isOpen }]">
+    <!-- 侧边栏头部 -->
     <div class="sidebar-header">
       <h3>消息中心</h3>
       <div class="header-actions">
-        <el-button v-if="hasSelected" type="text" size="small" @click="deleteSelectedMessages">删除所选</el-button>
-        <el-button type="text" size="small" @click="markAllAsRead">全部已读</el-button>
+        <!-- 只有有消息且有选中时显示删除按钮 -->
+        <el-button
+          v-if="messageData.length > 0 && hasSelected"
+          type="text"
+          size="small"
+          @click="deleteSelectedMessages"
+          class="delete-btn"
+        >
+          删除所选
+        </el-button>
+        <el-button
+          v-if="messageData.length > 0"
+          type="text"
+          size="small"
+          @click="markAllAsRead"
+        >
+          全部已读
+        </el-button>
       </div>
       <el-icon class="close-icon" @click="closeSidebar"><Close /></el-icon>
     </div>
+
+    <!-- 侧边栏内容区 -->
     <div class="sidebar-content">
+      <!-- 加载状态 -->
       <div v-if="loading" class="loading-state">
         <el-spinner size="small" />
         <span>加载中...</span>
       </div>
+
+      <!-- 空状态 -->
       <div v-else-if="messageData.length === 0" class="empty-state">
         <el-icon><Message /></el-icon>
         <p>暂无消息</p>
+        <p class="empty-hint">有新消息会在这里通知您~</p>
       </div>
-      <div v-else class="message-list">
-        <div
-          v-for="message in messageData"
-          :key="message.id"
-          :class="['message-item', { 'unread': message.readStatus === 0 }]"
-        >
-          <div class="message-checkbox">
-            <el-checkbox
-              v-model="selectedMessageIds"
-              :value="message.id" 
-            />
-          </div>
-          <div class="message-content" @click.stop="handleMessageClick(message)">
-            <div class="message-sender">
-              <span class="send-time">{{ formatTime(message.createTime) }}</span>
+
+      <!-- 消息列表（含全选栏） -->
+      <div v-else class="message-container">
+        <!-- 全选栏 -->
+        <div class="select-all-bar">
+          <el-checkbox
+            v-model="isAllSelected"
+            class="select-all-checkbox"
+            :indeterminate="hasSelected && !isAllSelected"
+          />
+          <span class="select-all-text">全选</span>
+        </div>
+
+        <!-- 消息列表 -->
+        <div class="message-list">
+          <div
+            v-for="message in messageData"
+            :key="message.id"
+            :class="[
+              'message-item',
+              { unread: message.readStatus === 0 },
+              { selected: selectedMessageIds.includes(message.id) },
+            ]"
+            @mouseenter="showTooltip = message.message.length > 30"
+            @mouseleave="showTooltip = false"
+          >
+            <!-- 消息复选框 -->
+            <div class="message-checkbox">
+              <el-checkbox
+                v-model="selectedMessageIds"
+                :value="message.id"
+                :disabled="!message.id"
+              />
             </div>
-            <div class="message-text">{{ message.message }}</div>
+
+            <!-- 消息内容（带tooltip） -->
+            <el-tooltip
+              v-if="message.message.length > 30"
+              :content="message.message"
+              placement="right"
+              effect="light"
+              :visible="showTooltip && isHoveringMessageId === message.id"
+              @mouseenter="isHoveringMessageId = message.id"
+              @mouseleave="isHoveringMessageId = ''"
+            >
+              <div
+                class="message-content"
+                @click.stop="handleMessageClick(message)"
+              >
+                <!-- 消息头部（时间+类型标签） -->
+                <div class="message-header">
+                  <span class="send-time">{{
+                    formatTime(message.createTime)
+                  }}</span>
+                  <el-tag
+                    :type="
+                      message.message.includes('已通过审核')
+                        ? 'success'
+                        : 'danger'
+                    "
+                    size="mini"
+                    class="message-tag"
+                  >
+                    {{
+                      message.message.includes("已通过审核")
+                        ? "审核通过"
+                        : "审核未通过"
+                    }}
+                  </el-tag>
+                </div>
+                <!-- 消息内容 -->
+                <div class="message-text">{{ message.message }}</div>
+              </div>
+            </el-tooltip>
+
+            <!-- 无tooltip的消息内容（短内容） -->
+            <div
+              v-else
+              class="message-content"
+              @click.stop="handleMessageClick(message)"
+            >
+              <div class="message-header">
+                <span class="send-time">{{
+                  formatTime(message.createTime)
+                }}</span>
+                <el-tag
+                  :type="
+                    message.message.includes('已通过审核')
+                      ? 'success'
+                      : 'danger'
+                  "
+                  size="mini"
+                  class="message-tag"
+                >
+                  {{
+                    message.message.includes("已通过审核")
+                      ? "审核通过"
+                      : "审核未通过"
+                  }}
+                </el-tag>
+              </div>
+              <div class="message-text">{{ message.message }}</div>
+            </div>
+
+            <!-- 未读红点 -->
+            <div v-if="message.readStatus === 0" class="unread-dot"></div>
           </div>
-          <div v-if="message.readStatus === 0" class="unread-dot"></div>
         </div>
       </div>
     </div>
@@ -43,10 +154,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, onMounted, watch, computed, onUnmounted } from "vue";
+import {
+  ref,
+  defineProps,
+  defineEmits,
+  onMounted,
+  watch,
+  computed,
+  onUnmounted,
+} from "vue";
 import { Close, Message } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
-import { selectMessageList, readMessage, deleteMessage } from "@/api/yonghuxiaoxiguanli";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  selectMessageList,
+  readMessage,
+  deleteMessage,
+} from "@/api/yonghuxiaoxiguanli";
 import { useLoginUserStore } from "@/store/loginUser";
 import { PushTypeEnum } from "@/enums/message.enum";
 import { webSocketService } from "@/router/index";
@@ -58,25 +181,55 @@ const props = defineProps<{
 
 // 定义emits
 const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'update:unreadCount', count: number): void;
-  (e: 'update:messages', messages: API.UserMessageVO[]): void;  // 新增：同步消息数据
+  (e: "close"): void;
+  (e: "update:unreadCount", count: number): void;
+  (e: "update:messages", messages: API.UserMessageVO[]): void;
 }>();
 
-// 引用
+// 状态管理
 const messageData = ref<API.UserMessageVO[]>([]);
 const loading = ref(false);
 const loginUserStore = useLoginUserStore();
 const selectedMessageIds = ref<string[]>([]);
+const showTooltip = ref(false);
+const isHoveringMessageId = ref(""); // 用于控制tooltip显示
 
 /**
- * 初始化WebSocket消息监听
- * 负责监听ARTICLE类型的WebSocket消息，并处理消息接收逻辑
+ * 全选状态计算属性
+ * - get: 判断是否全选（选中数量=消息总数且不为0）
+ * - set: 全选/取消全选（同步选中ID列表）
+ */
+const isAllSelected = computed({
+  get() {
+    return (
+      messageData.value.length > 0 &&
+      selectedMessageIds.value.length === messageData.value.length
+    );
+  },
+  set(checked) {
+    if (checked) {
+      // 全选：将所有消息ID加入选中列表
+      selectedMessageIds.value = messageData.value
+        .map((msg) => msg.id)
+        .filter((id) => !!id) as string[];
+    } else {
+      // 取消全选：清空选中列表
+      selectedMessageIds.value = [];
+    }
+  },
+});
+
+/**
+ * 是否有选中消息（计算属性）
+ */
+const hasSelected = computed(() => selectedMessageIds.value.length > 0);
+
+/**
+ * 初始化WebSocket监听
+ * 监听ARTICLE类型消息，新增消息插入列表顶部
  */
 const initWebSocketListeners = () => {
-  // 监听文章消息
   webSocketService.on(PushTypeEnum.ARTICLE, (data) => {
-    // 添加新消息到列表开头
     const newMessage: API.UserMessageVO = {
       id: data.id,
       message: data.message,
@@ -85,191 +238,241 @@ const initWebSocketListeners = () => {
       readStatus: 0, // 未读
     };
     messageData.value.unshift(newMessage);
-
-    // 发出消息数据更新事件，由父组件负责计算未读数量
-    emit('update:messages', messageData.value);
+    emit("update:messages", messageData.value);
   });
 };
 
-// 清理WebSocket监听
+/**
+ * 清理WebSocket监听
+ */
 const cleanupWebSocketListeners = () => {
   webSocketService.off(PushTypeEnum.ARTICLE);
 };
 
-// 计算属性，检查是否有选中的消息
-const hasSelected = computed(() => selectedMessageIds.value.length > 0);
-
-// 格式化时间
+/**
+ * 时间格式化（优化显示精度）
+ * @param time - 原始时间字符串
+ * @returns 格式化后的时间（刚刚/XX分钟前/XX小时前/XX天前/YYYY-MM-DD）
+ */
 const formatTime = (time: string) => {
+  if (!time) return "未知时间";
+
   const date = new Date(time);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
+  const secondDiff = Math.floor(diff / 1000);
+  const minuteDiff = Math.floor(secondDiff / 60);
+  const hourDiff = Math.floor(minuteDiff / 60);
+  const dayDiff = Math.floor(hourDiff / 24);
 
-  // 小于1分钟
-  if (diff < 60000) {
-    return '刚刚';
+  // 小于30秒
+  if (secondDiff < 30) {
+    return "刚刚";
   }
   // 小于1小时
-  if (diff < 3600000) {
-    return Math.floor(diff / 60000) + '分钟前';
+  if (hourDiff < 1) {
+    return `${minuteDiff}分钟前`;
   }
   // 小于24小时
-  if (diff < 86400000) {
-    return Math.floor(diff / 3600000) + '小时前';
+  if (dayDiff < 1) {
+    return `${hourDiff}小时前`;
   }
   // 小于30天
-  if (diff < 2592000000) {
-    return Math.floor(diff / 86400000) + '天前';
+  if (dayDiff < 30) {
+    return `${dayDiff}天前`;
   }
-  // 超过30天
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  // 超过30天（补零优化）
+  return `${date.getFullYear()}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
 };
 
-// 获取消息列表
+/**
+ * 获取消息列表（优化错误提示）
+ */
 const getMessages = async () => {
   loading.value = true;
   try {
-    const res = await selectMessageList({
-      userId: loginUserStore.loginUser.id,
-    });
+    const userId = loginUserStore.loginUser?.id;
+    if (!userId) {
+      ElMessage.warning("请先登录");
+      loading.value = false;
+      return;
+    }
+
+    const res = await selectMessageList({ userId });
     if (res.data.code === 200) {
       messageData.value = res.data.data || [];
-      // 发出消息数据更新事件，由父组件负责计算未读数量
-      emit('update:messages', messageData.value);  // 同步消息数据到父组件
+      emit("update:messages", messageData.value);
+    } else {
+      ElMessage.error(`获取消息失败：${res.data.msg || "未知错误"}`);
     }
   } catch (error) {
-    console.error('获取消息失败:', error);
+    console.error("获取消息失败:", error);
+    ElMessage.error("网络异常，获取消息失败");
   } finally {
     loading.value = false;
   }
 };
 
-
-// 处理消息点击
+/**
+ * 处理消息点击（优化加载状态提示）
+ * @param message - 点击的消息对象
+ */
 const handleMessageClick = async (message: API.UserMessageVO) => {
-  // 如果是未读消息，更新状态
-  if (message.readStatus === 0) {
-    try {
-      // 调用API标记为已读
-      const res = await readMessage([message.id]);
-      if (res.data.code === 200) {
-        // 更新本地消息状态
-        message.readStatus = 1;
-        // 发出消息数据更新事件，由父组件负责计算未读数量
-        emit('update:messages', messageData.value);  // 同步消息数据
-        ElMessage.success('消息已标记为已读');
-      } else {
-        ElMessage.error('标记消息为已读失败');
-      }
-    } catch (error) {
-      console.error('标记消息为已读失败:', error);
-      ElMessage.error('标记消息为已读失败');
-    }
-  }
-};
+  if (message.readStatus === 1) return; // 已读消息无需处理
 
-// 全部已读
-const markAllAsRead = async () => {
   try {
-    const unreadMessages = messageData.value.filter(msg => msg.readStatus === 0);
-    if (unreadMessages.length === 0) {
-      return;
-    }
-
-    const unreadIds = unreadMessages.map(msg => msg.id);
-    const res = await readMessage(unreadIds);
-
+    const res = await readMessage([message.id]);
     if (res.data.code === 200) {
-      // 更新本地消息状态
-      messageData.value.forEach(msg => {
-        if (unreadIds.includes(msg.id)) {
-          msg.readStatus = 1;
-        }
-      });
-      // 发出消息数据更新事件，由父组件负责计算未读数量
-      emit('update:messages', messageData.value);  // 同步消息数据
-      ElMessage.success('已将所有消息标记为已读');
+      message.readStatus = 1;
+      emit("update:messages", messageData.value);
+      ElMessage.success("消息已标记为已读");
+    } else {
+      ElMessage.error(`标记失败：${res.data.msg || "操作异常"}`);
     }
   } catch (error) {
-    ElMessage.error('标记全部已读失败');
+    console.error("标记消息已读失败:", error);
+    ElMessage.error("网络异常，标记失败");
   }
 };
 
-// 删除所选消息
-const deleteSelectedMessages = async () => {
-  if (selectedMessageIds.value.length === 0) {
-    ElMessage.warning('请选择要删除的消息');
+/**
+ * 全部已读（优化空判断）
+ */
+const markAllAsRead = async () => {
+  const unreadMessages = messageData.value.filter(
+    (msg) => msg.readStatus === 0
+  );
+  if (unreadMessages.length === 0) {
+    ElMessage.info("暂无未读消息");
     return;
   }
 
   try {
-    const res = await deleteMessage(selectedMessageIds.value);  // 修复：传递选中的ID
+    const unreadIds = unreadMessages
+      .map((msg) => msg.id)
+      .filter((id) => !!id) as string[];
+    const res = await readMessage(unreadIds);
     if (res.data.code === 200) {
-      // 重新获取消息列表
-      await getMessages();
-      // 清空选中状态
-      selectedMessageIds.value = [];
-      ElMessage.success('删除消息成功');
+      messageData.value.forEach((msg) => {
+        if (unreadIds.includes(msg.id)) msg.readStatus = 1;
+      });
+      emit("update:messages", messageData.value);
+      ElMessage.success("所有消息已标记为已读");
+    } else {
+      ElMessage.error(`操作失败：${res.data.msg || "服务器异常"}`);
     }
   } catch (error) {
-    ElMessage.error('删除消息失败');
+    console.error("标记全部已读失败:", error);
+    ElMessage.error("网络异常，操作失败");
   }
 };
 
-// 关闭侧边栏
+/**
+ * 删除所选消息（新增确认弹窗、优化状态同步）
+ */
+const deleteSelectedMessages = async () => {
+  if (selectedMessageIds.value.length === 0) {
+    ElMessage.warning("请选择要删除的消息");
+    return;
+  }
+
+  try {
+    // 新增删除确认
+    await ElMessageBox.confirm(
+      `确定要删除选中的${selectedMessageIds.value.length}条消息吗？`,
+      "删除确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    );
+
+    const res = await deleteMessage(selectedMessageIds.value);
+    if (res.data.code === 200) {
+      await getMessages(); // 重新获取列表确保数据同步
+      selectedMessageIds.value = []; // 清空选中状态
+      ElMessage.success("删除成功");
+    } else {
+      ElMessage.error(`删除失败：${res.data.msg || "操作异常"}`);
+    }
+  } catch (error: any) {
+    // 取消删除时不提示错误
+    if (error.name !== "Cancel") {
+      console.error("删除消息失败:", error);
+      ElMessage.error("网络异常，删除失败");
+    }
+  }
+};
+
+/**
+ * 关闭侧边栏
+ */
 const closeSidebar = () => {
-  emit('close');
+  emit("close");
+  selectedMessageIds.value = []; // 关闭时清空选中状态
 };
 
-// 监听isOpen变化
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) {
-    getMessages();
+/**
+ * 监听侧边栏开关状态
+ */
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      getMessages();
+    } else {
+      selectedMessageIds.value = []; // 关闭时重置选中
+    }
   }
-});
+);
 
-// 初始加载
-onMounted(() => {
-  if (props.isOpen) {
-    getMessages();
-  }
-  // 初始化WebSocket监听
-  initWebSocketListeners();
-});
-
-// 组件卸载时清理
-onUnmounted(() => {
-  cleanupWebSocketListeners();
-});
-
-// 监听用户登录状态变化
+/**
+ * 监听用户登录状态变化
+ */
 watch(
   () => loginUserStore.loginUser,
   (newUser) => {
     if (newUser) {
-      // 登录成功，初始化WebSocket监听
       initWebSocketListeners();
+      if (props.isOpen) getMessages();
     } else {
-      // 登出，清理WebSocket监听
       cleanupWebSocketListeners();
+      messageData.value = [];
+      selectedMessageIds.value = [];
     }
   },
   { immediate: true }
 );
+
+/**
+ * 组件生命周期
+ */
+onMounted(() => {
+  if (props.isOpen) getMessages();
+  initWebSocketListeners();
+});
+
+onUnmounted(() => {
+  cleanupWebSocketListeners();
+});
 </script>
 
 <style scoped>
+/* 基础布局优化 */
 .message-sidebar {
   position: fixed;
   top: 0;
   right: 0;
-  width: 360px;
+  width: 380px; /* 加宽20px提升舒适度 */
   height: 100vh;
   background: #fff;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.12); /* 加深阴影提升层次感 */
   z-index: 1000;
   transform: translateX(100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 优化过渡曲线 */
   display: flex;
   flex-direction: column;
 }
@@ -278,131 +481,204 @@ watch(
   transform: translateX(0);
 }
 
+/* 头部样式优化 */
 .sidebar-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f5f5f5; /* 加深边框色 */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #fafafa; /* 头部浅背景区分 */
 }
 
 .sidebar-header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 500;
-  color: #303133;
+  color: #1f2937; /* 加深文字色提升对比度 */
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
-  margin-right: 10px;
+  gap: 16px; /* 加大间距 */
+  margin-right: 8px;
 }
 
-.message-checkbox {
-  margin-right: 10px;
-  margin-top: 12px;
+.delete-btn {
+  color: #f56c6c; /* 删除按钮红色强调 */
 }
 
+.delete-btn:hover {
+  color: #e64942; /* hover加深 */
+}
+
+/* 关闭按钮优化 */
 .close-icon {
   cursor: pointer;
-  color: #909399;
+  color: #6b7280;
   font-size: 18px;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .close-icon:hover {
-  color: #303133;
+  color: #1f2937;
+  background-color: #f3f4f6;
 }
 
+/* 内容区样式 */
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 12px;
+  background-color: #f9fafb; /* 内容区浅背景 */
 }
 
+/* 加载状态优化 */
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #909399;
+  height: 200px; /* 固定高度避免跳动 */
+  color: #6b7280;
+  gap: 8px;
 }
 
+/* 空状态优化 */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #909399;
+  height: 200px;
+  color: #6b7280;
+  gap: 8px;
 }
 
 .empty-state .el-icon {
   font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.3;
+  margin-bottom: 12px;
+  opacity: 0.25; /* 降低图标透明度 */
 }
 
+.empty-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* 消息容器（含全选栏） */
+.message-container {
+  gap: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 全选栏样式 */
+.select-all-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 15px;
+  border-radius: 6px;
+  background-color: #fff;
+  margin-bottom: 4px;
+}
+
+.select-all-checkbox {
+  margin-right: 8px;
+}
+
+.select-all-text {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* 消息列表样式 */
 .message-list {
-  padding: 5px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* 消息项间距 */
 }
 
+/* 消息项核心样式优化 */
 .message-item {
   padding: 12px 15px;
   border-radius: 8px;
-  margin-bottom: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease; /* 优化过渡效果 */
   display: flex;
   align-items: flex-start;
+  background-color: #fff;
+  border: 1px solid transparent; /* 透明边框避免跳动 */
 }
 
+/* 鼠标悬浮效果 */
 .message-item:hover {
-  background-color: #f5f7fa;
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
 }
 
+/* 未读消息样式 */
 .message-item.unread {
-  background-color: #f0f5ff;
+  background-color: #f0f7ff;
+  border-left: 3px solid #409eff; /* 左侧蓝边强调 */
 }
 
-.message-avatar {
-  margin-right: 12px;
+/* 选中消息样式 */
+.message-item.selected {
+  background-color: #e6f4ff;
+  border-color: #91c9ff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+/* 复选框位置优化 */
+.message-checkbox {
+  margin-right: 10px;
+  margin-top: 3px; /* 垂直居中调整 */
+}
+
+/* 消息内容区 */
 .message-content {
   flex: 1;
   overflow: hidden;
 }
 
-.message-sender {
+/* 消息头部（时间+标签） */
+.message-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
-.sender-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-}
-
+/* 时间样式优化 */
 .send-time {
   font-size: 12px;
-  color: #909399;
+  color: #9ca3af;
 }
 
+/* 消息标签样式 */
+.message-tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  height: 18px;
+  line-height: 16px;
+}
+
+/* 消息内容样式 */
 .message-text {
   font-size: 13px;
-  color: #606266;
+  color: #374151;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.5; /* 优化行高 */
 }
 
+/* 未读红点优化 */
 .unread-dot {
   width: 8px;
   height: 8px;
@@ -410,21 +686,42 @@ watch(
   border-radius: 50%;
   margin-left: 8px;
   margin-top: 8px;
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2); /* 红点阴影提升视觉感 */
 }
 
-.sidebar-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 999;
-}
-
+/* 响应式优化（小屏幕占满宽度） */
 @media (max-width: 768px) {
   .message-sidebar {
     width: 100%;
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.15);
   }
+
+  .sidebar-content {
+    padding: 8px;
+  }
+
+  .message-item {
+    padding: 10px 12px;
+  }
+}
+
+/* 滚动条美化 */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style>

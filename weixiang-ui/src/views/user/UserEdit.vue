@@ -16,7 +16,7 @@
           <div class="avatar-preview-container">
             <img
               v-if="user.avatar"
-              :src="user.avatar"
+              :src="user?.avatar ? `${baseURL}${user?.avatar}` : ''"
               class="avatar"
               :class="{ 'avatar-loading': avatarUploading }"
             />
@@ -297,7 +297,7 @@ import FileUpload from "@/components/FileUpload.vue";
 import { User, Loading } from "@element-plus/icons-vue";
 import dayjs from "dayjs";
 import { sendCode } from "@/api/userRegisterController";
-
+import { baseURL } from "@/request";
 const router = useRouter();
 const formRef = ref<InstanceType<typeof ElForm>>();
 const phoneFormRef = ref<InstanceType<typeof ElForm>>();
@@ -496,9 +496,18 @@ const getUserInfo = async () => {
   try {
     const res = await getUserById({ id: loginUserStore.loginUser.id });
     if (res.data.code !== 200) return;
-
     // 赋值用户信息
     user.value = res.data.data;
+    if (!user.value.expandVo) {
+      user.value.expandVo = {
+        address: "",
+        bio: "",
+        province: "",
+        city: "",
+        district: "",
+        birthday: "",
+      };
+    }
     const { province, city, district } = user.value.expandVo;
 
     // 【关键】处理省市区回显：联动加载对应选项

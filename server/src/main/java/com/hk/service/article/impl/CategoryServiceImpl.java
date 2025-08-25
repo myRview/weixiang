@@ -111,6 +111,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, CategoryEnt
         return null;
     }
 
+    @Override
+    public boolean deleteCategoryById(Long id) {
+        boolean remove = this.removeById(id);
+        if (remove) {
+            redisService.deleteHash(getCategoryKey(), String.valueOf(id));
+        }
+        return remove;
+    }
+
     private String getCategoryKey() {
         return String.format("%s%s", BaseConstant.CACHE_PREFIX, "category");
     }

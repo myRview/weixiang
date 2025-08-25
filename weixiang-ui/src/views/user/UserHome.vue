@@ -4,7 +4,7 @@
     <div class="user-info-container">
       <div class="avatar-container">
         <el-avatar
-          :src="user?.avatar || defaultAvatar"
+          :src="user?.avatar ? `${baseURL}${user?.avatar}` : defaultAvatar"
           size="large"
           class="user-avatar"
         ></el-avatar>
@@ -27,25 +27,45 @@
           </div>
         </div>
       </div>
-      <div class="follow-button-container" v-if="showFollowBtn">
-        <el-button
-          v-if="isFollowing"
-          type="default"
-          size="medium"
-          @click="toggleFollow(user?.id, 0)"
-          class="follow-button"
-        >
-          已关注
-        </el-button>
-        <el-button
-          v-else
-          type="primary"
-          size="medium"
-          @click="toggleFollow(user?.id, 1)"
-          class="follow-button"
-        >
-          关注
-        </el-button>
+      <div class="user-actions-wrapper">
+        <div class="follow-button-container" v-if="showFollowBtn">
+          <el-button
+            v-if="isFollowing"
+            type="default"
+            size="medium"
+            @click="toggleFollow(user?.id, 0)"
+            class="follow-button"
+          >
+            已关注
+          </el-button>
+          <el-button
+            v-else
+            type="primary"
+            size="medium"
+            @click="toggleFollow(user?.id, 1)"
+            class="follow-button"
+          >
+            关注
+          </el-button>
+        </div>
+        <div class="user-actions-container" v-if="!showFollowBtn">
+          <el-button
+            type="primary"
+            size="medium"
+            @click="navigateToPersonalCenter"
+            class="follow-button"
+          >
+            个人中心
+          </el-button>
+          <el-button
+            type="primary"
+            size="medium"
+            @click="navigateToMemberCenter"
+            class="follow-button"
+          >
+            会员中心
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -155,7 +175,7 @@
                 style="cursor: pointer"
               >
                 <img
-                  :src="user.avatar || defaultAvatar"
+                  :src="user.avatar ? `${baseURL}${user.avatar}` : defaultAvatar"
                   alt="用户头像"
                   class="card-avatar"
                 />
@@ -168,9 +188,11 @@
                   :type="isUserFollowing(user.id) ? 'default' : 'primary'"
                   size="medium"
                   class="follow-button"
-                  @click.stop="toggleFollow(user.id, isUserFollowing(user.id) ? 0 : 1)"
+                  @click.stop="
+                    toggleFollow(user.id, isUserFollowing(user.id) ? 0 : 1)
+                  "
                 >
-                  {{ isUserFollowing(user.id) ? '已关注' : '关注' }}
+                  {{ isUserFollowing(user.id) ? "已关注" : "关注" }}
                 </el-button>
               </div>
             </div>
@@ -192,7 +214,7 @@
                 style="cursor: pointer"
               >
                 <img
-                  :src="user.avatar || defaultAvatar"
+                  :src="user.avatar ? `${baseURL}${user.avatar}` : defaultAvatar"
                   alt="用户头像"
                   class="card-avatar"
                 />
@@ -205,9 +227,11 @@
                   :type="isUserFollowing(user.id) ? 'default' : 'primary'"
                   size="medium"
                   class="follow-button"
-                  @click.stop="toggleFollow(user.id, isUserFollowing(user.id) ? 0 : 1)"
+                  @click.stop="
+                    toggleFollow(user.id, isUserFollowing(user.id) ? 0 : 1)
+                  "
                 >
-                  {{ isUserFollowing(user.id) ? '已关注' : '关注' }}
+                  {{ isUserFollowing(user.id) ? "已关注" : "关注" }}
                 </el-button>
               </div>
             </div>
@@ -228,6 +252,7 @@ import dayjs from "dayjs";
 import { selectArticlePageByAuthor } from "@/api/wenzhangguanli";
 import { EditPen } from "@element-plus/icons-vue";
 import { changStatus, fansList, list, status } from "@/api/guanzhuguanli";
+import { baseURL } from "@/request";
 const formatDate = (date: string | number | Date) => {
   return dayjs(date).format("YYYY-MM-DD HH:mm:ss");
 };
@@ -258,23 +283,29 @@ const followStatusMap = ref<Record<number, boolean>>({});
 const isUserFollowing = (userId: number) => {
   return followStatusMap.value[userId] || false;
 };
+const navigateToPersonalCenter = () => {
+  router.push("/profile");
+};
+const navigateToMemberCenter = () => {
+  router.push("/member-center");
+};
 
 // 新增：刷新关注状态映射表
 const refreshFollowStatusMap = async () => {
   if (!loginUser?.id) return;
-  
+
   try {
     // 获取当前登录用户的所有关注
     const res = await list({ userId: loginUser.id });
     if (res.data.code === 200) {
       const myFollowing = res.data.data || [];
       const statusMap: Record<number, boolean> = {};
-      
+
       // 标记已关注的用户
-      myFollowing.forEach(user => {
+      myFollowing.forEach((user) => {
         statusMap[user.id] = true;
       });
-      
+
       followStatusMap.value = statusMap;
     }
   } catch (error) {
@@ -285,36 +316,33 @@ const refreshFollowStatusMap = async () => {
 // 修复：切换关注状态方法
 const toggleFollow = async (userId: number, status: number) => {
   if (!userId || !loginUser?.id) return;
-  
+
   // 防止重复点击
   const buttonEl = document.activeElement as HTMLButtonElement;
   if (buttonEl) buttonEl.disabled = true;
-  
+
   try {
     const res = await changStatus({ userId: userId, status: status });
     if (res.data.code !== 200) {
-      ElMessage.error(res.data.message || '操作失败');
+      ElMessage.error(res.data.message || "操作失败");
       return;
     }
-    
-    ElMessage.success(status === 1 ? '关注成功' : '取消关注成功');
-    
+
+    ElMessage.success(status === 1 ? "关注成功" : "取消关注成功");
+
     // 立即更新状态映射表
     followStatusMap.value[userId] = status === 1;
-    
+
     // 如果是当前页面用户的关注状态变更，同步更新
     if (userId === Number(route.query.id)) {
       isFollowing.value = status === 1;
     }
-    
+
     // 重新加载列表数据
-    await Promise.all([
-      getFlowList(),
-      getFollowerList()
-    ]);
+    await Promise.all([getFlowList(), getFollowerList()]);
     getFlowStatus();
   } catch (error) {
-    ElMessage.error('操作失败，请重试');
+    ElMessage.error("操作失败，请重试");
     console.error("关注操作失败", error);
   } finally {
     if (buttonEl) buttonEl.disabled = false;
@@ -335,7 +363,7 @@ const navigateToArticleDetail = (articleId: number) => {
     path: "/article-detail",
     query: { id: articleId },
   });
-}
+};
 
 // 跳转到用户详情页
 const navigateToUserDetail = (userId: number) => {
@@ -427,7 +455,7 @@ const getFlowStatus = async () => {
 const getFlowList = async () => {
   const targetUserId = route.query.id;
   if (!targetUserId) return;
-  
+
   loadingFollowing.value = true;
   try {
     const res = await list({ userId: targetUserId });
@@ -448,7 +476,7 @@ const getFlowList = async () => {
 const getFollowerList = async () => {
   const targetUserId = route.query.id;
   if (!targetUserId) return;
-  
+
   loadingFollowers.value = true;
   try {
     const res = await fansList({ userId: targetUserId });
@@ -474,7 +502,7 @@ watch(
       fetchArticles(),
       getFlowStatus(),
       getFlowList(),
-      getFollowerList()
+      getFollowerList(),
     ]);
   }
 );
@@ -487,7 +515,7 @@ onMounted(async () => {
       fetchArticles(),
       getFlowStatus(),
       getFlowList(),
-      getFollowerList()
+      getFollowerList(),
     ]);
   } catch (error) {
     console.error("页面初始化失败", error);
@@ -555,6 +583,14 @@ onMounted(async () => {
   overflow: hidden;
 }
 
+/* 用户操作按钮容器样式 - 确保垂直对齐 */
+.user-actions-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px; /* 按钮组之间的垂直间距 */
+}
+
 .follow-button-container {
   display: flex;
   align-items: center;
@@ -571,6 +607,14 @@ onMounted(async () => {
 .follow-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(66, 185, 131, 0.3);
+}
+
+/* 个人中心和会员中心按钮容器 */
+.user-actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 按钮之间的垂直间距 */
+  align-items: flex-end; /* 按钮右对齐 */
 }
 
 .user-stats {
@@ -726,56 +770,5 @@ onMounted(async () => {
 .card-bio {
   font-size: 14px;
   color: #666;
-}
-
-.card-button {
-  padding: 6px 12px;
-  background-color: #42b983;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.card-button:hover {
-  background-color: #3aa876;
-}
-
-/* 加载中和空状态样式 */
-.loading-indicator,
-.empty-state {
-  padding: 30px 0;
-  text-align: center;
-  color: #999;
-}
-
-.empty-state-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40px 0;
-}
-
-.empty-icon {
-  margin-bottom: 20px;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: 16px;
-  color: #999;
-  margin-bottom: 30px;
-}
-
-.publish-button {
-  padding: 12px 24px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.publish-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(66, 185, 131, 0.3);
 }
 </style>

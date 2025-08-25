@@ -17,25 +17,37 @@
       >
     </div>
     <!-- 标签导航 -->
-    <div class="tag-nav">
-      <a
-        href="#"
-        class="tag-item"
-        :class="{ active: selectedTagId === -1 }"
-        @click.prevent="handleTagClick(-1)"
-      >
-        全部
-      </a>
-      <a
-        href="#"
-        v-for="tag in tagData"
-        :key="tag.id"
-        class="tag-item"
-        :class="{ active: selectedTagId === tag.id }"
-        @click.prevent="handleTagClick(tag.id)"
-      >
-        {{ tag.name }}
-      </a>
+    <div class="tag-nav-container">
+      <button class="scroll-btn left" @click="handleScrollLeft">
+        <el-icon>
+          <ArrowLeft />
+        </el-icon>
+      </button>
+      <div class="tag-nav" ref="tagNav">
+        <a
+          href="#"
+          class="tag-item"
+          :class="{ active: selectedTagId === -1 }"
+          @click.prevent="handleTagClick(-1)"
+        >
+          全部
+        </a>
+        <a
+          href="#"
+          v-for="tag in tagData"
+          :key="tag.id"
+          class="tag-item"
+          :class="{ active: selectedTagId === tag.id }"
+          @click.prevent="handleTagClick(tag.id)"
+        >
+          {{ tag.name }}
+        </a>
+      </div>
+      <button class="scroll-btn right" @click="handleScrollRight">
+        <el-icon>
+          <ArrowRight />
+        </el-icon>
+      </button>
     </div>
     <!-- 主体内容区 -->
     <div class="main-container">
@@ -88,7 +100,11 @@
               <div class="article-meta">
                 <div class="author-info">
                   <img
-                    :src="article.userAvatar || defaultAvatar"
+                    :src="
+                      article.userAvatar
+                        ? `${baseURL}${article.userAvatar}`
+                        : defaultAvatar
+                    "
                     alt="作者头像"
                     class="author-avatar"
                   />
@@ -138,6 +154,7 @@ import dayjs from "dayjs";
 import { selectPassArticlePage } from "@/api/wenzhangguanli";
 import { getCategoryList } from "@/api/wenzhangfenleiguanli";
 import { getTagList } from "@/api/wenzhangbiaoqianguanli";
+import { ArrowLeft, ArrowRight } from "@element-plus/icons-vue";
 
 // 路由导航
 const router = useRouter();
@@ -151,7 +168,8 @@ const tagData = ref<API.TagVO[]>([]);
 const searchKeyword = ref("");
 // 选中的标签ID，默认为全部(-1)
 const selectedTagId = ref(-1);
-
+const tagNav = ref<HTMLDivElement>(null); // 标签导航容器
+import { baseURL } from "@/request";
 // 默认头像
 const defaultAvatar =
   "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
@@ -247,6 +265,20 @@ const handleReset = () => {
   getArticleList();
 };
 
+// 处理滚动左
+const handleScrollLeft = () => {
+  if (tagNav.value) {
+    tagNav.value.scrollLeft -= 100;
+  }
+};
+
+// 处理滚动右
+const handleScrollRight = () => {
+  if (tagNav.value) {
+    tagNav.value.scrollLeft += 100;
+  }
+};
+
 // 处理标签点击
 const handleTagClick = (tagId: number) => {
   selectedTagId.value = tagId;
@@ -292,6 +324,8 @@ const navigateToDetail = (id: number) => {
 
 // 页面加载时获取数据
 onMounted(async () => {
+  // 初始化滚动状态
+  nextTick(() => {});
   await getCategoryData();
   await getTagData();
   getArticleList();
@@ -350,7 +384,7 @@ onUnmounted(() => {
   max-width: 800px;
   display: flex;
   gap: 10px;
-  padding: 0 20px;
+  padding: 0 120px;
 }
 
 .search-input {
@@ -385,7 +419,7 @@ onUnmounted(() => {
 
 /* 主体内容区优化 */
 .main-container {
-  max-width: 1200px;
+  max-width: 1000px;
   padding: 0 20px;
 }
 
@@ -572,17 +606,47 @@ onUnmounted(() => {
   color: #1890ff;
 }
 
+/* 标签导航容器样式 */
+.tag-nav-container {
+  max-width: 1000px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+/* 滚动按钮样式 */
+.scroll-btn {
+  background: #fff;
+  border: 1px solid #e5e9f2;
+  border-radius: 4px;
+  padding: 0 12px;
+  height: 32px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.scroll-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.scroll-btn:hover:not(:disabled) {
+  background: #e8f4fd;
+  color: #1890ff;
+  border-color: #d1e5fe;
+}
+
 /* 标签导航样式优化 */
 .tag-nav {
-  max-width: 1200px;
+  flex: 1;
   display: flex;
-  overflow-x: auto;
+  overflow-x: hidden;
   gap: 12px;
   padding: 10px 20px;
   scrollbar-width: thin;
   scrollbar-color: #d1e5fe #f5f7fa;
-  margin-bottom: 10px;
-  margin-top: 10px;
 }
 
 /* 滚动条样式 - 仅适用于WebKit浏览器 */

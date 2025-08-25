@@ -34,7 +34,7 @@
       <div class="author-info">
         <el-avatar
           :size="32"
-          :src="articleDetail.userAvatar || defaultAvatar"
+          :src="articleDetail.userAvatar  ? `${baseURL}${articleDetail.userAvatar }` : defaultAvatar"
           class="author-avatar"
           @click="handleAvatarClick(articleDetail.userId)"
           style="cursor: pointer"
@@ -197,7 +197,7 @@
         <div class="comment-input-area">
           <el-avatar
             :size="40"
-            :src="userAvatar || defaultAvatar"
+            :src="userAvatar ? `${baseURL}${userAvatar}` : defaultAvatar"
             class="comment-avatar"
           ></el-avatar>
           <div class="input-wrapper">
@@ -234,7 +234,7 @@
             >
               <el-avatar
                 :size="32"
-                :src="comment.userAvatar || defaultAvatar"
+                 :src="comment.userAvatar  ? `${baseURL}${comment.userAvatar }` : defaultAvatar"
                 @click="handleAvatarClick(comment.userId)"
                 class="comment-item-avatar"
               ></el-avatar>
@@ -277,6 +277,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { baseURL } from "@/request";
 import {
   ElMessage,
   ElMessageBox,

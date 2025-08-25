@@ -5,7 +5,7 @@
       <div class="avatar-section">
         <div class="avatar-wrapper">
           <img
-            :src="user?.avatar || defaultAvatar"
+             :src="user?.avatar ? `${baseURL}${user?.avatar}` : defaultAvatar"
             alt="用户头像"
             class="avatar"
           />
@@ -112,7 +112,7 @@ import { ElMessage } from "element-plus";
 import { Edit, Check, CircleCheckFilled, Star } from "@element-plus/icons-vue";
 import { getPayPlan } from "@/api/yonghutaocanbiaoguanli";
 import { useRouter } from "vue-router";
-
+import { baseURL } from "@/request";
 const router = useRouter();
 // 默认头像
 const defaultAvatar =

@@ -102,11 +102,20 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, TagEntity> implements
             Map<String, TagVO> tagVOMap = new HashMap<>();
             tagVOList.forEach(tagVO -> tagVOMap.put(String.valueOf(tagVO.getId()), tagVO));
             redisService.putAllHash(getTagKey(), tagVOMap);
-            redisService.expire(getTagKey(),1, TimeUnit.HOURS);
+            redisService.expire(getTagKey(), 1, TimeUnit.HOURS);
             log.info("标签数据加载到缓存中,数量:{}", tagVOList.size());
             return tagVOList;
         }
         return null;
+    }
+
+    @Override
+    public boolean deleteTagById(Long id) {
+        boolean remove = this.removeById(id);
+        if (remove) {
+            redisService.deleteHash(getTagKey(), String.valueOf(id));
+        }
+        return remove;
     }
 
     private String getTagKey() {

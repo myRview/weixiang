@@ -20,7 +20,10 @@
       </div>
       <el-dropdown trigger="click">
         <div class="user-avatar">
-          <el-avatar :src="user.avatar" size="medium"></el-avatar>
+          <el-avatar
+            :src="user?.avatar ? `${baseURL}${user?.avatar}` : defaultAvatar"
+            size="medium"
+          ></el-avatar>
           <span class="user-name">{{ user.userName || user.account }}</span>
           <el-icon class="arrow-down"><ArrowDown /></el-icon>
         </div>
@@ -91,12 +94,11 @@
     @update:unreadCount="updateUnreadCount"
     @update:messages="updateMessages"
   />
-  
 </template>
 
 <script setup lang="ts">
-import MessageSidebar from './MessageSidebar.vue';
-import { ref, watch, onMounted, computed } from 'vue';
+import MessageSidebar from "./MessageSidebar.vue";
+import { ref, watch, onMounted, computed } from "vue";
 import {
   ArrowDown,
   BellFilled,
@@ -116,7 +118,9 @@ import {
 import { getUserById, updatePassword } from "@/api/yonghuguanli";
 import { useRouter } from "vue-router";
 import { selectMessageList } from "@/api/yonghuxiaoxiguanli";
-
+import { baseURL } from "@/request";
+const defaultAvatar =
+  "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
 // 获取登录用户存储
 const loginUserStore = useLoginUserStore();
 // 使用存储中的响应式用户信息
@@ -143,14 +147,14 @@ const handlerLogout = async () => {
       cancelButtonText: "取消",
       type: "warning",
     });
-    
+
     // 调用后端退出接口
     const res = await logout();
-      // 清空本地存储
-      localStorage.removeItem("token");
-      loginUserStore.clearLoginUser();
-      // 跳转到登录页
-      router.push("/login");
+    // 清空本地存储
+    localStorage.removeItem("token");
+    loginUserStore.clearLoginUser();
+    // 跳转到登录页
+    router.push("/login");
   } catch (error) {
     // 用户取消操作
     console.log("用户取消退出");
@@ -232,6 +236,11 @@ const handleUpdatePwd = () => {
           return;
         }
         ElMessage.success("密码修改成功");
+        // 清除本地缓存和用户信息
+        localStorage.removeItem("token");
+        loginUserStore.clearLoginUser();
+        // 跳转到登录页
+        router.push("/login");
         showPwdDialog.value = false;
         passwordFormRef.value?.resetFields();
       } catch (error) {
@@ -310,7 +319,9 @@ const getMessages = async () => {
 watch(
   messageData,
   () => {
-    const count = messageData.value.filter(msg => msg.readStatus === 0).length;
+    const count = messageData.value.filter(
+      (msg) => msg.readStatus === 0
+    ).length;
     updateUnreadCount(count);
   },
   { deep: true }
@@ -324,13 +335,18 @@ onMounted(async () => {
 });
 
 // 监听消息侧边栏关闭事件
-watch(() => messageSidebarOpen.value, (newVal) => {
-  if (!newVal && messageData.value.length > 0) {
-    // 侧边栏关闭时，重新获取消息数量
-    const count = messageData.value.filter(msg => msg.readStatus === 0).length;
-    updateUnreadCount(count);
+watch(
+  () => messageSidebarOpen.value,
+  (newVal) => {
+    if (!newVal && messageData.value.length > 0) {
+      // 侧边栏关闭时，重新获取消息数量
+      const count = messageData.value.filter(
+        (msg) => msg.readStatus === 0
+      ).length;
+      updateUnreadCount(count);
+    }
   }
-});
+);
 </script>
 
 <style scoped>

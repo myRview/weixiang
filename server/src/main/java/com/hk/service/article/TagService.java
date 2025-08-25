@@ -28,4 +28,6 @@ public interface TagService extends IService<TagEntity> {
     IPage<TagVO> selectTagPage(TagSearchParam param);
 
     List<TagVO> buildCache(List<TagEntity> tagList);
+
+    boolean deleteTagById(Long id);
 }

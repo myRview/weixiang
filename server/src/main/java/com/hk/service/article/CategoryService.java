@@ -28,4 +28,6 @@ public interface CategoryService extends IService<CategoryEntity> {
     IPage<CategoryVO> selectCategoryPage(CategorySearchParam param);
 
     List<CategoryVO> buildCache(List<CategoryEntity> categoryList);
+
+    boolean deleteCategoryById(Long id);
 }

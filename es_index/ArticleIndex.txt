@@ -60,6 +60,12 @@ PUT /article_v1
       "category_id": {
         "type": "keyword"
       },
+      "userName": {
+        "type": "keyword"
+      },
+      "userAvatar": {
+        "type": "keyword"
+      },
       "tag_ids": {
         "type": "keyword"
       },

@@ -69,6 +69,12 @@ public class ArticleEsVO implements Serializable {
     @Field(name = "tagIds", type = FieldType.Keyword)
     private List<String> tagIds;
 
+    @Schema(description = "用户名")
+    private String userName;
+
+    @Schema(description = "用户头像")
+    private String userAvatar;
+
     /**
      * 将文章VO转换为ES存储对象
      *
@@ -93,6 +99,8 @@ public class ArticleEsVO implements Serializable {
             List<String> tagIds = articleVO.getTagIds().stream().map(String::valueOf).toList();
             articleEsVO.setTagIds(tagIds);
         }
+        articleEsVO.setUserName(articleVO.getUserName());
+        articleEsVO.setUserAvatar(articleVO.getUserAvatar());
         return articleEsVO;
     }
 
@@ -124,6 +132,8 @@ public class ArticleEsVO implements Serializable {
             List<Long> tagIds = articleEsVO.getTagIds().stream().map(Long::valueOf).toList();
             articleVO.setTagIds(tagIds);
         }
+        articleVO.setUserName(articleEsVO.getUserName());
+        articleVO.setUserAvatar(articleEsVO.getUserAvatar());
 
         return articleVO;
     }

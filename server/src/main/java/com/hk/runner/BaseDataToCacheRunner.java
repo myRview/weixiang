@@ -17,7 +17,7 @@ import java.util.List;
  * @description: 基础分类、标签数据放在缓存中
  * @date 2025/8/23 16:08
  */
-@Component
+//@Component
 @Slf4j
 public class BaseDataToCacheRunner implements CommandLineRunner {
 
