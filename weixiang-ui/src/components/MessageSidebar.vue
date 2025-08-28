@@ -63,8 +63,8 @@
               { unread: message.readStatus === 0 },
               { selected: selectedMessageIds.includes(message.id) },
             ]"
-            @mouseenter="showTooltip = message.message.length > 30"
-            @mouseleave="showTooltip = false"
+            @mouseenter="isHoveringMessageId = message.id"
+            @mouseleave="isHoveringMessageId = ''"
           >
             <!-- 消息复选框 -->
             <div class="message-checkbox">
@@ -75,52 +75,12 @@
               />
             </div>
 
-            <!-- 消息内容（带tooltip） -->
-            <el-tooltip
-              v-if="message.message.length > 30"
-              :content="message.message"
-              placement="right"
-              effect="light"
-              :visible="showTooltip && isHoveringMessageId === message.id"
-              @mouseenter="isHoveringMessageId = message.id"
-              @mouseleave="isHoveringMessageId = ''"
-            >
-              <div
-                class="message-content"
-                @click.stop="handleMessageClick(message)"
-              >
-                <!-- 消息头部（时间+类型标签） -->
-                <div class="message-header">
-                  <span class="send-time">{{
-                    formatTime(message.createTime)
-                  }}</span>
-                  <el-tag
-                    :type="
-                      message.message.includes('已通过审核')
-                        ? 'success'
-                        : 'danger'
-                    "
-                    size="mini"
-                    class="message-tag"
-                  >
-                    {{
-                      message.message.includes("已通过审核")
-                        ? "审核通过"
-                        : "审核未通过"
-                    }}
-                  </el-tag>
-                </div>
-                <!-- 消息内容 -->
-                <div class="message-text">{{ message.message }}</div>
-              </div>
-            </el-tooltip>
-
-            <!-- 无tooltip的消息内容（短内容） -->
+            <!-- 消息内容 -->
             <div
-              v-else
               class="message-content"
               @click.stop="handleMessageClick(message)"
             >
+              <!-- 消息头部（时间+类型标签） -->
               <div class="message-header">
                 <span class="send-time">{{
                   formatTime(message.createTime)
@@ -141,7 +101,19 @@
                   }}
                 </el-tag>
               </div>
-              <div class="message-text">{{ message.message }}</div>
+              <!-- 消息内容 -->
+              <el-tooltip
+                v-if="message.message.length > 30"
+                :content="message.message"
+                placement="right"
+                effect="light"
+                :visible="isHoveringMessageId === message.id"
+              >
+                <div class="message-text">
+                  {{ truncateMessage(message.message) }}
+                </div>
+              </el-tooltip>
+              <div v-else class="message-text">{{ message.message }}</div>
             </div>
 
             <!-- 未读红点 -->
@@ -171,8 +143,6 @@ import {
   deleteMessage,
 } from "@/api/yonghuxiaoxiguanli";
 import { useLoginUserStore } from "@/store/loginUser";
-import { PushTypeEnum } from "@/enums/message.enum";
-import { webSocketService } from "@/router/index";
 
 // 定义props
 const props = defineProps<{
@@ -191,7 +161,6 @@ const messageData = ref<API.UserMessageVO[]>([]);
 const loading = ref(false);
 const loginUserStore = useLoginUserStore();
 const selectedMessageIds = ref<string[]>([]);
-const showTooltip = ref(false);
 const isHoveringMessageId = ref(""); // 用于控制tooltip显示
 
 /**
@@ -223,31 +192,6 @@ const isAllSelected = computed({
  * 是否有选中消息（计算属性）
  */
 const hasSelected = computed(() => selectedMessageIds.value.length > 0);
-
-/**
- * 初始化WebSocket监听
- * 监听ARTICLE类型消息，新增消息插入列表顶部
- */
-const initWebSocketListeners = () => {
-  webSocketService.on(PushTypeEnum.ARTICLE, (data) => {
-    const newMessage: API.UserMessageVO = {
-      id: data.id,
-      message: data.message,
-      userId: data.userId,
-      createTime: new Date().toISOString(),
-      readStatus: 0, // 未读
-    };
-    messageData.value.unshift(newMessage);
-    emit("update:messages", messageData.value);
-  });
-};
-
-/**
- * 清理WebSocket监听
- */
-const cleanupWebSocketListeners = () => {
-  webSocketService.off(PushTypeEnum.ARTICLE);
-};
 
 /**
  * 时间格式化（优化显示精度）
@@ -288,6 +232,13 @@ const formatTime = (time: string) => {
 };
 
 /**
+ * 截断长消息
+ */
+const truncateMessage = (message: string) => {
+  return message.length > 30 ? message.substring(0, 30) + "..." : message;
+};
+
+/**
  * 获取消息列表（优化错误提示）
  */
 const getMessages = async () => {
@@ -303,6 +254,7 @@ const getMessages = async () => {
     const res = await selectMessageList({ userId });
     if (res.data.code === 200) {
       messageData.value = res.data.data || [];
+      updateUnreadCount();
       emit("update:messages", messageData.value);
     } else {
       ElMessage.error(`获取消息失败：${res.data.msg || "未知错误"}`);
@@ -316,6 +268,14 @@ const getMessages = async () => {
 };
 
 /**
+ * 更新未读数量
+ */
+const updateUnreadCount = () => {
+  const count = messageData.value.filter((msg) => msg.readStatus === 0).length;
+  emit("update:unreadCount", count);
+};
+
+/**
  * 处理消息点击（优化加载状态提示）
  * @param message - 点击的消息对象
  */
@@ -326,8 +286,8 @@ const handleMessageClick = async (message: API.UserMessageVO) => {
     const res = await readMessage([message.id]);
     if (res.data.code === 200) {
       message.readStatus = 1;
+      updateUnreadCount();
       emit("update:messages", messageData.value);
-      ElMessage.success("消息已标记为已读");
     } else {
       ElMessage.error(`标记失败：${res.data.msg || "操作异常"}`);
     }
@@ -358,6 +318,7 @@ const markAllAsRead = async () => {
       messageData.value.forEach((msg) => {
         if (unreadIds.includes(msg.id)) msg.readStatus = 1;
       });
+      updateUnreadCount();
       emit("update:messages", messageData.value);
       ElMessage.success("所有消息已标记为已读");
     } else {
@@ -392,8 +353,13 @@ const deleteSelectedMessages = async () => {
 
     const res = await deleteMessage(selectedMessageIds.value);
     if (res.data.code === 200) {
-      await getMessages(); // 重新获取列表确保数据同步
+      // 更新本地消息列表
+      messageData.value = messageData.value.filter(
+        (msg) => !selectedMessageIds.value.includes(msg.id)
+      );
       selectedMessageIds.value = []; // 清空选中状态
+      updateUnreadCount();
+      emit("update:messages", messageData.value);
       ElMessage.success("删除成功");
     } else {
       ElMessage.error(`删除失败：${res.data.msg || "操作异常"}`);
@@ -435,11 +401,9 @@ watch(
 watch(
   () => loginUserStore.loginUser,
   (newUser) => {
-    if (newUser) {
-      initWebSocketListeners();
-      if (props.isOpen) getMessages();
+    if (newUser && props.isOpen) {
+      getMessages();
     } else {
-      cleanupWebSocketListeners();
       messageData.value = [];
       selectedMessageIds.value = [];
     }
@@ -452,11 +416,10 @@ watch(
  */
 onMounted(() => {
   if (props.isOpen) getMessages();
-  initWebSocketListeners();
 });
 
 onUnmounted(() => {
-  cleanupWebSocketListeners();
+  // 清理操作
 });
 </script>
 

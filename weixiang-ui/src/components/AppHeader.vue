@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import MessageSidebar from "./MessageSidebar.vue";
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, computed, onUnmounted } from "vue";
 import {
   ArrowDown,
   BellFilled,
@@ -119,6 +119,9 @@ import { getUserById, updatePassword } from "@/api/yonghuguanli";
 import { useRouter } from "vue-router";
 import { selectMessageList } from "@/api/yonghuxiaoxiguanli";
 import { baseURL } from "@/request";
+import { webSocketService } from "@/router/index";
+import { PushTypeEnum } from "@/enums/message.enum";
+
 const defaultAvatar =
   "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
 // 获取登录用户存储
@@ -268,9 +271,38 @@ const getUserInfo = async () => {
     console.error("获取用户信息失败", error);
   }
 };
+
 // 消息侧边栏
 const messageSidebarOpen = ref(false);
 const unreadCount = ref(0); // 未读消息数量
+const messageData = ref<API.UserMessageVO[]>([]); // 消息数据
+
+// 初始化WebSocket监听
+const initWebSocketListeners = () => {
+  webSocketService.on(PushTypeEnum.ARTICLE, (data) => {
+    const newMessage: API.UserMessageVO = {
+      id: data.id,
+      message: data.message,
+      userId: data.userId,
+      createTime: new Date().toISOString(),
+      readStatus: 0, // 未读
+    };
+
+    // 添加新消息到列表开头
+    messageData.value.unshift(newMessage);
+
+    // 更新未读计数
+    const count = messageData.value.filter(
+      (msg) => msg.readStatus === 0
+    ).length;
+    updateUnreadCount(count);
+  });
+};
+
+// 清理WebSocket监听
+const cleanupWebSocketListeners = () => {
+  webSocketService.off(PushTypeEnum.ARTICLE);
+};
 
 // 打开消息侧边栏
 const openMessageSidebar = () => {
@@ -290,15 +322,13 @@ const updateUnreadCount = (count: number) => {
 // 更新消息数据
 const updateMessages = (messages: API.UserMessageVO[]) => {
   messageData.value = messages;
+  // 同步更新未读数量
+  const count = messages.filter((msg) => msg.readStatus === 0).length;
+  updateUnreadCount(count);
 };
 
-// 消息
-const messageData = ref<API.UserMessageVO[]>([]); // 消息数据
-const messageDialogVisible = ref(false); // 消息对话框是否可见
-const currentMessage = ref<API.UserMessageVO | null>(null); // 当前选中的消息
-const loading = ref(false); // 加载状态
+// 获取消息列表
 const getMessages = async () => {
-  loading.value = true;
   try {
     const res = await selectMessageList({
       userId: loginUserStore.loginUser.id,
@@ -306,33 +336,15 @@ const getMessages = async () => {
     if (res.data.code === 200) {
       messageData.value = res.data.data || [];
       // 计算未读消息数量 0 未读 1 已读
-      unreadCount.value = messageData.value.filter(
+      const count = messageData.value.filter(
         (msg) => msg.readStatus === 0
       ).length;
+      updateUnreadCount(count);
     }
   } catch (error) {
     console.error("获取消息失败:", error);
   }
 };
-
-// 监听消息数据变化，实时更新未读数量
-watch(
-  messageData,
-  () => {
-    const count = messageData.value.filter(
-      (msg) => msg.readStatus === 0
-    ).length;
-    updateUnreadCount(count);
-  },
-  { deep: true }
-);
-
-// 组件挂载时获取最新用户信息
-onMounted(async () => {
-  await loginUserStore.fetchLoginUser();
-  await getUserInfo();
-  await getMessages();
-});
 
 // 监听消息侧边栏关闭事件
 watch(
@@ -347,6 +359,19 @@ watch(
     }
   }
 );
+
+// 组件挂载时获取最新用户信息
+onMounted(async () => {
+  await loginUserStore.fetchLoginUser();
+  await getUserInfo();
+  await getMessages();
+  initWebSocketListeners();
+});
+
+// 组件卸载时清理WebSocket监听
+onUnmounted(() => {
+  cleanupWebSocketListeners();
+});
 </script>
 
 <style scoped>

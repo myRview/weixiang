@@ -16,9 +16,7 @@
       </template>
       <div class="member-info">
         <el-avatar
-          :src="
-            user.avatar ? `${baseURL}${user.avatar}` : defaultAvatar
-          "
+          :src="user.avatar ? `${baseURL}${user.avatar}` : defaultAvatar"
           size="large"
         ></el-avatar>
         <div class="user-basic-info">
@@ -26,6 +24,11 @@
           <p class="member-expiry" v-if="isMember">
             会员到期时间: {{ memberExpiryDate }}
           </p>
+        </div>
+        <div class="member-action" v-if="isMember">
+          <el-button type="primary" size="small" @click="getPlanList">
+            立即续费
+          </el-button>
         </div>
       </div>
       <el-divider />
@@ -147,68 +150,101 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import {
-  User,
   Calendar,
   ArrowRight,
-  ShoppingCart,
-  Star,
   CircleCheckFilled,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { getPayPlan, payPlan } from "@/api/yonghutaocanbiaoguanli";
 import { selectPlanList } from "@/api/huiyuantaocanguanli";
-import { getOrderStatusById } from "@/api/dingdanguanli";
 import QRCode from "qrcode";
 import { useRouter } from "vue-router";
+import { PushTypeEnum } from "@/enums/message.enum";
+import { baseURL } from "@/request";
+import { webSocketService } from "@/router/index";
 
 const router = useRouter();
-import { baseURL } from "@/request";
+
 const defaultAvatar =
   "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
-// 获取登录用户存储
+
+// 登录用户状态
 const loginUserStore = useLoginUserStore();
 const user = ref<API.UserVO>(loginUserStore.loginUser);
 
-// 会员信息
+// 会员状态
 const isMember = ref(false);
 const memberExpiryDate = ref("");
-const memberBenefits = ref<
-  Array<{
-    id: number;
-    description: string;
-    icon: string;
-  }>
->([]);
+const memberBenefits = ref<{ id: number; description: string; icon: string }[]>(
+  []
+);
 
-// 会员套餐相关
+// 套餐弹窗
 const planData = ref<API.MemberPlanVO[]>([]);
 const planDialogVisible = ref(false);
 
-// 支付弹窗控制
+// 支付弹窗相关
 const payDialogVisible = ref(false);
-// 二维码图片数据
 const qrCodeImage = ref("");
-// 支付有效时间倒计时（毫秒）
 const countdown = ref(0);
-// 倒计时显示文本（分:秒）
 const countdownText = ref("");
-// 订单状态查询定时器
-const orderTimer = ref<NodeJS.Timeout | null>(null);
-// 倒计时定时器
 const countdownTimer = ref<NodeJS.Timeout | null>(null);
-// 当前订单ID
-const currentOrderId = ref(0);
-// 订单状态信息
+const currentOrderId = ref("");
 const orderStatusText = ref("等待支付...");
-// 当前套餐名称
 const currentPlanName = ref("");
-// 当前套餐价格
 const currentPlanPrice = ref(0);
-// 订单开始时间
-const startTime = ref(Date.now());
+
+// WebSocket消息处理
+const handleWebSocketMessage = (data: any) => {
+  console.log(
+      "收到订单消息，但不匹配当前订单:",
+      data.orderId,
+      "当前:",
+      currentOrderId.value
+    );
+  handleOrderStatusChange(data.orderStatus);
+};
+
+// 初始化WebSocket监听
+const initWebSocketListeners = () => {
+  webSocketService.on(PushTypeEnum.ORDER, handleWebSocketMessage);
+};
+
+// 清理WebSocket监听
+const cleanupWebSocketListeners = () => {
+  webSocketService.off(PushTypeEnum.ORDER, handleWebSocketMessage);
+};
+
+// 订单状态变化处理
+const handleOrderStatusChange = (status: number) => {
+  switch (status) {
+    case 1: // 支付成功
+      getMemberInfo().then(() => {
+        if (countdownTimer.value) {
+          clearInterval(countdownTimer.value);
+          countdownTimer.value = null;
+        }
+        // 关闭支付弹框
+        setTimeout(() => {
+          payDialogVisible.value = false;
+        }, 1000);
+      });
+      break;
+
+    case 2: // 支付失败
+      orderStatusText.value = "支付失败";
+      ElMessage.error("支付失败，请重新尝试或联系客服");
+      break;
+
+    case 3: // 订单已关闭
+      orderStatusText.value = "订单已关闭";
+      ElMessage.warning("支付超时，订单已关闭");
+      break;
+  }
+};
 
 // 获取会员信息
 const getMemberInfo = async () => {
@@ -217,6 +253,8 @@ const getMemberInfo = async () => {
     if (res.data.code === 200 && res.data.data) {
       isMember.value = true;
       memberExpiryDate.value = res.data.data.endDate || "";
+    } else {
+      isMember.value = false;
     }
     setMemberBenefits();
   } catch (error) {
@@ -265,7 +303,7 @@ const getPlanList = async () => {
   try {
     const res = await selectPlanList();
     if (res.data.code === 200) {
-      planData.value = res.data.data;
+      planData.value = res.data.data || [];
       planDialogVisible.value = true;
     } else {
       ElMessage.error(res.data.message);
@@ -276,37 +314,29 @@ const getPlanList = async () => {
   }
 };
 
-// 选择套餐
+// 选择套餐处理
 const handleSelectPlan = async (planId: number) => {
   try {
-    // 找到选中的套餐
     const plan = planData.value.find((p) => p.id === planId);
     if (!plan) {
       ElMessage.error("未找到套餐信息");
       return;
     }
 
-    // 保存套餐信息
     currentPlanName.value = plan.name;
     currentPlanPrice.value = plan.price;
 
     // 调用支付接口
     const res = await payPlan({ planId, userId: user.value.id });
     if (res.data.code === 200) {
-      const qrCodeUrl = res.data.data?.qrCodeUrl;
-      currentOrderId.value = res.data.data?.id || 0;
-      // 获取有效时间（后端返回毫秒）
-      const validTime = res.data.data?.validTime || 900000;
+      const orderInfo = res.data.data;
+      const qrCodeUrl = orderInfo?.qrCodeUrl;
+      currentOrderId.value = orderInfo?.id || "";
+      const validTime = orderInfo?.validTime || 900000; // 默认15分钟
       countdown.value = validTime;
-      // 初始化倒计时文本
-      const minutes = Math.floor(validTime / 60000);
-      const seconds = Math.floor((validTime % 60000) / 1000);
-      countdownText.value = `${minutes}分${seconds
-        .toString()
-        .padStart(2, "0")}秒`;
 
-      // 记录开始时间
-      startTime.value = Date.now();
+      // 更新倒计时显示
+      updateCountdown();
 
       // 生成二维码
       QRCode.toDataURL(
@@ -330,29 +360,19 @@ const handleSelectPlan = async (planId: number) => {
 
           // 重置支付状态
           orderStatusText.value = "等待支付...";
-          // 启动订单状态查询定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-          }
-          // 启动订单状态查询定时器
-          orderTimer.value = setInterval(checkOrderStatus, 1500);
+
           // 启动倒计时定时器
+          if (countdownTimer.value) {
+            clearInterval(countdownTimer.value);
+          }
           countdownTimer.value = setInterval(() => {
             countdown.value -= 1000;
-            const minutes = Math.floor(countdown.value / 60000);
-            const seconds = Math.floor((countdown.value % 60000) / 1000);
-            countdownText.value = `${minutes}分${seconds
-              .toString()
-              .padStart(2, "0")}秒`;
+            updateCountdown();
+
             if (countdown.value <= 0) {
               clearInterval(countdownTimer.value as NodeJS.Timeout);
               orderStatusText.value = "订单已过期";
               ElMessage.warning("支付超时，订单已过期");
-              // 清除订单状态定时器
-              if (orderTimer.value) {
-                clearInterval(orderTimer.value);
-                orderTimer.value = null;
-              }
             }
           }, 1000);
         }
@@ -361,85 +381,19 @@ const handleSelectPlan = async (planId: number) => {
       ElMessage.error(res.data.message);
     }
   } catch (error) {
-    console.error("开通会员失败", error);
     ElMessage.error("开通会员失败");
   }
 };
 
-// 检查订单状态
-const checkOrderStatus = async () => {
-  try {
-    // 调用后端API查询订单状态
-    const res = await getOrderStatusById({ id: currentOrderId.value });
-
-    if (res.data.code === 200) {
-      const status = res.data.data;
-      switch (status) {
-        case 1: // 支付成功
-          orderStatusText.value = "支付成功";
-          // 3秒后自动关闭弹窗
-          setTimeout(() => {
-            payDialogVisible.value = false;
-            isMember.value = true;
-            getMemberInfo(); // 刷新会员信息
-            ElMessage.success("会员开通成功！");
-          }, 3000);
-
-          // 清除定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-            orderTimer.value = null;
-          }
-          return;
-
-        case 2: // 支付失败
-          orderStatusText.value = "支付失败";
-          ElMessage.error("支付失败，请重新尝试或联系客服");
-
-          // 清除定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-            orderTimer.value = null;
-          }
-          return;
-
-        case 3: // 订单已关闭
-          orderStatusText.value = "订单已关闭";
-          ElMessage.warning("支付超时，订单已关闭");
-
-          // 清除定时器
-          if (orderTimer.value) {
-            clearInterval(orderTimer.value);
-            orderTimer.value = null;
-          }
-          return;
-
-        default: // 未支付
-          // 根据等待时间更新状态文本
-          const elapsedSeconds = Math.floor(
-            (Date.now() - startTime.value) / 1000
-          );
-          if (elapsedSeconds > 120) {
-            orderStatusText.value = "支付处理中...";
-          } else {
-            orderStatusText.value = "等待支付...";
-          }
-      }
-    } else {
-      ElMessage.error(res.data.message || "查询订单状态失败");
-    }
-  } catch (error) {
-    console.error("查询订单状态失败", error);
-  }
+// 更新倒计时显示文本
+const updateCountdown = () => {
+  const minutes = Math.floor(countdown.value / 60000);
+  const seconds = Math.floor((countdown.value % 60000) / 1000);
+  countdownText.value = `${minutes}分${seconds.toString().padStart(2, "0")}秒`;
 };
 
-// 关闭支付弹窗的处理
+// 关闭支付弹窗处理
 const handlePayClose = (done: () => void) => {
-  if (orderTimer.value) {
-    clearInterval(orderTimer.value);
-    orderTimer.value = null;
-  }
-  // 清除倒计时定时器
   if (countdownTimer.value) {
     clearInterval(countdownTimer.value);
     countdownTimer.value = null;
@@ -447,9 +401,31 @@ const handlePayClose = (done: () => void) => {
   done();
 };
 
-// 组件挂载时获取会员信息
+// 监听用户登录状态变化
+watch(
+  () => loginUserStore.loginUser,
+  (newUser) => {
+    if (newUser) {
+      initWebSocketListeners();
+      getMemberInfo();
+    } else {
+      cleanupWebSocketListeners();
+    }
+  },
+  { immediate: true }
+);
+
+// 组件生命周期
 onMounted(async () => {
   await getMemberInfo();
+  initWebSocketListeners();
+});
+
+onUnmounted(() => {
+  cleanupWebSocketListeners();
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value);
+  }
 });
 </script>
 
@@ -472,6 +448,7 @@ onMounted(async () => {
   display: flex;
   padding: 20px 0;
   align-items: center;
+  justify-content: space-between;
 }
 
 .member-info .el-avatar {
@@ -488,10 +465,13 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.member-level,
 .member-expiry {
   margin: 5px 0;
   color: #606266;
+}
+
+.member-action {
+  margin-left: 20px;
 }
 
 .member-benefits {
@@ -516,12 +496,6 @@ onMounted(async () => {
   font-size: 18px;
 }
 
-.member-actions {
-  padding: 10px 0;
-  display: flex;
-  gap: 10px;
-}
-
 /* 会员套餐相关样式 */
 .plan-table-container {
   margin: 10px;
@@ -531,27 +505,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.hot-tag {
-  background-color: #ff4d4f;
-  color: white;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(255, 77, 79, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
-  }
 }
 
 .price-container {

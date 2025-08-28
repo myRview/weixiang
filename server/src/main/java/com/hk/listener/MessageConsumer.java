@@ -61,7 +61,7 @@ public class MessageConsumer {
         switch (messageType) {
             case "ORDER_CREATE":
                 // 处理订单创建消息
-                orderInfoService.updateStatus(dataId, OrderStatusEnum.CANCEL.getCode());
+                orderInfoService.closeOrder(dataId);
                 break;
             case "ORDER_COMPLETE":
                 // 处理订单完成消息

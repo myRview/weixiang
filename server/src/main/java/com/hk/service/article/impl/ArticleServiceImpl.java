@@ -21,8 +21,8 @@ import com.hk.enums.PushTypeEnum;
 import com.hk.exception.BusinessException;
 import com.hk.mapper.article.ArticleMapper;
 import com.hk.param.ArticleSearchParam;
-import com.hk.scoket.ArticleApprovalHandler;
 import com.hk.scoket.PushMessageBaseVO;
+import com.hk.scoket.WebSocketPushService;
 import com.hk.service.article.ArticleService;
 import com.hk.service.article.ArticleTagService;
 import com.hk.service.message.UserMessageService;
@@ -69,7 +69,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Autowired
     private UserMessageService userMessageService;
     @Autowired
-    private ArticleApprovalHandler articleApprovalHandler;
+    private WebSocketPushService articleApprovalHandler;
     @Autowired
     private ElasticsearchOperations elasticsearchOperations;
     ;
@@ -78,7 +78,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Transactional(rollbackFor = Exception.class)
     public Boolean saveArticle(ArticleEditVO articleEditVO) {
         Long id = articleEditVO.getId();
-
         ArticleEntity newArticle = new ArticleEntity();
         newArticle.setTitle(articleEditVO.getTitle());
         newArticle.setContent(articleEditVO.getContent());
@@ -87,7 +86,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         newArticle.setAuditStatus(ArticleAuditStatus.PENDING.getCode());
         Long currentUserId = UserContext.getCurrentUserId();
         if (id != null && id > 0) {
-            ArticleEntity article = this.getById(id);
+            ArticleEntity article = this.getOne(new LambdaQueryWrapper<ArticleEntity>().eq(ArticleEntity::getId, id)
+                    .select(ArticleEntity::getUserId, ArticleEntity::getId)
+                    .last(" limit 1")
+            );
             if (article == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "文章不存在");
             if (!article.getUserId().equals(currentUserId))
                 throw new BusinessException(ErrorCode.BAD_REQUEST, "没有权限修改文章");
@@ -95,7 +97,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         } else {
             newArticle.setUserId(currentUserId);
         }
-
+        //管理员文章不用审批
+        if (UserContext.isAdmin()) {
+            newArticle.setAuditStatus(ArticleAuditStatus.PASS.getCode());
+        }
         boolean save = this.saveOrUpdate(newArticle);
         if (save) {
             articleTagService.deleteByArticleId(newArticle.getId());
@@ -137,7 +142,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         Map<Long, List<ArticleTagVO>> articleTagMap = new HashMap<>();
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
         queryWrapper.eq(ArticleEntity::getUserId, param.getUserId());
-        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus, ArticleEntity::getAuditReason, ArticleEntity::getPublishStatus, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
+        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus,
+                ArticleEntity::getAuditReason, ArticleEntity::getPublishStatus,
+                ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);
         return buildPage(page, articleTagMap);
     }
@@ -148,7 +155,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
         param.setAuditStatus(ArticleAuditStatus.PASS.getCode());
         param.setPublishStatus(ArticlePublishStatus.PUBLISHED.getCode());
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
-        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getContent, ArticleEntity::getViewCount, ArticleEntity::getLikeCount, ArticleEntity::getUserId, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
+        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getContent,
+                ArticleEntity::getViewCount, ArticleEntity::getLikeCount, ArticleEntity::getUserId,
+                ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);
         return buildPage(page, articleTagMap);
     }
@@ -232,7 +241,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         LambdaQueryWrapper<ArticleEntity> queryWrapper = getQueryWrapper(articleTagMap, param);
 
-        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus, ArticleEntity::getUserId, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
+        queryWrapper.select(ArticleEntity::getId, ArticleEntity::getTitle, ArticleEntity::getAuditStatus,
+                ArticleEntity::getUserId, ArticleEntity::getCategoryId, ArticleEntity::getCreateTime);
         Page<ArticleEntity> page = this.page(new Page<>(param.getPageNum(), param.getPageSize()), queryWrapper);
         return buildPage(page, articleTagMap);
     }
@@ -310,7 +320,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
 
         boolean update = this.updateById(article);
         if (update) {
-            String message = status == ArticleAuditStatus.PASS.getCode() ? "您的文章《" + article.getTitle() + "》已通过审核" : "您的文章《" + article.getTitle() + "》未通过审核，原因：" + auditVO.getAuditReason();
+            String message = status == ArticleAuditStatus.PASS.getCode() ?
+                    "您的文章《" + article.getTitle() + "》已通过审核"
+                    : "您的文章《" + article.getTitle() + "》未通过审核，原因：" + auditVO.getAuditReason();
             UserMessageVO messageVO = new UserMessageVO();
             messageVO.setUserId(article.getUserId());
             messageVO.setMessage(message);

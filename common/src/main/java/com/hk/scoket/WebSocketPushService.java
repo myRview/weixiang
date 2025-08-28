@@ -1,5 +1,6 @@
 package com.hk.scoket;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.hk.utils.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
-public class ArticleApprovalHandler  extends TextWebSocketHandler {
+public class WebSocketPushService extends TextWebSocketHandler {
     // 存储用户ID与WebSocketSession的映射
     private static final Map<String, WebSocketSession> userSessions = new ConcurrentHashMap<>();
 
@@ -30,9 +32,11 @@ public class ArticleApprovalHandler  extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         // 从会话中获取用户ID（需要根据实际认证方式获取）
         String userId = getUserIdFromSession(session);
+        log.info("用户{}连接成功", userId);
         if (userId != null) {
             userSessions.put(userId, session);
         }
+        log.info("当前在线人数:{}", JSONObject.toJSONString(userSessions.keySet()));
     }
 
     // 连接关闭时触发
@@ -55,10 +59,23 @@ public class ArticleApprovalHandler  extends TextWebSocketHandler {
                 return true;
             } catch (IOException e) {
                 // 处理异常
+                log.error("发送消息失败,接收人:{},消息:{},异常:{}", userId, messageVO, e);
                 return false;
             }
         }
         return false;
+    }
+
+    public boolean sendMessageToUser(Collection<String> userIds, PushMessageBaseVO messageVO) {
+        if (CollectionUtil.isEmpty(userIds)) return false;
+        try {
+            for (String userId : userIds) {
+                sendMessageToUser(userId, messageVO);
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private String getUserIdFromSession(WebSocketSession session) {
@@ -73,7 +90,7 @@ public class ArticleApprovalHandler  extends TextWebSocketHandler {
             userId = JwtUtil.getUserId(token);
         } catch (Exception e) {
             log.error("解析token失败");
-           return null;
+            return null;
         }
         return userId;
     }

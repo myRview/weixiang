@@ -1,5 +1,6 @@
 package com.hk.controller.order;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.aop.log.annotation.OperatorLog;
 import com.hk.common.ResponseResult;
@@ -92,4 +93,39 @@ public class OrderInfoController {
     public ResponseResult<Integer> getOrderStatusById(@RequestParam Long id) {
         return ResponseResult.success(orderInfoService.getOrderStatusById(id));
     }
+
+    /**
+     * 查询支付宝订单详情
+     */
+    @GetMapping("/detail")
+    @Operation(summary = "查询支付宝订单详情")
+    @PreAuthorize("@ss.hasPermission('/order/info/detail')")
+    public ResponseResult<JSONObject> getOrderDetail(@RequestParam Long id) {
+        return ResponseResult.success(orderInfoService.getOrderDetail(id));
+    }
+
+    /**
+     * 退款
+     *
+     */
+    @GetMapping("/refund")
+    @Operation(summary = "退款")
+    @PreAuthorize("@ss.hasPermission('/order/info/refund')")
+    public ResponseResult<?> refund(@RequestParam Long id) {
+        return ResponseResult.success(orderInfoService.refund(id));
+    }
+
+    /**
+     * 查询支付宝退款订单详情
+     * @param id
+     * @return
+     */
+    @GetMapping("/refund/detail")
+    @Operation(summary = "查询支付宝退款订单详情")
+    @PreAuthorize("@ss.hasPermission('/order/info/refund/detail')")
+    public ResponseResult<JSONObject> getRefundDetail(@RequestParam Long id) {
+        return ResponseResult.success(orderInfoService.getRefundDetail(id));
+    }
+
+
 }

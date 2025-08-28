@@ -40,7 +40,6 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-
               <!-- 操作按钮区域 -->
               <el-col :span="6" :xs="24" class="action-col">
                 <div class="action-buttons">
@@ -72,15 +71,12 @@
           </el-form>
         </el-card>
       </div>
-
       <div class="card-container">
         <el-table
           :data="categoryTableData"
           stripe
           border
           style="width: 100%"
-          :empty-text="categoryLoading ? '加载中...' : '暂无分类数据'"
-          highlight-current-row
         >
           <el-table-column
             prop="id"
@@ -92,11 +88,11 @@
             label="分类名称"
             min-width="140"
           ></el-table-column>
-          <el-table-column
+          <!-- <el-table-column
             prop="description"
             label="分类描述"
             min-width="200"
-          ></el-table-column>
+          ></el-table-column> -->
           <el-table-column label="创建日期" min-width="180">
             <template #default="scope">{{
               formatDate(scope.row.createTime)
@@ -158,7 +154,6 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-
               <!-- 操作按钮区域 -->
               <el-col :span="6" :xs="24" class="action-col">
                 <div class="action-buttons">
@@ -176,7 +171,6 @@
                   </el-button>
                 </div>
               </el-col>
-
               <!-- 新增按钮区域 -->
               <el-col :span="4" :xs="24" class="add-col">
                 <el-button
@@ -192,15 +186,12 @@
           </el-form>
         </el-card>
       </div>
-
       <div class="card-container">
         <el-table
           :data="tagTableData"
           stripe
           border
           style="width: 100%"
-          :empty-text="tagLoading ? '加载中...' : '暂无标签数据'"
-          highlight-current-row
         >
           <el-table-column
             prop="id"
@@ -250,7 +241,6 @@
         />
       </div>
     </div>
-
     <!-- 分类表单弹窗 -->
     <el-dialog
       v-model="categoryDialogVisible"
@@ -286,7 +276,6 @@
         <el-button type="primary" @click="handleCategorySave">确定</el-button>
       </template>
     </el-dialog>
-
     <!-- 标签表单弹窗 -->
     <el-dialog
       v-model="tagDialogVisible"
@@ -329,20 +318,22 @@ import {
   updateTag,
 } from "@/api/wenzhangbiaoqianguanli";
 import { ElMessage, ElMessageBox, ElLoading, ElForm } from "element-plus";
-import { ref, reactive, getCurrentInstance } from "vue";
+import { ref, reactive, getCurrentInstance, onUnmounted, onMounted } from "vue";
 import dayjs from "dayjs";
 import { Search, Plus } from "@element-plus/icons-vue";
 
 const activeTab = ref("category");
-// 加载状态管理
+// 加载状态管理（分类加载状态之前未正确控制，导致渲染异常）
 const categoryLoading = ref(false);
 const tagLoading = ref(false);
+
 // 分类相关
 const categorySearchParam = ref<API.CategorySearchParam>({});
 const categoryCurrentPage = ref(1);
 const categoryPageSize = ref(10);
 const categoryTotal = ref(0);
 const categoryTableData = ref<API.CategoryVO[]>([]);
+
 // 标签相关
 const tagSearchParam = ref<API.TagSearchParam>({});
 const tagCurrentPage = ref(1);
@@ -401,28 +392,30 @@ const handleTabChange = (tabName: string) => {
   }
 };
 
-// 分类搜索
-let categorySearchTimeout: NodeJS.Timeout | undefined;
+// 【核心修改】分类搜索：补充加载状态控制+错误提示，避免渲染循环
 const handleCategorySearch = async () => {
-  clearTimeout(categorySearchTimeout);
-  categoryLoading.value = true;
-  categorySearchTimeout = setTimeout(async () => {
-    try {
-      categorySearchParam.value.pageNum = categoryCurrentPage.value;
-      categorySearchParam.value.pageSize = categoryPageSize.value;
-      const res = await selectCategoryPage(categorySearchParam.value);
-      if (res.data.code === 200) {
-        categoryTableData.value = res.data.data?.records || [];
-        categoryTotal.value = Number(res.data.data?.total) || 0;
-      } else {
-        ElMessage.error("获取分类数据失败");
-      }
-    } catch (error) {
-      ElMessage.error("网络错误，获取分类数据失败");
-    } finally {
-      categoryLoading.value = false;
+  categoryLoading.value = true; // 开始加载：锁定状态，防止重复请求
+  try {
+    categorySearchParam.value.pageNum = categoryCurrentPage.value;
+    categorySearchParam.value.pageSize = categoryPageSize.value;
+    const res = await selectCategoryPage(categorySearchParam.value);
+
+    if (res.data.code === 200) {
+      categoryTableData.value = res.data.data?.records || [];
+      categoryTotal.value = Number(res.data.data?.total) || 0;
+    } else {
+      ElMessage.error("获取分类数据失败：" + (res.data.message || "未知错误"));
+      categoryTableData.value = []; // 清空异常数据，避免表格渲染混乱
+      categoryTotal.value = 0;
     }
-  }, 300);
+  } catch (error) {
+    console.error("分类搜索接口异常：", error);
+    ElMessage.error("网络错误，无法获取分类数据");
+    categoryTableData.value = [];
+    categoryTotal.value = 0;
+  } finally {
+    categoryLoading.value = false; // 无论成功/失败，都关闭加载状态
+  }
 };
 
 // 重置分类搜索
@@ -498,11 +491,9 @@ const resetCategoryForm = () => {
 // 保存分类
 const handleCategorySave = async () => {
   if (!categoryFormRef.value) return;
-
   try {
     await categoryFormRef.value.validate();
     const loading = ElLoading.service({ text: "保存中..." });
-
     let res;
     if (categoryForm.id) {
       // 修改分类
@@ -511,7 +502,6 @@ const handleCategorySave = async () => {
       // 新增分类
       res = await saveCategory(categoryForm);
     }
-
     if (res.data.code === 200) {
       ElMessage.success(categoryForm.id ? "分类修改成功" : "分类添加成功");
       categoryDialogVisible.value = false;
@@ -529,28 +519,24 @@ const handleCategorySave = async () => {
   }
 };
 
-// 标签搜索
-let tagSearchTimeout: NodeJS.Timeout | undefined;
+// 标签搜索（原有逻辑正确，保持不变）
 const handleTagSearch = async () => {
-  clearTimeout(tagSearchTimeout);
   tagLoading.value = true;
-  tagSearchTimeout = setTimeout(async () => {
-    try {
-      tagSearchParam.value.pageNum = tagCurrentPage.value;
-      tagSearchParam.value.pageSize = tagPageSize.value;
-      const res = await selectTagPage(tagSearchParam.value);
-      if (res.data.code === 200) {
-        tagTableData.value = res.data.data?.records || [];
-        tagTotal.value = Number(res.data.data?.total) || 0;
-      } else {
-        ElMessage.error("获取标签数据失败");
-      }
-    } catch (error) {
-      ElMessage.error("网络错误，获取标签数据失败");
-    } finally {
-      tagLoading.value = false;
+  try {
+    tagSearchParam.value.pageNum = tagCurrentPage.value;
+    tagSearchParam.value.pageSize = tagPageSize.value;
+    const res = await selectTagPage(tagSearchParam.value);
+    if (res.data.code === 200) {
+      tagTableData.value = res.data.data?.records || [];
+      tagTotal.value = Number(res.data.data?.total) || 0;
+    } else {
+      ElMessage.error("获取标签数据失败");
     }
-  }, 300);
+  } catch (error) {
+    ElMessage.error("网络错误，获取标签数据失败");
+  } finally {
+    tagLoading.value = false;
+  }
 };
 
 // 重置标签搜索
@@ -624,11 +610,9 @@ const resetTagForm = () => {
 // 保存标签
 const handleTagSave = async () => {
   if (!tagFormRef.value) return;
-
   try {
     await tagFormRef.value.validate();
     const loading = ElLoading.service({ text: "保存中..." });
-
     let res;
     if (tagForm.id) {
       // 修改标签
@@ -637,7 +621,6 @@ const handleTagSave = async () => {
       // 新增标签
       res = await saveTag(tagForm);
     }
-
     if (res.data.code === 200) {
       ElMessage.success(tagForm.id ? "标签修改成功" : "标签添加成功");
       tagDialogVisible.value = false;
@@ -655,8 +638,16 @@ const handleTagSave = async () => {
   }
 };
 
-// 初始化加载分类数据
-handleCategorySearch();
+// 初始化数据
+onMounted(() => {
+  handleCategorySearch();
+});
+
+// 组件卸载时清理弹窗状态
+onUnmounted(() => {
+  categoryDialogVisible.value = false;
+  tagDialogVisible.value = false;
+});
 </script>
 <style scoped>
 .category-tag-management {

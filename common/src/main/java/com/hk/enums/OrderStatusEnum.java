@@ -24,6 +24,10 @@ public enum OrderStatusEnum {
      * 已取消
      */
     CANCEL(2, "已取消"),
+    /**
+     * 退款
+     */
+    REFUND(3, "退款");
 
     ;
     private final int code;

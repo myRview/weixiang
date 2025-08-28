@@ -2,6 +2,7 @@ package com.hk.service.order.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -29,6 +30,7 @@ import com.hk.vo.plan.MemberPlanVO;
 import com.hk.vo.plan.PayPlanVo;
 import com.hk.vo.plan.PlanStatisticsVO;
 import com.hk.vo.user.UserVO;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,6 +53,7 @@ import java.util.stream.Collectors;
  * @author hk
  * @since 2025-06-22
  */
+@Slf4j
 @Service
 public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfoEntity> implements OrderInfoService {
 
@@ -173,7 +176,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     @Override
     public boolean updateStatus(Long orderId, Integer status) {
-        OrderVO order = getOrderById(orderId);
+        OrderInfoEntity order = getOneOrder(orderId);
         if (order == null || order.getStatus().equals(OrderStatusEnum.FINISHED.getCode())) return false;
 
         //乐观锁更新（防止并发覆盖，确保仅当状态为当前状态时才更新）
@@ -210,9 +213,12 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         OrderStatisticsVO waitPayVO = new OrderStatisticsVO(0, OrderStatusEnum.WAIT_PAY.getCode(), BigDecimal.ZERO);
         //已取消
         OrderStatisticsVO cancelVO = new OrderStatisticsVO(0, OrderStatusEnum.CANCEL.getCode(), BigDecimal.ZERO);
+        //退款
+        OrderStatisticsVO refundVO = new OrderStatisticsVO(0, OrderStatusEnum.REFUND.getCode(), BigDecimal.ZERO);
         statisticsVOList.add(payVO);
         statisticsVOList.add(waitPayVO);
         statisticsVOList.add(cancelVO);
+        statisticsVOList.add(refundVO);
         //查询订单时间是date的所有订单
         LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotBlank(date)) queryWrapper.eq(OrderInfoEntity::getOrderDate, date);
@@ -248,6 +254,59 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             }
         }
         return planStatisticsVOS;
+    }
+
+    @Override
+    public JSONObject getOrderDetail(Long id) {
+        String orderId = String.valueOf(id);
+        return alipayManager.queryOrder(orderId);
+    }
+
+    @Override
+    public String refund(Long id) {
+        OrderInfoEntity orderInfo = this.getOneOrder(id);
+        if (orderInfo == null) {
+            return null;
+        }
+        String orderId = String.valueOf(id);
+        Boolean refund = alipayManager.refund(orderId, orderInfo.getAmount());
+        if (refund) {
+            orderInfo.setStatus(OrderStatusEnum.REFUND.getCode());
+            this.updateById(orderInfo);
+        }
+        return null;
+    }
+
+    @Override
+    public void closeOrder(Long orderId) {
+        OrderInfoEntity order = this.getOneOrder(orderId);
+        if (order == null || !order.getStatus().equals(OrderStatusEnum.WAIT_PAY.getCode())) {
+            log.error("订单不存在或订单状态不是待支付");
+            return;
+        }
+        Boolean closed = alipayManager.closeOrder(String.valueOf(orderId));
+        if (closed) {
+            this.updateStatus(orderId, OrderStatusEnum.CANCEL.getCode());
+        }
+    }
+
+    @Override
+    public JSONObject getRefundDetail(Long id) {
+        OrderInfoEntity orderInfo = this.getOneOrder(id);
+        if (orderInfo == null) {
+            return null;
+        }
+        String orderId = String.valueOf(id);
+        return alipayManager.queryRefund(orderId);
+    }
+
+
+    private OrderInfoEntity getOneOrder(Long id) {
+        LambdaQueryWrapper<OrderInfoEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderInfoEntity::getId, id);
+        queryWrapper.select(OrderInfoEntity::getId, OrderInfoEntity::getStatus, OrderInfoEntity::getAmount, OrderInfoEntity::getUserId);
+        queryWrapper.last(" limit 1");
+        return this.getOne(queryWrapper);
     }
 
     private String getHashKey() {

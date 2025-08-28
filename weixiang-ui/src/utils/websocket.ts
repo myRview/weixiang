@@ -6,7 +6,7 @@ export default class WebSocketService {
   private baseUrl: string;
   private path: string;
 
-  constructor(baseUrl?: string, path = '/ws/article/notify') {
+  constructor(baseUrl?: string, path = '/ws/notify') {
     this.socket = null;
     this.token = null;
     this.reconnectTimer = null;

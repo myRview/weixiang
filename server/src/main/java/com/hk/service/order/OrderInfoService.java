@@ -1,5 +1,6 @@
 package com.hk.service.order;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hk.entity.order.OrderInfoEntity;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -34,4 +35,12 @@ public interface OrderInfoService extends IService<OrderInfoEntity> {
     List<OrderStatisticsVO> getCount(String date);
 
     List<PlanStatisticsVO> planCount(String date);
+
+    JSONObject getOrderDetail(Long id);
+
+    String refund(Long id);
+
+    JSONObject getRefundDetail(Long id);
+
+    void closeOrder(Long orderId);
 }

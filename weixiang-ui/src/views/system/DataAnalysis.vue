@@ -66,10 +66,11 @@ const statusMap = {
   0: "未支付",
   1: "已支付",
   2: "已取消",
+  3: "退款",
 };
 
 // 优化后的颜色方案
-const ORDER_COLORS = ["#FF6B6B", "#4ECDC4", "#FFD166"];
+const ORDER_COLORS = ["#FF6B6B", "#4ECDC4", "#FFD166", "#9D65C9"];
 const PLAN_COLORS = ["#6A0572", "#AB83A1", "#5C7AFF", "#3AAFA9", "#F9C74F", "#90BE6D", "#F8961E", "#577590"];
 
 // 订单统计数据
@@ -98,6 +99,7 @@ const orderChartOption = computed(() => {
     0: { count: 0, amount: 0 },
     1: { count: 0, amount: 0 },
     2: { count: 0, amount: 0 },
+    3: { count: 0, amount: 0 }
   };
 
   OrderStatisticsData.value.forEach((item) => {
@@ -110,10 +112,10 @@ const orderChartOption = computed(() => {
   // 转换为饼图数据格式
   const pieData = Object.entries(statusData).map(([status, data], index) => ({
     value: data.count,
-    name: statusMap[Number(status) as 0 | 1 | 2],
+    name: statusMap[Number(status) as 0 | 1 | 2 | 3],
     amount: data.amount,
     itemStyle: { color: ORDER_COLORS[index] }
-  }));
+  })).filter(item => item.value > 0); // 过滤掉数量为0的状态
 
   // 计算总数
   const totalCount = pieData.reduce((sum, item) => sum + item.value, 0);
