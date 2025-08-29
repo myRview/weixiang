@@ -37,7 +37,7 @@ public class CodeGenerator {
                             .pathInfo(Collections.singletonMap(OutputFile.xml, xmlPath)); // XML位置
                 })
                 .strategyConfig(builder -> {
-                    builder.addInclude("user_message")
+                    builder.addInclude("sys_county", "sys_province", "sys_city") // 设置需要生成的表名
                             .addTablePrefix("sys_") // 表前缀过滤
 
                             // 实体类配置

@@ -21,6 +21,7 @@ import MemberCenter from "@/views/user/MemberCenter.vue";
 import UserHome from "@/views/user/UserHome.vue";
 import CategoryTagManagement from "@/views/system/CategoryTagManagement.vue";
 import UserEdit from "@/views/user/UserEdit.vue";
+import ProvinceManager from "@/views/system/ProvinceManager.vue";
 import {
   House,
   Edit,
@@ -35,7 +36,9 @@ import {
   Reading,
   Goods,
   Operation,
+  MapLocation
 } from "@element-plus/icons-vue";
+
 
 export const routes: Array<RouteRecordRaw> = [
   // 登录注册（独立页面）
@@ -246,6 +249,16 @@ export const routes: Array<RouteRecordRaw> = [
             meta: {
               title: "分类标签管理",
               icon: Menu,
+              requiresAdmin: true
+            },
+          },
+          {
+            path: "province-manager",
+            name: "provinceManager",
+            component: ProvinceManager,
+            meta: {
+              title: "地区管理",
+              icon: MapLocation,
               requiresAdmin: true
             },
           },

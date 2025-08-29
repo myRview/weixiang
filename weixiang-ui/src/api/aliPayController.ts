@@ -2,7 +2,7 @@
 /* eslint-disable */
 import request from "@/request";
 
-/** 此处后端没有提供注释 POST /aliPay/callback */
+/** 支付回调 POST /aliPay/callback */
 export async function callback(options?: { [key: string]: any }) {
   return request<string>("/aliPay/callback", {
     method: "POST",
@@ -10,7 +10,7 @@ export async function callback(options?: { [key: string]: any }) {
   });
 }
 
-/** 此处后端没有提供注释 GET /aliPay/pay */
+/** 生成支付二维码(测试) GET /aliPay/pay */
 export async function pay(options?: { [key: string]: any }) {
   return request<API.ResponseResult>("/aliPay/pay", {
     method: "GET",

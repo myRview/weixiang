@@ -9,7 +9,8 @@
  export const ORDER_STATUS_MAP: Record<number, string> = {
   0: '待支付',
   1: '已完成',
-  2: '已取消'
+  2: '已取消',
+  3: '已退款',
 };
 
 // 订单状态选项（用于下拉选择等场景）

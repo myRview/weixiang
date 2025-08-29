@@ -7,6 +7,10 @@ declare namespace API {
     articleId: number;
   };
 
+  type addBlackIpParams = {
+    ip: string;
+  };
+
   type ArticleAuditVO = {
     /** 文章id */
     articleId: number;
@@ -110,6 +114,15 @@ declare namespace API {
     tagIds?: number[];
   };
 
+  type BlackIpVO = {
+    /** 主键id */
+    id?: number;
+    /** 用户id */
+    userId?: number;
+    /** ip地址 */
+    ip?: string;
+  };
+
   type CategorySearchParam = {
     pageNum?: number;
     pageSize?: number;
@@ -134,8 +147,30 @@ declare namespace API {
     status: number;
   };
 
+  type CityVO = {
+    id?: number;
+    /** 城市名称 */
+    cityName?: string;
+    /** 城市编码(行政区划代码) */
+    cityCode?: string;
+    /** 所属省份ID */
+    provinceId?: number;
+    /** 区县列表 */
+    countyVOS?: CountyVO[];
+  };
+
   type countParams = {
     date: string;
+  };
+
+  type CountyVO = {
+    id?: number;
+    /** 区县名称 */
+    countyName?: string;
+    /** 区县编码(行政区划代码) */
+    countyCode?: string;
+    /** 所属城市ID */
+    cityId?: number;
   };
 
   type deleteArticleCommentParams = {
@@ -233,6 +268,10 @@ declare namespace API {
     id: number;
   };
 
+  type getOrderDetailParams = {
+    id: number;
+  };
+
   type getOrderStatusByIdParams = {
     id: number;
   };
@@ -242,6 +281,10 @@ declare namespace API {
   };
 
   type getPlanInfoByIdParams = {
+    id: number;
+  };
+
+  type getRefundDetailParams = {
     id: number;
   };
 
@@ -262,51 +305,51 @@ declare namespace API {
   };
 
   type IPageArticleVO = {
+    size?: number;
+    total?: number;
+    records?: ArticleVO[];
     current?: number;
     pages?: number;
-    size?: number;
-    records?: ArticleVO[];
-    total?: number;
   };
 
   type IPageCategoryVO = {
+    size?: number;
+    total?: number;
+    records?: CategoryVO[];
     current?: number;
     pages?: number;
-    size?: number;
-    records?: CategoryVO[];
-    total?: number;
   };
 
   type IPageLoginLogVO = {
+    size?: number;
+    total?: number;
+    records?: LoginLogVO[];
     current?: number;
     pages?: number;
-    size?: number;
-    records?: LoginLogVO[];
-    total?: number;
   };
 
   type IPageOperationLogVO = {
+    size?: number;
+    total?: number;
+    records?: OperationLogVO[];
     current?: number;
     pages?: number;
-    size?: number;
-    records?: OperationLogVO[];
-    total?: number;
   };
 
   type IPagePermissionVO = {
+    size?: number;
+    total?: number;
+    records?: PermissionVO[];
     current?: number;
     pages?: number;
-    size?: number;
-    records?: PermissionVO[];
-    total?: number;
   };
 
   type IPageTagVO = {
+    size?: number;
+    total?: number;
+    records?: TagVO[];
     current?: number;
     pages?: number;
-    size?: number;
-    records?: TagVO[];
-    total?: number;
   };
 
   type likeArticleParams = {
@@ -378,8 +421,8 @@ declare namespace API {
     ipAddress?: string;
     /** 操作地址 */
     operationAddress?: string;
-    /** 操作时间 */
-    operationTime?: string;
+    /** 创建时间 */
+    createTime?: string;
     /** 1-成功，0-失败 */
     status?: number;
   };
@@ -529,7 +572,27 @@ declare namespace API {
     total?: number;
   };
 
+  type ProvinceVO = {
+    id?: number;
+    /** 省份名称 */
+    provinceName?: string;
+    /** 省份编码(行政区划代码) */
+    provinceCode?: string;
+    /** 省份邮编 */
+    postCode?: string;
+    /** 城市列表 */
+    cityVOS?: CityVO[];
+  };
+
   type publishArticleParams = {
+    id: number;
+  };
+
+  type refundParams = {
+    id: number;
+  };
+
+  type removeBlackIpParams = {
     id: number;
   };
 
@@ -597,10 +660,22 @@ declare namespace API {
     data?: IPageTagVO;
   };
 
+  type ResponseResultJSONObject = {
+    code?: number;
+    message?: string;
+    data?: { empty?: boolean; innerMap?: Record<string, any> };
+  };
+
   type ResponseResultListArticleCommentVO = {
     code?: number;
     message?: string;
     data?: ArticleCommentVO[];
+  };
+
+  type ResponseResultListBlackIpVO = {
+    code?: number;
+    message?: string;
+    data?: BlackIpVO[];
   };
 
   type ResponseResultListCategoryVO = {
@@ -631,6 +706,12 @@ declare namespace API {
     code?: number;
     message?: string;
     data?: PlanStatisticsVO[];
+  };
+
+  type ResponseResultListProvinceVO = {
+    code?: number;
+    message?: string;
+    data?: ProvinceVO[];
   };
 
   type ResponseResultListRoleVO = {
@@ -751,8 +832,20 @@ declare namespace API {
     id: number;
   };
 
+  type selectCityParams = {
+    id: number;
+  };
+
+  type selectCountyParams = {
+    id: number;
+  };
+
   type selectMessageListParams = {
     userId: number;
+  };
+
+  type selectProvinceParams = {
+    id: number;
   };
 
   type statusParams = {

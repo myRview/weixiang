@@ -21,4 +21,6 @@ public interface CityService extends IService<CityDataEntity> {
     Boolean deleteCity(Long id);
 
     Boolean updateCity(CityVO cityVO);
+
+    void deleteByProvinceId(Long provinceId);
 }

@@ -27,7 +27,7 @@ public class CityController {
 
     @Operation(summary = "添加区县数据")
     @PostMapping("/add")
-    @PreAuthorize("@ss.hasPermission('/city/add')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<?> addCity(@RequestBody CityVO CityVO) {
         Boolean result = cityService.addCity(CityVO);
         return result ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
@@ -35,7 +35,7 @@ public class CityController {
 
     @Operation(summary = "删除区县数据")
     @PostMapping("/delete")
-    @PreAuthorize("@ss.hasPermission('/city/delete')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<?> deleteCity(@RequestBody Long id) {
         Boolean result = cityService.deleteCity(id);
         return result ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
@@ -43,7 +43,7 @@ public class CityController {
 
     @Operation(summary = "更新区县数据")
     @PostMapping("/update")
-    @PreAuthorize("@ss.hasPermission('/city/update')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<?> updateCity(@RequestBody CityVO CityVO) {
         Boolean result = cityService.updateCity(CityVO);
         return result ? ResponseResult.success("更新成功") : ResponseResult.fail("更新失败");
@@ -51,7 +51,6 @@ public class CityController {
 
     @Operation(summary = "查询区县数据")
     @GetMapping("/select")
-    @PreAuthorize("@ss.hasPermission('/city/select')")
     public ResponseResult<?> selectCity(@RequestParam Long id) {
         CityVO CityVO = cityService.selectOne(id);
         return ResponseResult.success(CityVO);

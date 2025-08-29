@@ -128,61 +128,59 @@
           </el-button>
         </div>
       </el-form-item>
-      <!-- 地区（优化回显和展示） -->
+      <!-- 地区选择区域 -->
       <el-form-item label="地区" prop="expandVo.area">
         <el-row :gutter="12" class="area-select-row">
-          <!-- 省份选择 -->
           <el-col :span="8">
             <el-select
               v-model="user.expandVo.province"
               placeholder="选择省份"
               @change="handleProvinceChange"
               class="area-select"
+              ref="provinceSelect"
             >
               <el-option
                 v-for="item in provinces"
-                :key="item.code"
-                :label="item.name"
-                :value="item.code"
+                :key="item.provinceCode"
+                :label="item.provinceName"
+                :value="item.provinceCode"
               />
             </el-select>
           </el-col>
-          <!-- 城市选择 -->
-          <el-col :span="7">
+          <el-col :span="8">
             <el-select
               v-model="user.expandVo.city"
               :placeholder="user.expandVo.province ? '选择城市' : '请先选省份'"
               :disabled="!user.expandVo.province"
               @change="handleCityChange"
               class="area-select"
+              ref="citySelect"
             >
               <el-option
                 v-for="item in cities"
-                :key="item.code"
-                :label="item.name"
-                :value="item.code"
+                :key="item.cityCode"
+                :label="item.cityName"
+                :value="item.cityCode"
               />
             </el-select>
           </el-col>
-          <!-- 区县选择 -->
           <el-col :span="7">
             <el-select
               v-model="user.expandVo.district"
               :placeholder="user.expandVo.city ? '选择区县' : '请先选城市'"
               :disabled="!user.expandVo.city"
               class="area-select"
+              ref="districtSelect"
             >
               <el-option
                 v-for="item in counties"
-                :key="item.code"
-                :label="item.name"
-                :value="item.code"
+                :key="item.countyCode"
+                :label="item.countyName"
+                :value="item.countyCode"
               />
             </el-select>
           </el-col>
         </el-row>
-        <!-- 地区预览文本（直观显示完整地区） -->
-        <div class="area-preview">当前选择：{{ formattedArea }}</div>
       </el-form-item>
       <!-- 提交/取消按钮 -->
       <el-form-item>
@@ -287,22 +285,29 @@
     </el-dialog>
   </div>
 </template>
+
 <script setup lang="ts">
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import { bindPhoneAndEmail, editUser, getUserById } from "@/api/yonghuguanli";
-import { ElMessage, ElForm, ElDialog } from "element-plus";
-import { onMounted, ref, computed, nextTick } from "vue";
+import { ElMessage, ElForm, ElDialog, ElSelect } from "element-plus";
+import { onMounted, ref, computed, nextTick, watch } from "vue";
 import { useLoginUserStore } from "@/store/loginUser";
 import FileUpload from "@/components/FileUpload.vue";
-import { User, Loading } from "@element-plus/icons-vue";
 import dayjs from "dayjs";
 import { sendCode } from "@/api/userRegisterController";
 import { baseURL } from "@/request";
+import { getAllProvince } from "@/api/shengfenguanli";
+
 const router = useRouter();
 const formRef = ref<InstanceType<typeof ElForm>>();
 const phoneFormRef = ref<InstanceType<typeof ElForm>>();
 const emailFormRef = ref<InstanceType<typeof ElForm>>();
 const avatarUploadRef = ref<InstanceType<typeof FileUpload>>();
+
+// 省市区选择器引用
+const provinceSelect = ref<InstanceType<typeof ElSelect>>();
+const citySelect = ref<InstanceType<typeof ElSelect>>();
+const districtSelect = ref<InstanceType<typeof ElSelect>>();
 
 // 加载状态
 const saveLoading = ref(false);
@@ -345,191 +350,106 @@ const user = ref<API.UserVO>({
     province: "",
     city: "",
     district: "",
-    birthday: "", // 补充生日字段，避免undefined
+    birthday: "",
   },
 });
 
-// 省市区假数据
-const provinces = ref([
-  { code: "110000", name: "北京市" },
-  { code: "120000", name: "天津市" },
-  { code: "130000", name: "河北省" },
-  { code: "310000", name: "上海市" },
-  { code: "440100", name: "广东省" },
-]);
-const cities = ref([]); // 根据省份动态变化
-const counties = ref([]); // 根据市动态变化
+// 省市区数据
+const provinces = ref<API.ProvinceVO[]>([]);
+const cities = ref<API.CityVO[]>([]);
+const counties = ref<API.CountyVO[]>([]);
 
-// 省份选择变化
-const handleProvinceChange = (provinceCode: string) => {
-  // 模拟根据省份获取市数据
-  cities.value =
-    provinceCode === "110000"
-      ? [{ code: "110100", name: "北京市" }]
-      : provinceCode === "310000"
-      ? [{ code: "310100", name: "上海市" }]
-      : provinceCode === "440100"
-      ? [
-          { code: "440101", name: "广州市" },
-          { code: "440300", name: "深圳市" },
-        ]
-      : provinceCode === "130000"
-      ? [
-          { code: "130100", name: "石家庄市" },
-          { code: "130200", name: "唐山市" },
-        ]
-      : [];
+// 获取省份数据 - 优化错误处理
+const selectProvince = async () => {
+  try {
+    const res = await getAllProvince();
+    if (res.data.code === 200 && res.data.data) {
+      provinces.value = res.data.data;
+    }
+  } catch (error) {
+    ElMessage.error("获取地区数据失败，请刷新页面重试");
+    provinces.value = [];
+  }
+};
+
+const handleProvinceChange = async (provinceCode: string) => {
   // 清空下级选择
   user.value.expandVo.city = "";
+  user.value.expandVo.district = "";
+  cities.value = [];
   counties.value = [];
+
+  try {
+    // 查找选中省份的ID
+    const selectedProvince = provinces.value.find(
+      (p) => p.provinceCode === provinceCode
+    );
+    if (selectedProvince) {
+      cities.value = selectedProvince.cityVOS || [];
+    }
+  } catch (error) {
+    cities.value = [];
+    if (citySelect.value) citySelect.value.loading = false;
+  }
 };
 
-// 市选择变化
-const handleCityChange = (cityCode: string) => {
-  // 模拟根据市获取县数据
-  counties.value =
-    cityCode === "440101"
-      ? [
-          { code: "440103", name: "荔湾区" },
-          { code: "440104", name: "越秀区" },
-          { code: "440106", name: "天河区" },
-        ]
-      : cityCode === "440300"
-      ? [
-          { code: "440303", name: "罗湖区" },
-          { code: "440304", name: "福田区" },
-          { code: "440305", name: "南山区" },
-        ]
-      : cityCode === "110100"
-      ? [
-          { code: "110101", name: "东城区" },
-          { code: "110102", name: "西城区" },
-          { code: "110105", name: "朝阳区" },
-        ]
-      : cityCode === "310100"
-      ? [
-          { code: "310101", name: "黄浦区" },
-          { code: "310104", name: "徐汇区" },
-          { code: "310105", name: "长宁区" },
-        ]
-      : [];
+// 城市选择变化 - 优化数据加载和回显
+const handleCityChange = async (cityCode: string) => {
   // 清空下级选择
   user.value.expandVo.district = "";
-};
-
-const loginUserStore = useLoginUserStore();
-
-// 邮箱脱敏处理
-const formattedEmail = computed({
-  get() {
-    if (!user.value.email) return "";
-    return emailEditable.value
-      ? user.value.email
-      : user.value.email.replace(/^(.{2}).*@(.*)$/, "$1***@$2");
-  },
-  set(val) {
-    user.value.email = val;
-  },
-});
-
-// 手机号脱敏处理
-const formattedPhone = computed({
-  get() {
-    if (!user.value.phone) return "";
-    return phoneEditable.value
-      ? user.value.phone
-      : user.value.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2");
-  },
-  set(val) {
-    user.value.phone = val;
-  },
-});
-
-// 【新增】根据code获取地区名称（用于预览文本）
-const getAreaName = (code: string, list: { code: string; name: string }[]) => {
-  const item = list.find((item) => item.code === code);
-  return item ? item.name : "";
-};
-
-// 【新增】格式化地区预览文本（如：北京市 - 北京市 - 朝阳区）
-const formattedArea = computed(() => {
-  const { province, city, district } = user.value.expandVo;
-  // 根据code获取对应的名称
-  const provinceName = getAreaName(province, provinces.value);
-  const cityName = getAreaName(city, cities.value);
-  const districtName = getAreaName(district, counties.value);
-  // 过滤空值并拼接
-  const areaParts = [provinceName, cityName, districtName].filter(Boolean);
-  return areaParts.length > 0 ? areaParts.join(" - ") : "未选择地区";
-});
-
-// 手机号表单验证规则
-const phoneRules = ref({
-  phone: [
-    { required: true, message: "请输入手机号", trigger: "blur" },
-    {
-      pattern: /^1[3-9]\d{9}$/,
-      message: "请输入正确的手机号",
-      trigger: "blur",
-    },
-  ],
-  code: [
-    { required: true, message: "请输入验证码", trigger: "blur" },
-    { pattern: /^\d{6}$/, message: "验证码为6位数字", trigger: "blur" },
-  ],
-});
-
-// 邮箱表单验证规则
-const emailRules = ref({
-  email: [
-    { required: true, message: "请输入邮箱", trigger: "blur" },
-    { type: "email", message: "请输入正确的邮箱格式", trigger: "blur" },
-  ],
-  code: [
-    { required: true, message: "请输入验证码", trigger: "blur" },
-    { pattern: /^\d{6}$/, message: "验证码为6位数字", trigger: "blur" },
-  ],
-});
-
-// 获取用户信息（新增回显处理逻辑）
-const getUserInfo = async () => {
+  counties.value = [];
   try {
-    const res = await getUserById({ id: loginUserStore.loginUser.id });
-    if (res.data.code !== 200) return;
-    // 赋值用户信息
-    user.value = res.data.data;
-    if (!user.value.expandVo) {
-      user.value.expandVo = {
-        address: "",
-        bio: "",
-        province: "",
-        city: "",
-        district: "",
-        birthday: "",
-      };
+    // 从当前城市列表查找
+    const currentCity = cities.value.find((c) => c.cityCode === cityCode);
+    if (currentCity) {
+      counties.value = currentCity.countyVOS || [];
     }
-    const { province, city, district } = user.value.expandVo;
+  } catch (error) {}
+};
 
-    // 【关键】处理省市区回显：联动加载对应选项
-    if (province) {
-      // 1. 加载省份对应的城市
-      handleProvinceChange(province);
-      // 等待城市列表加载完成后，设置城市并加载区县
+// 初始化地区数据并处理回显 - 重点修复回显问题
+const initAreaData = async () => {
+  try {
+    await selectProvince();
+    const { province, city, district } = user.value.expandVo;
+    if (province && provinces.value.length > 0) {
+      const provinceExists = provinces.value.some(
+        (p) => p.provinceCode === province
+      );
+      if (!provinceExists) {
+        console.warn(`保存的省份代码 ${province} 不在省份列表中，可能已过期`);
+        return;
+      }
+      user.value.expandVo.province = province;
+      await handleProvinceChange(province);
       await nextTick();
-      if (city) {
-        // 2. 赋值城市并加载区县
+      if (city && cities.value.length > 0) {
+        // 验证城市是否存在
+        const cityExists = cities.value.some((c) => c.cityCode === city);
+        if (!cityExists) {
+          console.warn(`保存的城市代码 ${city} 不在城市列表中，可能已过期`);
+          return;
+        }
         user.value.expandVo.city = city;
-        handleCityChange(city);
-        // 等待区县列表加载完成后，设置区县
         await nextTick();
-        if (district) {
-          user.value.expandVo.district = district;
+        await handleCityChange(city);
+        await nextTick();
+        if (district && counties.value.length > 0) {
+          const districtExists = counties.value.some(
+            (d) => d.countyCode === district
+          );
+          if (!districtExists) {
+            console.warn(
+              `保存的区县代码 ${district} 不在区县列表中，可能已过期`
+            );
+          } else {
+            user.value.expandVo.district = district;
+          }
         }
       }
     }
   } catch (error) {
-    console.error("获取用户信息失败", error);
-    ElMessage.error("获取用户信息失败");
+    console.error("地区数据初始化失败:", error);
   }
 };
 
@@ -598,7 +518,6 @@ const sendPhoneCode = async () => {
       return;
     }
     ElMessage.success("验证码发送成功");
-    // 开始倒计时
     startPhoneCodeCountdown();
   } catch (error) {
     ElMessage.error("验证码发送失败，请重试");
@@ -623,14 +542,13 @@ const sendEmailCode = async () => {
       return;
     }
     ElMessage.success("验证码发送成功");
-    // 开始倒计时
     startEmailCodeCountdown();
   } catch (error) {
     ElMessage.error("验证码发送失败，请重试");
   }
 };
 
-// 手机验证码1分钟倒计时（结束显示“重复发送”）
+// 手机验证码倒计时
 const startPhoneCodeCountdown = () => {
   let count = codeCountdown;
   phoneCodeDisabled.value = true;
@@ -646,7 +564,7 @@ const startPhoneCodeCountdown = () => {
   }, 1000);
 };
 
-// 邮箱验证码1分钟倒计时（结束显示“重复发送”）
+// 邮箱验证码倒计时
 const startEmailCodeCountdown = () => {
   let count = codeCountdown;
   emailCodeDisabled.value = true;
@@ -676,7 +594,6 @@ const submitPhone = async () => {
       return;
     }
     ElMessage.success("手机号绑定成功");
-    // 绑定成功后更新用户信息并关闭弹框
     user.value.phone = phoneForm.value.phone;
     phoneDialogVisible.value = false;
   } catch (error) {
@@ -738,8 +655,6 @@ const submitEdit = async () => {
     ElMessage.error("编辑失败，请重试");
   } finally {
     saveLoading.value = false;
-    phoneEditable.value = false;
-    emailEditable.value = false;
   }
 };
 
@@ -748,13 +663,142 @@ const cancelEdit = () => {
   router.back();
 };
 
+// 邮箱脱敏处理
+const formattedEmail = computed({
+  get() {
+    if (!user.value.email) return "";
+    return emailEditable.value
+      ? user.value.email
+      : user.value.email.replace(/^(.{2}).*@(.*)$/, "$1***@$2");
+  },
+  set(val) {
+    user.value.email = val;
+  },
+});
+
+// 手机号脱敏处理
+const formattedPhone = computed({
+  get() {
+    if (!user.value.phone) return "";
+    return phoneEditable.value
+      ? user.value.phone
+      : user.value.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2");
+  },
+  set(val) {
+    user.value.phone = val;
+  },
+});
+// 监听数据变化，确保选择器正确更新
+watch(
+  () => user.value.expandVo.province,
+  (newVal) => {
+    if (newVal && provinceSelect.value) {
+      // 强制刷新选择器
+      provinceSelect.value.blur();
+      provinceSelect.value.focus();
+    }
+    // 省份变化后更新地址
+    updateAddress();
+  }
+);
+
+watch(
+  () => user.value.expandVo.city,
+  (newVal) => {
+    if (newVal && citySelect.value) {
+      citySelect.value.blur();
+      citySelect.value.focus();
+    }
+    // 城市变化后更新地址
+    updateAddress();
+  }
+);
+
+watch(
+  () => user.value.expandVo.district,
+  (newVal) => {
+    if (newVal && districtSelect.value) {
+      districtSelect.value.blur();
+      districtSelect.value.focus();
+    }
+    // 区县变化后更新地址
+    updateAddress();
+  }
+);
+
+// 获取用户信息
+const getUserInfo = async () => {
+  try {
+    const loginUserStore = useLoginUserStore();
+    const res = await getUserById({ id: loginUserStore.loginUser.id });
+    if (res.data.code !== 200) return;
+    user.value = res.data.data;
+    if (!user.value.expandVo) {
+      user.value.expandVo = {
+        address: "",
+        bio: "",
+        province: "",
+        city: "",
+        district: "",
+        birthday: "",
+      };
+    }
+  } catch (error) {
+    ElMessage.error("获取用户信息失败");
+  }
+};
+
+// 计算并更新详细地址
+const updateAddress = () => {
+  let addressParts = [];
+  
+  // 根据省份代码查找省份名称
+  if (user.value.expandVo.province) {
+    const selectedProvince = provinces.value.find(
+      (p) => p.provinceCode === user.value.expandVo.province
+    );
+    if (selectedProvince) {
+      addressParts.push(selectedProvince.provinceName);
+    }
+  }
+  
+  // 根据城市代码查找城市名称
+  if (user.value.expandVo.city) {
+    const selectedCity = cities.value.find(
+      (c) => c.cityCode === user.value.expandVo.city
+    );
+    if (selectedCity) {
+      addressParts.push(selectedCity.cityName);
+    }
+  }
+  
+  // 根据区县代码查找区县名称
+  if (user.value.expandVo.district) {
+    const selectedDistrict = counties.value.find(
+      (d) => d.countyCode === user.value.expandVo.district
+    );
+    if (selectedDistrict) {
+      addressParts.push(selectedDistrict.countyName);
+    }
+  }
+  
+  // 更新详细地址
+  user.value.expandVo.address = addressParts.join("");
+};
+
 const handleInput = () => {};
 
-// 页面挂载时获取用户信息
-onMounted(() => {
-  getUserInfo();
+onMounted(async () => {
+  await getUserInfo();
+  // 等待用户信息加载完成后再初始化地区数据
+  await nextTick();
+  await initAreaData();
+  // 初始化地区数据后更新地址
+  await nextTick();
+  updateAddress();
 });
 </script>
+
 <style scoped>
 .edit-container {
   padding: 20px;
@@ -888,7 +932,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-/* 地区选择区域样式（新增/优化） */
+/* 地区选择区域样式 */
 .area-select-row {
   margin-bottom: 8px;
   align-items: center;
@@ -897,7 +941,7 @@ onMounted(() => {
   width: 100%;
   border-radius: 4px;
   font-size: 14px;
-  height: 32px; /* 统一高度，优化对齐 */
+  height: 32px;
 }
 .area-preview {
   margin-top: 4px;
@@ -905,6 +949,14 @@ onMounted(() => {
   color: #666;
   padding-left: 2px;
   line-height: 1.5;
+}
+
+/* 为选择器添加加载状态样式 */
+.el-select__input.is-loading {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='2' x2='12' y2='6'%3E%3C/line%3E%3Cline x1='12' y1='18' x2='12' y2='22'%3E%3C/line%3E%3Cline x1='4.93' y1='4.93' x2='7.76' y2='7.76'%3E%3C/line%3E%3Cline x1='16.24' y1='16.24' x2='19.07' y2='19.07'%3E%3C/line%3E%3Cline x1='2' y1='12' x2='6' y2='12'%3E%3C/line%3E%3Cline x1='18' y1='12' x2='22' y2='12'%3E%3C/line%3E%3Cline x1='4.93' y1='19.07' x2='7.76' y2='16.24'%3E%3C/line%3E%3Cline x1='16.24' y1='7.76' x2='19.07' y2='4.93'%3E%3C/line%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
 }
 
 /* 文本域样式 */
@@ -992,5 +1044,10 @@ onMounted(() => {
   .area-select-row .el-col:last-child {
     margin-bottom: 0;
   }
+}
+
+/* 地区选择框宽度设置 */
+.area-select {
+  width: 120px !important;
 }
 </style>

@@ -29,7 +29,7 @@ public class CountyController {
 
     @Operation(summary = "添加区县数据")
     @PostMapping("/add")
-    @PreAuthorize("@ss.hasPermission('/county/add')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<?> addCounty(@RequestBody CountyVO CountyVO) {
         Boolean result = countyService.addCounty(CountyVO);
         return result ? ResponseResult.success("添加成功") : ResponseResult.fail("添加失败");
@@ -37,7 +37,7 @@ public class CountyController {
 
     @Operation(summary = "删除区县数据")
     @PostMapping("/delete")
-    @PreAuthorize("@ss.hasPermission('/county/delete')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<?> deleteCounty(@RequestBody Long id) {
         Boolean result = countyService.deleteCounty(id);
         return result ? ResponseResult.success("删除成功") : ResponseResult.fail("删除失败");
@@ -45,7 +45,7 @@ public class CountyController {
 
     @Operation(summary = "更新区县数据")
     @PostMapping("/update")
-    @PreAuthorize("@ss.hasPermission('/county/update')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<?> updateCounty(@RequestBody CountyVO CountyVO) {
         Boolean result = countyService.updateCounty(CountyVO);
         return result ? ResponseResult.success("更新成功") : ResponseResult.fail("更新失败");
@@ -53,7 +53,6 @@ public class CountyController {
 
     @Operation(summary = "查询区县数据")
     @GetMapping("/select")
-    @PreAuthorize("@ss.hasPermission('/county/select')")
     public ResponseResult<?> selectCounty(@RequestParam Long id) {
         CountyVO CountyVO = countyService.selectCounty(id);
         return ResponseResult.success(CountyVO);

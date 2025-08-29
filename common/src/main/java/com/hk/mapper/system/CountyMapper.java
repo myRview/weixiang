@@ -4,6 +4,8 @@ package com.hk.mapper.system;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hk.entity.system.CountyEntity;
 
+import java.util.List;
+
 /**
  * <p>
  * 区县表 Mapper 接口
@@ -14,4 +16,5 @@ import com.hk.entity.system.CountyEntity;
  */
 public interface CountyMapper extends BaseMapper<CountyEntity> {
 
+    void deleteByCityId(List<Long> cityIdList);
 }

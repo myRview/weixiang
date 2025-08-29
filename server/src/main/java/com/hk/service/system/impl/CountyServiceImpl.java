@@ -38,6 +38,7 @@ public class CountyServiceImpl extends ServiceImpl<CountyMapper, CountyEntity> i
             throw new BusinessException(ErrorCode.BAD_REQUEST, "城市不存在");
         }
         CountyEntity countyEntity = new CountyEntity();
+        countyEntity.setCityId(countyVO.getCityId());
         countyEntity.setCountyCode(countyVO.getCountyCode());
         countyEntity.setCountyName(countyVO.getCountyName());
         boolean save = this.save(countyEntity);

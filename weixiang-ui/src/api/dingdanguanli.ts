@@ -17,6 +17,21 @@ export async function deleteOrder(
   });
 }
 
+/** 查询支付宝订单详情 GET /order/info/detail */
+export async function getOrderDetail(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getOrderDetailParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultJSONObject>("/order/info/detail", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 查询订单详情 GET /order/info/get */
 export async function getOrderById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -43,6 +58,36 @@ export async function selectOrderPage(
       "Content-Type": "application/json",
     },
     data: body,
+    ...(options || {}),
+  });
+}
+
+/** 退款 GET /order/info/refund */
+export async function refund(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.refundParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultObject>("/order/info/refund", {
+    method: "GET",
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 查询支付宝退款订单详情 GET /order/info/refund/detail */
+export async function getRefundDetail(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getRefundDetailParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResponseResultJSONObject>("/order/info/refund/detail", {
+    method: "GET",
+    params: {
+      ...params,
+    },
     ...(options || {}),
   });
 }

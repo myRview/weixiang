@@ -159,14 +159,14 @@ const formatDate = (date: string | number | Date) => {
 
 const searchDateRange = ref<[Date | null, Date | null]>([null, null]);
 
-const getTagType = (status: string) => {
+const getTagType = (status: number) => {
   switch (status) {
-    case "1":
+    case 1:
       return "success";
-    case "0":
+    case 0:
       return "info";
-    case "32":
-      return "warning";
+    case 3:
+      return "error";
     default:
       return "";
   }

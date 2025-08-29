@@ -1,5 +1,6 @@
 package com.hk.service.system.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hk.common.ErrorCode;
@@ -7,6 +8,7 @@ import com.hk.entity.system.CityDataEntity;
 import com.hk.event.ProvinceUpdateEvent;
 import com.hk.exception.BusinessException;
 import com.hk.mapper.system.CityMapper;
+import com.hk.mapper.system.CountyMapper;
 import com.hk.service.system.CityService;
 import com.hk.service.system.ProvinceService;
 import com.hk.vo.system.CityVO;
@@ -15,6 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -32,6 +39,8 @@ public class CityServiceImpl extends ServiceImpl<CityMapper, CityDataEntity> imp
     @Lazy
     @Autowired
     private ProvinceService provinceService;
+    @Autowired
+    private CountyMapper countyMapper;
 
     @Override
     public CityVO selectOne(Long cityId) {
@@ -63,11 +72,13 @@ public class CityServiceImpl extends ServiceImpl<CityMapper, CityDataEntity> imp
         return save;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean deleteCity(Long id) {
         CityDataEntity cityDataEntity = this.getById(id);
         if (cityDataEntity == null) return false;
         boolean remove = this.removeById(id);
+        countyMapper.deleteByCityId(Arrays.asList(id));
         if (remove) {
             ProvinceUpdateEvent event = new ProvinceUpdateEvent(this, cityDataEntity.getProvinceId());
             applicationContext.publishEvent(event);
@@ -91,5 +102,20 @@ public class CityServiceImpl extends ServiceImpl<CityMapper, CityDataEntity> imp
             applicationContext.publishEvent(event);
         }
         return update;
+    }
+
+    @Override
+    public void deleteByProvinceId(Long provinceId) {
+        LambdaQueryWrapper<CityDataEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(CityDataEntity::getProvinceId, provinceId);
+        queryWrapper.select(CityDataEntity::getId);
+        List<CityDataEntity> entities = this.list(queryWrapper);
+        if (CollectionUtil.isEmpty(entities)) return;
+
+        List<Long> cityIdList = entities.stream().map(CityDataEntity::getId).collect(Collectors.toList());
+        LambdaQueryWrapper<CityDataEntity> removeWrapper = new LambdaQueryWrapper<>();
+        removeWrapper.eq(CityDataEntity::getProvinceId, provinceId);
+        boolean remove = this.remove(removeWrapper);
+        countyMapper.deleteByCityId(cityIdList);
     }
 }

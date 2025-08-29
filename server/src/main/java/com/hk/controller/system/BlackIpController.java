@@ -35,7 +35,7 @@ public class BlackIpController {
 
     @Operation(summary = "添加黑名单ip")
     @PostMapping("/add/black/ip")
-    @PreAuthorize("@ss.hasPermission('/system/setting/add/black/ip')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult addBlackIp(String ip) {
         if (StringUtils.isBlank(ip)) {
             return ResponseResult.fail("请输入ip");
@@ -49,7 +49,7 @@ public class BlackIpController {
 
     @Operation(summary = "移除黑名单ip")
     @PostMapping("/remove/black/ip")
-    @PreAuthorize("@ss.hasPermission('/system/setting/remove/black/ip')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult removeBlackIp(Long id) {
         if (id == null) {
             return ResponseResult.fail("请输入id");
@@ -60,7 +60,7 @@ public class BlackIpController {
 
     @Operation(summary = "获取所有黑名单ip")
     @PostMapping("/all/black/ip")
-    @PreAuthorize("@ss.hasPermission('/system/setting/all/black/ip')")
+    @PreAuthorize("@ss.hasPermission('/system/setting')")
     public ResponseResult<List<BlackIpVO>> selectBlackIpAll() {
         return ResponseResult.success(blackIpService.selectAll());
     }

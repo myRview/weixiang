@@ -16,5 +16,12 @@
     <sql id="Base_Column_List">
         id, county_name, county_code, city_id, create_time, update_time
     </sql>
+    <delete id="deleteByCityId" parameterType="java.util.List">
+        DELETE FROM sys_county
+        WHERE city_id IN
+        <foreach collection="list" item="cityId" open="(" separator="," close=")">
+            #{cityId}
+        </foreach>
+    </delete>
 
 </mapper>

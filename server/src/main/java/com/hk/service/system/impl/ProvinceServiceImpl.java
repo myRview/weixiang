@@ -19,6 +19,7 @@ import com.hk.vo.system.CountyVO;
 import com.hk.vo.system.ProvinceVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -123,9 +124,11 @@ public class ProvinceServiceImpl extends ServiceImpl<ProvinceMapper, ProvinceEnt
         return save;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean deleteProvince(Long id) {
         boolean remove = this.removeById(id);
+        cityService.deleteByProvinceId(id);
         if (remove) {
             redisService.deleteHash(this.getHashKey(), String.valueOf(id));
         }
