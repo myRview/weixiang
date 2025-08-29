@@ -41,6 +41,10 @@
 <img width="633" height="375" alt="register" src="https://github.com/user-attachments/assets/b263d54d-c7a9-45ca-a49e-134cabb710f0" />
 
 #### 系统首页展示（支持滚动分页）
+<img width="637" height="383" alt="home" src="https://github.com/user-attachments/assets/06276a1b-5458-417f-8906-1ef38ea7f61f" />
+<img width="624" height="357" alt="admin-home" src="https://github.com/user-attachments/assets/499114b7-aade-4e74-91a3-70a28353e29b" />
+
+#### 文章审批和我的文章页面
 
 
 ## 快速开始
