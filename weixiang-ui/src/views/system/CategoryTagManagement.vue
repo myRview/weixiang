@@ -651,7 +651,7 @@ onUnmounted(() => {
 </script>
 <style scoped>
 .category-tag-management {
-  padding: 20px;
+  max-height: 100vh;
 }
 /* 标签页样式优化 */
 .custom-tabs {

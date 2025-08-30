@@ -2,9 +2,12 @@ package com.hk.service.article.impl;
 
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hk.cache.RedisService;
 import com.hk.common.ErrorCode;
+import com.hk.constants.BaseConstant;
 import com.hk.context.UserContext;
 import com.hk.entity.article.ArticleCommentEntity;
 import com.hk.entity.article.ArticleEntity;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -40,9 +44,17 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
     private ArticleService articleService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public List<ArticleCommentVO> getArticleCommentList(Long articleId) {
+        if (articleId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        Object hash = redisService.getHash(getHashKey(), String.valueOf(articleId));
+        if (hash != null) return (List<ArticleCommentVO>) hash;
+
         LambdaQueryWrapper<ArticleCommentEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(ArticleCommentEntity::getArticleId, articleId);
         queryWrapper.select(ArticleCommentEntity::getId, ArticleCommentEntity::getContent,
@@ -68,9 +80,11 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
                     return commentVO;
                 }
         ).collect(Collectors.toList());
-
+        redisService.putHash(getHashKey(), String.valueOf(articleId), commentVOS);
+        redisService.expire(getHashKey(), RandomUtil.randomInt(1, 5), TimeUnit.HOURS);
         return commentVOS;
     }
+
 
     @Override
     public boolean addArticleComment(ArticleCommentVO articleCommentVO) {
@@ -111,5 +125,10 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
             return this.removeById(id);
         }
         return false;
+    }
+
+
+    private String getHashKey() {
+        return String.format("%s:%s", BaseConstant.CACHE_PREFIX, "article:comments");
     }
 }

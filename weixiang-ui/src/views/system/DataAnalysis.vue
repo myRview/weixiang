@@ -27,9 +27,27 @@
       </div>
     </div>
 
-    <!-- 下半部分：留空给其他统计图 -->
+    <!-- 下半部分：订单状态与金额柱状图 -->
     <div class="chart-container">
-      <!-- 其他统计图将放在这里 -->
+      <div v-if="orderLoading" class="chart-loading">
+        <div class="loading-spinner"></div>
+        <div>加载订单数据中...</div>
+      </div>
+      <div
+        v-else-if="
+          !orderAmountChartOption.series ||
+          !orderAmountChartOption.series[0].data.length
+        "
+        class="chart-empty"
+      >
+        <el-empty description="暂无订单金额数据" />
+      </div>
+      <v-chart
+        v-else
+        class="chart"
+        :option="orderAmountChartOption"
+        autoresize
+      />
     </div>
   </div>
 </template>
@@ -38,23 +56,26 @@
 import { onMounted, ref, computed } from "vue";
 import { count, planCount } from "@/api/dingdantongji";
 import { use } from "echarts/core";
-import { PieChart } from "echarts/charts";
+import { PieChart, BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import {
   TitleComponent,
   TooltipComponent,
-  LegendComponent,
+  GridComponent,
+  DatasetComponent,
+  TransformComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { ElEmpty } from "element-plus";
 
-// 初始化ECharts组件
 use([
-  CanvasRenderer,
-  PieChart,
   TitleComponent,
   TooltipComponent,
-  LegendComponent,
+  GridComponent,
+  DatasetComponent,
+  TransformComponent,
+  BarChart,
+  CanvasRenderer,
 ]);
 
 // 加载状态
@@ -71,15 +92,30 @@ const statusMap = {
 
 // 优化后的颜色方案
 const ORDER_COLORS = ["#FF6B6B", "#4ECDC4", "#FFD166", "#9D65C9"];
-const PLAN_COLORS = ["#6A0572", "#AB83A1", "#5C7AFF", "#3AAFA9", "#F9C74F", "#90BE6D", "#F8961E", "#577590"];
+const PLAN_COLORS = [
+  "#6A0572",
+  "#AB83A1",
+  "#5C7AFF",
+  "#3AAFA9",
+  "#F9C74F",
+  "#90BE6D",
+  "#F8961E",
+  "#577590",
+];
 
 // 订单统计数据
-const OrderStatisticsData = ref<any[]>([]);
+const OrderStatisticsData = ref<API.OrderStatisticsVO[]>([]);
 // 获取订单统计数据
 const getOrderStatisticsData = async () => {
   try {
     orderLoading.value = true;
-    const params = { date: "" };
+    // 获取今天的日期并格式化为YYYY-MM-DD格式
+    // const today = new Date();
+    // const formattedDate = today.getFullYear() + '-' + 
+    //   String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    //   String(today.getDate()).padStart(2, '0');
+    // const params = { date: formattedDate };
+    const params = { date: '' };
     const response = await count(params);
     if (response.data.code === 200) {
       OrderStatisticsData.value = response.data.data || [];
@@ -99,7 +135,7 @@ const orderChartOption = computed(() => {
     0: { count: 0, amount: 0 },
     1: { count: 0, amount: 0 },
     2: { count: 0, amount: 0 },
-    3: { count: 0, amount: 0 }
+    3: { count: 0, amount: 0 },
   };
 
   OrderStatisticsData.value.forEach((item) => {
@@ -110,12 +146,14 @@ const orderChartOption = computed(() => {
   });
 
   // 转换为饼图数据格式
-  const pieData = Object.entries(statusData).map(([status, data], index) => ({
-    value: data.count,
-    name: statusMap[Number(status) as 0 | 1 | 2 | 3],
-    amount: data.amount,
-    itemStyle: { color: ORDER_COLORS[index] }
-  })).filter(item => item.value > 0); // 过滤掉数量为0的状态
+  const pieData = Object.entries(statusData)
+    .map(([status, data], index) => ({
+      value: data.count,
+      name: statusMap[Number(status) as 0 | 1 | 2 | 3],
+      amount: data.amount,
+      itemStyle: { color: ORDER_COLORS[index] },
+    }))
+    .filter((item) => item.value > 0); // 过滤掉数量为0的状态
 
   // 计算总数
   const totalCount = pieData.reduce((sum, item) => sum + item.value, 0);
@@ -126,9 +164,9 @@ const orderChartOption = computed(() => {
       text: "订单状态分布",
       left: "center",
       textStyle: {
-        fontWeight: 'bold',
-        fontSize: 16
-      }
+        fontWeight: "bold",
+        fontSize: 16,
+      },
     },
     tooltip: {
       trigger: "item",
@@ -142,46 +180,49 @@ const orderChartOption = computed(() => {
           <div>占比: <b>${percent}%</b></div>
         `;
       },
-      backgroundColor: 'rgba(255,255,255,0.9)',
-      borderColor: '#ddd',
+      backgroundColor: "rgba(255,255,255,0.9)",
+      borderColor: "#ddd",
       borderWidth: 1,
       padding: [10, 15],
       textStyle: {
-        color: '#333'
-      }
+        color: "#333",
+      },
     },
     legend: {
       orient: "vertical",
       left: "left",
       data: pieData.map((item) => item.name),
       textStyle: {
-        fontSize: 14
-      }
+        fontSize: 14,
+      },
     },
     color: ORDER_COLORS,
-    graphic: [{
-      type: 'text',
-      left: 'center',
-      top: '45%',
-      style: {
-        text: `订单总数\n${totalCount}`,
-        textAlign: 'center',
-        fill: '#333',
-        fontSize: 14,
-        fontWeight: 'bold',
-        lineHeight: 24
-      }
-    }, {
-      type: 'text',
-      left: 'center',
-      top: '55%',
-      style: {
-        text: `总金额\n¥${totalAmount.toFixed(2)}`,
-        textAlign: 'center',
-        fill: '#666',
-        fontSize: 13
-      }
-    }],
+    graphic: [
+      {
+        type: "text",
+        left: "center",
+        top: "45%",
+        style: {
+          text: `订单总数\n${totalCount}`,
+          textAlign: "center",
+          fill: "#333",
+          fontSize: 14,
+          fontWeight: "bold",
+          lineHeight: 24,
+        },
+      },
+      {
+        type: "text",
+        left: "center",
+        top: "55%",
+        style: {
+          text: `总金额\n¥${totalAmount.toFixed(2)}`,
+          textAlign: "center",
+          fill: "#666",
+          fontSize: 13,
+        },
+      },
+    ],
     series: [
       {
         name: "订单状态",
@@ -191,13 +232,13 @@ const orderChartOption = computed(() => {
         data: pieData,
         avoidLabelOverlap: false,
         itemStyle: {
-          borderColor: '#fff',
-          borderWidth: 2
+          borderColor: "#fff",
+          borderWidth: 2,
         },
         label: {
           show: true,
-          formatter: '{b}: {c}',
-          fontSize: 12
+          formatter: "{b}: {c}",
+          fontSize: 12,
         },
         emphasis: {
           itemStyle: {
@@ -207,8 +248,8 @@ const orderChartOption = computed(() => {
           },
           label: {
             show: true,
-            fontWeight: 'bold'
-          }
+            fontWeight: "bold",
+          },
         },
       },
     ],
@@ -216,12 +257,19 @@ const orderChartOption = computed(() => {
 });
 
 // 套餐统计数据
-const planStatisticsData = ref<any[]>([]);
+const planStatisticsData = ref<API.PlanStatisticsVO[]>([]);
 // 获取套餐统计数据
 const getPlanStatisticsData = async () => {
   try {
     planLoading.value = true;
-    const params = { date: "" };
+    // 获取今天的日期并格式化为YYYY-MM-DD格式
+    // const today = new Date();
+    // const formattedDate = today.getFullYear() + '-' + 
+    //   String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    //   String(today.getDate()).padStart(2, '0');
+    // const params = { date: formattedDate };
+
+    const params = { date: '' };
     const response = await planCount(params);
     if (response.data.code === 200) {
       planStatisticsData.value = response.data.data || [];
@@ -240,7 +288,7 @@ const planChartOption = computed(() => {
   const pieData = planStatisticsData.value.map((item, index) => ({
     value: item.total || 0,
     name: item.planName || "未知套餐",
-    itemStyle: { color: PLAN_COLORS[index % PLAN_COLORS.length] }
+    itemStyle: { color: PLAN_COLORS[index % PLAN_COLORS.length] },
   }));
 
   // 计算总数
@@ -251,9 +299,9 @@ const planChartOption = computed(() => {
       text: "套餐购买分布",
       left: "center",
       textStyle: {
-        fontWeight: 'bold',
-        fontSize: 16
-      }
+        fontWeight: "bold",
+        fontSize: 16,
+      },
     },
     tooltip: {
       trigger: "item",
@@ -265,35 +313,37 @@ const planChartOption = computed(() => {
           <div>占比: <b>${percent}%</b></div>
         `;
       },
-      backgroundColor: 'rgba(255,255,255,0.9)',
-      borderColor: '#ddd',
+      backgroundColor: "rgba(255,255,255,0.9)",
+      borderColor: "#ddd",
       borderWidth: 1,
       padding: [10, 15],
       textStyle: {
-        color: '#333'
-      }
+        color: "#333",
+      },
     },
     legend: {
       orient: "vertical",
       right: "10%",
       data: pieData.map((item) => item.name),
       textStyle: {
-        fontSize: 12
-      }
+        fontSize: 12,
+      },
     },
     color: PLAN_COLORS,
-    graphic: [{
-      type: 'text',
-      left: 'center',
-      top: '50%',
-      style: {
-        text: `套餐总数\n${totalCount}`,
-        textAlign: 'center',
-        fill: '#333',
-        fontSize: 14,
-        fontWeight: 'bold'
-      }
-    }],
+    graphic: [
+      {
+        type: "text",
+        left: "center",
+        top: "50%",
+        style: {
+          text: `套餐总数\n${totalCount}`,
+          textAlign: "center",
+          fill: "#333",
+          fontSize: 14,
+          fontWeight: "bold",
+        },
+      },
+    ],
     series: [
       {
         name: "套餐分布",
@@ -303,13 +353,13 @@ const planChartOption = computed(() => {
         data: pieData,
         avoidLabelOverlap: false,
         itemStyle: {
-          borderColor: '#fff',
-          borderWidth: 2
+          borderColor: "#fff",
+          borderWidth: 2,
         },
         label: {
           show: true,
-          formatter: '{b}: {c}',
-          fontSize: 12
+          formatter: "{b}: {c}",
+          fontSize: 12,
         },
         emphasis: {
           itemStyle: {
@@ -319,8 +369,8 @@ const planChartOption = computed(() => {
           },
           label: {
             show: true,
-            fontWeight: 'bold'
-          }
+            fontWeight: "bold",
+          },
         },
       },
     ],
@@ -332,9 +382,126 @@ onMounted(() => {
   getOrderStatisticsData();
   getPlanStatisticsData();
 });
+// 订单状态金额柱状图配置项
+const orderAmountChartOption = computed(() => {
+  // 按状态分组统计数量和金额
+  const statusData: Record<number, { count: number; amount: number }> = {
+    0: { count: 0, amount: 0 },
+    1: { count: 0, amount: 0 },
+    2: { count: 0, amount: 0 },
+    3: { count: 0, amount: 0 },
+  };
+
+  OrderStatisticsData.value.forEach((item) => {
+    if (item.status !== undefined && statusData[item.status] !== undefined) {
+      statusData[item.status].count += item.total || 0;
+      statusData[item.status].amount += item.totalAmount || 0;
+    }
+  });
+
+  // 转换为柱状图数据格式
+  const xAxisData = [];
+  const seriesData = [];
+
+  Object.entries(statusData)
+    .filter(([_, data]) => data.count > 0 || data.amount > 0) // 过滤掉数量和金额都为0的状态
+    .forEach(([status, data]) => {
+      xAxisData.push(statusMap[Number(status) as 0 | 1 | 2 | 3]);
+      seriesData.push({
+        value: data.amount,
+        count: data.count,
+        status: statusMap[Number(status) as 0 | 1 | 2 | 3],
+      });
+    });
+
+  return {
+    title: {
+      text: "订单状态与金额分布",
+      left: "center",
+      textStyle: {
+        fontWeight: "bold",
+        fontSize: 16,
+      },
+    },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: {
+        type: "shadow",
+      },
+      formatter: (params: any) => {
+        const { name, value, data } = params[0];
+        return `
+          <div style="font-weight:bold;margin-bottom:5px">${name}</div>
+          <div>订单数量: <b>${data.count}</b></div>
+          <div>订单金额: <b>¥${value.toFixed(2)}</b></div>
+        `;
+      },
+      backgroundColor: "rgba(255,255,255,0.9)",
+      borderColor: "#ddd",
+      borderWidth: 1,
+      padding: [10, 15],
+      textStyle: {
+        color: "#333",
+      },
+    },
+    grid: {
+      left: "3%",
+      right: "4%",
+      bottom: "3%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category",
+      data: xAxisData,
+      axisLabel: {
+        fontSize: 14,
+      },
+    },
+    yAxis: {
+      type: "value",
+      name: "金额(元)",
+      axisLabel: {
+        formatter: "¥{value}",
+        fontSize: 12,
+      },
+    },
+    series: [
+      {
+        name: "订单金额",
+        type: "bar",
+        data: seriesData,
+        itemStyle: {
+          color: (params: any) => {
+            const index = Object.keys(statusData).findIndex(
+              (key) => statusMap[Number(key) as 0 | 1 | 2 | 3] === params.name
+            );
+            return ORDER_COLORS[index];
+          },
+          borderRadius: [4, 4, 0, 0],
+        },
+        label: {
+          show: true,
+          position: "top",
+          formatter: "¥{c}",
+          fontSize: 12,
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: "rgba(0, 0, 0, 0.3)",
+          },
+        },
+      },
+    ],
+  };
+});
 </script>
 
 <style scoped>
+.data-analysis {
+  max-height: 500px;
+}
 .chart-row {
   display: flex;
   flex-wrap: wrap;
@@ -353,5 +520,45 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.chart {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
 
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #999;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.chart-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 400px;
+}
 </style>

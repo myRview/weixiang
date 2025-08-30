@@ -4,6 +4,7 @@ package com.hk.service.article.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -47,6 +48,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -165,28 +167,30 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
     @Override
     public ArticleVO selectArticleDetail(Long id) {
         if (id == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "文章id不能为空");
+        ArticleVO articleVO = null;
+        articleVO = (ArticleVO) redisService.getHash(getArticleDetailKey(), String.valueOf(id));
+        if (articleVO != null) {
+            return articleVO;
+        }
         ArticleEsVO articleEsVO = elasticsearchOperations.get(String.valueOf(id), ArticleEsVO.class);
         if (articleEsVO != null) {
-            ArticleVO articleVO = ArticleEsVO.convertToVO(articleEsVO);
-            UserVO userVO = userService.selectById(Long.valueOf(articleEsVO.getUserId()));
+            articleVO = ArticleEsVO.convertToVO(articleEsVO);
+        } else {
+            ArticleEntity article = this.getById(id);
+            if (article == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "文章不存在");
+            articleVO = ArticleVO.convert(article);
+            List<ArticleTagVO> tagVOList = articleTagService.selectListByArticleId(id);
+            if (CollectionUtil.isNotEmpty(tagVOList)) {
+                articleVO.setTagIds(tagVOList.stream().map(ArticleTagVO::getTagId).collect(Collectors.toList()));
+            }
+            UserVO userVO = userService.selectById(article.getUserId());
             if (userVO != null) {
                 articleVO.setUserName(userVO.getUserName());
                 articleVO.setUserAvatar(userVO.getAvatar());
             }
-            return articleVO;
         }
-        ArticleEntity article = this.getById(id);
-        if (article == null) throw new BusinessException(ErrorCode.BAD_REQUEST, "文章不存在");
-        ArticleVO articleVO = ArticleVO.convert(article);
-        List<ArticleTagVO> tagVOList = articleTagService.selectListByArticleId(id);
-        if (CollectionUtil.isNotEmpty(tagVOList)) {
-            articleVO.setTagIds(tagVOList.stream().map(ArticleTagVO::getTagId).collect(Collectors.toList()));
-        }
-        UserVO userVO = userService.selectById(article.getUserId());
-        if (userVO != null) {
-            articleVO.setUserName(userVO.getUserName());
-            articleVO.setUserAvatar(userVO.getAvatar());
-        }
+        redisService.putHash(getArticleDetailKey(), String.valueOf(id), articleVO);
+        redisService.expire(getArticleDetailKey(), RandomUtil.randomInt(1, 5), TimeUnit.HOURS);
         return articleVO;
     }
 
@@ -364,6 +368,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, ArticleEntity
                 }
         ).collect(Collectors.toList());
     }
+
+    private String getArticleDetailKey() {
+        return String.format("%s:%s", BaseConstant.CACHE_PREFIX, "article:detail");
+    }
+
 
     private String getLikeKey(Long articleId) {
         return String.format("%s:%s:%s", BaseConstant.CACHE_PREFIX, "article:like", articleId);

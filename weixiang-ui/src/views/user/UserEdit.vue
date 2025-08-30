@@ -297,6 +297,7 @@ import dayjs from "dayjs";
 import { sendCode } from "@/api/userRegisterController";
 import { baseURL } from "@/request";
 import { getAllProvince } from "@/api/shengfenguanli";
+import { User, Loading } from "@element-plus/icons-vue";
 
 const router = useRouter();
 const formRef = ref<InstanceType<typeof ElForm>>();
@@ -335,6 +336,33 @@ const phoneCodeText = ref("获取验证码");
 const emailCodeDisabled = ref(false);
 const emailCodeText = ref("获取验证码");
 const codeCountdown = 60;
+
+// 表单验证规则
+const phoneRules = ref({
+  phone: [
+    { required: true, message: "请输入手机号", trigger: "blur" },
+    {
+      pattern: /^1[3-9]\d{9}$/,
+      message: "请输入正确的手机号",
+      trigger: "blur",
+    },
+  ],
+  code: [
+    { required: true, message: "请输入验证码", trigger: "blur" },
+    { pattern: /^\d{6}$/, message: "验证码为6位数字", trigger: "blur" },
+  ],
+});
+
+const emailRules = ref({
+  email: [
+    { required: true, message: "请输入邮箱", trigger: "blur" },
+    { type: "email", message: "请输入正确的邮箱格式", trigger: "blur" },
+  ],
+  code: [
+    { required: true, message: "请输入验证码", trigger: "blur" },
+    { pattern: /^\d{6}$/, message: "验证码为6位数字", trigger: "blur" },
+  ],
+});
 
 // 用户信息结构
 const user = ref<API.UserVO>({
@@ -583,6 +611,11 @@ const startEmailCodeCountdown = () => {
 // 提交手机号绑定/修改
 const submitPhone = async () => {
   if (!phoneFormRef.value) return;
+
+  // 先验证表单
+  const valid = await phoneFormRef.value.validate();
+  if (!valid) return;
+
   try {
     const res = await bindPhoneAndEmail({
       userId: user.value.id,
@@ -605,6 +638,11 @@ const submitPhone = async () => {
 // 提交邮箱绑定/修改
 const submitEmail = async () => {
   if (!emailFormRef.value) return;
+
+  // 先验证表单
+  const valid = await emailFormRef.value.validate();
+  if (!valid) return;
+
   try {
     const res = await bindPhoneAndEmail({
       userId: user.value.id,
@@ -751,7 +789,7 @@ const getUserInfo = async () => {
 // 计算并更新详细地址
 const updateAddress = () => {
   let addressParts = [];
-  
+
   // 根据省份代码查找省份名称
   if (user.value.expandVo.province) {
     const selectedProvince = provinces.value.find(
@@ -761,7 +799,7 @@ const updateAddress = () => {
       addressParts.push(selectedProvince.provinceName);
     }
   }
-  
+
   // 根据城市代码查找城市名称
   if (user.value.expandVo.city) {
     const selectedCity = cities.value.find(
@@ -771,7 +809,7 @@ const updateAddress = () => {
       addressParts.push(selectedCity.cityName);
     }
   }
-  
+
   // 根据区县代码查找区县名称
   if (user.value.expandVo.district) {
     const selectedDistrict = counties.value.find(
@@ -781,7 +819,7 @@ const updateAddress = () => {
       addressParts.push(selectedDistrict.countyName);
     }
   }
-  
+
   // 更新详细地址
   user.value.expandVo.address = addressParts.join("");
 };
@@ -811,12 +849,13 @@ onMounted(async () => {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
 }
 
-/* 头像上传区域样式 */
+/* 头像上传区域样式 - 修复覆盖问题 */
 .avatar-upload-container {
   position: relative;
   display: inline-block;
   margin-bottom: 15px;
   text-align: center;
+  width: 60px; /* 限制容器宽度，防止覆盖其他元素 */
 }
 .avatar-upload {
   position: absolute;
@@ -899,6 +938,8 @@ onMounted(async () => {
   display: flex;
   gap: 20px;
   margin-top: 5px;
+  position: relative; /* 确保性别选择器在最上层 */
+  z-index: 10;
 }
 .gender-radio-group .el-radio {
   font-size: 14px;
