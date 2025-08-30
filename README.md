@@ -45,7 +45,17 @@
 <img width="624" height="357" alt="admin-home" src="https://github.com/user-attachments/assets/499114b7-aade-4e74-91a3-70a28353e29b" />
 
 #### 文章审批和我的文章页面
+<img width="615" height="305" alt="article-approval" src="https://github.com/user-attachments/assets/a1c637b6-bbbf-4043-b014-f53013a7e7fa" />
+<img width="606" height="240" alt="my-articles" src="https://github.com/user-attachments/assets/10bcb571-66b8-416d-8e26-bfee17eef761" />
 
+#### 用户详情页面和用户主页
+<img width="535" height="281" alt="User-detail" src="https://github.com/user-attachments/assets/5bda5d8f-b995-442d-8a46-4854cbb3b817" />
+<img width="535" height="289" alt="User-home" src="https://github.com/user-attachments/assets/aacab049-9d4f-4dcd-9a0e-260d55182a78" />
+
+#### 订单数据统计页面和订单管理页面
+<img width="543" height="322" alt="data-analyse" src="https://github.com/user-attachments/assets/ea169c7b-68f7-44a2-8af0-bb356c947377" />
+
+#### 文章详情页面
 
 ## 快速开始
 
