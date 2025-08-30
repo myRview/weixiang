@@ -54,8 +54,10 @@
 
 #### 订单数据统计页面和订单管理页面
 <img width="543" height="322" alt="data-analyse" src="https://github.com/user-attachments/assets/ea169c7b-68f7-44a2-8af0-bb356c947377" />
+<img width="615" height="305" alt="order-manager" src="https://github.com/user-attachments/assets/009a391f-b390-436b-950b-17ad313fb3f4" />
 
 #### 文章详情页面
+<img width="440" height="261" alt="article-detail" src="https://github.com/user-attachments/assets/02c6179f-513e-40b9-80af-f932b573a484" />
 
 ## 快速开始
 
