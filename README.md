@@ -37,11 +37,7 @@
 用户可以注册、登录、发布文章、评论、点赞、签到等功能。系统还集成了支付功能，用户可以购买会员套餐，享受更多特权。
 ## 系统架构图
 ## 视频效果展示
-
-
-https://github.com/user-attachments/assets/00f35a6a-1cd8-4c9f-b5ee-732dc68f542d
-
-
+https://vimeo.com/1116977446
 ## 界面效果
 #### 登录注册页面展示（支持账号、短信、邮箱三种方式注册登录）
 <img width="639" height="392" alt="login" src="https://github.com/user-attachments/assets/7b833537-daa9-431a-abfb-bba4054734ce" />
